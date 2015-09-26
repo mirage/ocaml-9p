@@ -14,23 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Result
 
-module T : sig
-  type t = {
-    msize: int32;
-    version: string;
-  }
-  (** A client version message *)
+module Version = Request.Version
 
-  include S.SERIALISABLE with type t := t
-end
+cstruct hdr {
+  uint32_t size;
+  uint8_t ty;
+  uint16_t tag;
+} as little_endian
 
-module R : sig
-  type t = {
-    msize: int32;
-    version: string;
-  }
-  (** A server version message *)
+type t =
+  | Version of Version.t
 
-  include S.SERIALISABLE with type t := t
-end
+let sizeof t = sizeof_hdr + (match t with
+  | Version x -> Version.sizeof x
+)

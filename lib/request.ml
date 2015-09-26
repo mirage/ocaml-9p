@@ -16,7 +16,7 @@
  *)
 open Result
 
-module T = struct
+module Version = struct
   cstruct hdr {
     uint32_t msize;
     uint16_t version_len;
@@ -59,4 +59,15 @@ module T = struct
     end
 end
 
-module R = T
+cstruct hdr {
+  uint32_t size;
+  uint8_t ty;
+  uint16_t tag;
+} as little_endian
+
+type t =
+  | Version of Version.t
+
+let sizeof t = sizeof_hdr + (match t with
+  | Version x -> Version.sizeof x
+)

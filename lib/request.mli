@@ -14,4 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Result
+
+module Version : sig
+
+  type t = {
+    msize: int32;
+    version: string;
+  }
+  (** The payload of a version message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
+type t =
+  | Version of Version.t
 
