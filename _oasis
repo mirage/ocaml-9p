@@ -28,5 +28,5 @@ Library protocol_9p
   CompiledObject:     best
   Path:               lib
   Findlibname:        9p-protocol
-  Modules:            S, M
+  Modules:            S, Version, M
   BuildDepends:       result, cstruct, cstruct.syntax

@@ -14,4 +14,20 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Result
 
+module type SERIALISABLE = sig
+  type t
+  (** Instances of this type can be read and written *)
+
+  val sizeof: t -> int
+  (** The size of a buffer needed to hold [t] *)
+
+  val read: Cstruct.t -> (t, [ `Msg of string]) result
+  (** Read a [t] from the given buffer. If the buffer cannot
+      be parsed then return an error. *)
+
+  val write: t -> Cstruct.t -> (unit, [ `TooSmall of (int * int)]) result
+  (** Write a [t] into the given buffer. If the buffer is too small,
+      then fail with [`TooSmall(expected, actual)]. *)
+end
