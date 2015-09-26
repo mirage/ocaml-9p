@@ -32,15 +32,22 @@ module T = struct
 
   let sizeof t = 2 + 4 + 2 + (String.length t.version)
 
-  let marshal t buf =
-    set_hdr_tag buf t.tag;
-    set_hdr_msize buf t.msize;
-    set_hdr_version_len buf (String.length t.version)
+  let write t buf =
+    let length = Cstruct.len buf in
+    let needed = sizeof t in
+    if length < needed
+    then Error (`TooSmall(needed, length))
+    else begin
+      set_hdr_tag buf t.tag;
+      set_hdr_msize buf t.msize;
+      set_hdr_version_len buf (String.length t.version);
+      Ok ()
+    end
 
-  let unmarshal buf =
+  let read buf =
     let length = Cstruct.len buf in
     if length < sizeof_hdr
-    then Error (Printf.sprintf "Version.T.unmarshal: truncated input")
+    then Error (`Msg "Version.read: truncated input")
     else begin
       let tag = get_hdr_tag buf in
       let msize = get_hdr_msize buf in
@@ -48,7 +55,7 @@ module T = struct
       let rest = Cstruct.shift buf sizeof_hdr in
       let remaining = Cstruct.len rest in
       if remaining < version_len
-      then Error (Printf.sprintf "Version.T.unmarshal: truncated input")
+      then Error (`Msg "Version.T.unmarshal: truncated input")
       else begin
         let version = Cstruct.(to_string (sub buf sizeof_hdr version_len)) in
         Ok { tag; msize; version }
