@@ -14,9 +14,36 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
-open Result
+open Error
 
 module Version = Request.Version
+
+module Auth = struct
+  type t = {
+    aqid: string; (* 13 bytes long *)
+  }
+
+  let sizeof _ = 13
+
+  let write t buf =
+    let length = Cstruct.len buf in
+    let needed = sizeof t in
+    ( if length < needed
+      then error_msg "Auth.write: buffer is too small for aqid (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    Cstruct.blit_from_string t 0 buf 0 needed;
+    return ()
+
+  let read buf =
+    let length = Cstruct.len buf in
+    let needed = 13 in
+    ( if length < needed
+      then error_msg "Auth.read: buffer is too small for aqid (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    return Cstruct.(to_string (sub buf 0 needed))
+end
 
 cstruct hdr {
   uint32_t size;
