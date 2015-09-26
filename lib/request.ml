@@ -73,14 +73,35 @@ module Auth = struct
   let write t buf =
     let length = Cstruct.len buf in
     let needed = sizeof t in
-    if length < needed
-    then Error (needed, length)
-    else begin
-      Cstruct.LE.set_uint32 buf 0 t.afid;
-      let uname = Data.of_string t.uname in
-      let aname = Data.of_string t.aname in
-      assert false
-    end
+    ( if length < needed
+      then error_msg "Auth.write: output buffer too small (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    Cstruct.LE.set_uint32 buf 0 t.afid;
+    let rest = Cstruct.shift buf 4 in
+    let uname = Data.of_string t.uname in
+    Data.write uname rest
+    >>= fun () ->
+    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    let aname = Data.of_string t.aname in
+    Data.write aname rest
+
+  let read buf =
+    let length = Cstruct.len buf in
+    ( if length < 4
+      then error_msg "Auth.read: output buffer too small for afid"
+      else return ()
+    ) >>= fun () ->
+    let afid = Cstruct.LE.get_uint32 buf 0 in
+    let rest = Cstruct.shift buf 4 in
+    Data.read rest
+    >>= fun uname ->
+    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    Data.read rest
+    >>= fun aname ->
+    let uname = Data.to_string uname in
+    let aname = Data.to_string aname in
+    return { afid; uname; aname }
 end
 
 cstruct hdr {

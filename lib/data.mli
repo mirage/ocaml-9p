@@ -20,4 +20,6 @@ type t = Cstruct.t
 
 val of_string: string -> t
 
+val to_string: t -> string
+
 include S.SERIALISABLE with type t := t
