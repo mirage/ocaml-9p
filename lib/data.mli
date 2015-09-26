@@ -14,14 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
-open Result
-
 type t = Cstruct.t
 (** A length-prefixed chunk of data which may include embedded NULLs, or may be
     interpreted later as UTF-8 text. *)
 
 val of_string: string -> t
 
-val read: Cstruct.t -> ( (t * Cstruct.t), [ `Msg of string ] ) result
-(** [read buf] returns the length-prefixed chunk of data and the rest of
-    the buffer, for incremental parsing. *)
+include S.SERIALISABLE with type t := t

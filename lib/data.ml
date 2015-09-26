@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
-open Result
+open Error
 
 type t = Cstruct.t
 
@@ -23,19 +23,30 @@ let of_string x =
   Cstruct.blit_from_string x 0 t 0 (String.length x);
   t
 
+let sizeof t = 2 + (Cstruct.len t)
+
 let read buf =
   let length = Cstruct.len buf in
-  if length < 2
-  then Error(`Msg "Buffer is too short to contain a string length")
-  else begin
-    let required = Cstruct.LE.get_uint16 buf 0 in
-    let rest = Cstruct.shift buf 2 in
-    let remaining = Cstruct.len rest in
-    if remaining < required
-    then Error(`Msg "Buffer is too short to contain string payload")
-    else begin
-      let payload = Cstruct.sub rest 0 required in
-      let trailing = Cstruct.shift rest required in
-      Ok(payload, trailing)
-    end
-  end
+  ( if length < 2
+    then error_msg "Buffer is too short to contain a string length"
+    else return ()
+  ) >>= fun () ->
+  let required = Cstruct.LE.get_uint16 buf 0 in
+  let rest = Cstruct.shift buf 2 in
+  let remaining = Cstruct.len rest in
+  ( if remaining < required
+    then error_msg "Buffer is too short to contain string payload"
+    else return ()
+  ) >>= fun () ->
+  return (Cstruct.sub rest 0 required)
+
+let write t buf =
+  let length = Cstruct.len buf in
+  let needed = sizeof t in
+  ( if needed < length
+    then error_msg "Buffer is too small for Data.t (%d < %d)" needed length
+    else return ()
+  ) >>= fun () ->
+  Cstruct.LE.set_uint16 buf 0 (Cstruct.len t);
+  Cstruct.blit t 0 buf 2 (Cstruct.len t);
+  return ()
