@@ -27,6 +27,12 @@ module Version : sig
   include S.SERIALISABLE with type t := t
 end
 
-type t =
+type payload =
   | Version of Version.t
 
+type t = {
+  tag: int;
+  payload: payload;
+}
+
+val sizeof: t -> int

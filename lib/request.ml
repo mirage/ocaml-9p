@@ -65,9 +65,15 @@ cstruct hdr {
   uint16_t tag;
 } as little_endian
 
-type t =
+type payload =
   | Version of Version.t
 
-let sizeof t = sizeof_hdr + (match t with
+type t = {
+  tag: int;
+  payload: payload
+}
+
+let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
 )
+
