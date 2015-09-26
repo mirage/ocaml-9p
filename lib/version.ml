@@ -18,19 +18,17 @@ open Result
 
 module T = struct
   cstruct hdr {
-    uint16_t tag;
     uint32_t msize;
     uint16_t version_len;
     (* version_len bytes *)
   } as little_endian
 
   type t = {
-    tag: int;
     msize: int32;
     version: string;
   }
 
-  let sizeof t = 2 + 4 + 2 + (String.length t.version)
+  let sizeof t = 4 + 2 + (String.length t.version)
 
   let write t buf =
     let length = Cstruct.len buf in
@@ -38,7 +36,6 @@ module T = struct
     if length < needed
     then Error (`TooSmall(needed, length))
     else begin
-      set_hdr_tag buf t.tag;
       set_hdr_msize buf t.msize;
       set_hdr_version_len buf (String.length t.version);
       Ok ()
@@ -49,7 +46,6 @@ module T = struct
     if length < sizeof_hdr
     then Error (`Msg "Version.read: truncated input")
     else begin
-      let tag = get_hdr_tag buf in
       let msize = get_hdr_msize buf in
       let version_len = get_hdr_version_len buf in
       let rest = Cstruct.shift buf sizeof_hdr in
@@ -58,7 +54,7 @@ module T = struct
       then Error (`Msg "Version.T.unmarshal: truncated input")
       else begin
         let version = Cstruct.(to_string (sub buf sizeof_hdr version_len)) in
-        Ok { tag; msize; version }
+        Ok { msize; version }
       end
     end
 end

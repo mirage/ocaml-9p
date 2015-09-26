@@ -17,7 +17,6 @@
 
 module T : sig
   type t = {
-    tag: int;
     msize: int32;
     version: string;
   }
@@ -28,7 +27,6 @@ end
 
 module R : sig
   type t = {
-    tag: int;
     msize: int32;
     version: string;
   }
