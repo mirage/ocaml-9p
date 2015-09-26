@@ -16,18 +16,26 @@
  *)
 open Result
 
-module type SERIALISABLE = sig
-  type t
-  (** Instances of this type can be read and written *)
+type t = Cstruct.t
 
-  val sizeof: t -> int
-  (** The size of a buffer needed to hold [t] *)
+let of_string x =
+  let t = Cstruct.create (String.length x) in
+  Cstruct.blit_from_string x 0 t 0 (String.length x);
+  t
 
-  val read: Cstruct.t -> (t, [ `Msg of string]) result
-  (** Read a [t] from the given buffer. If the buffer cannot
-      be parsed then return an error. *)
-
-  val write: t -> Cstruct.t -> (unit, [ `Msg of string]) result
-  (** Write a [t] into the given buffer. If the buffer is too small,
-      then return an error. *)
-end
+let read buf =
+  let length = Cstruct.len buf in
+  if length < 2
+  then Error(`Msg "Buffer is too short to contain a string length")
+  else begin
+    let required = Cstruct.LE.get_uint16 buf 0 in
+    let rest = Cstruct.shift buf 2 in
+    let remaining = Cstruct.len rest in
+    if remaining < required
+    then Error(`Msg "Buffer is too short to contain string payload")
+    else begin
+      let payload = Cstruct.sub rest 0 required in
+      let trailing = Cstruct.shift rest required in
+      Ok(payload, trailing)
+    end
+  end

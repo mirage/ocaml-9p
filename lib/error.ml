@@ -16,18 +16,16 @@
  *)
 open Result
 
-module type SERIALISABLE = sig
-  type t
-  (** Instances of this type can be read and written *)
+type error = [
+  | `Msg of string
+]
 
-  val sizeof: t -> int
-  (** The size of a buffer needed to hold [t] *)
+type 'a t = ('a, error) result
 
-  val read: Cstruct.t -> (t, [ `Msg of string]) result
-  (** Read a [t] from the given buffer. If the buffer cannot
-      be parsed then return an error. *)
+let return x = Ok x
 
-  val write: t -> Cstruct.t -> (unit, [ `Msg of string]) result
-  (** Write a [t] into the given buffer. If the buffer is too small,
-      then return an error. *)
-end
+let error_msg fmt = Printf.ksprintf (fun s -> Error (`Msg s)) fmt
+
+let ( >>= ) m f = match m with
+  | Error x -> Error x
+  | Ok x -> f x

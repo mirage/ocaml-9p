@@ -15,6 +15,7 @@
  *
  *)
 open Result
+open Error
 
 module Version = struct
   cstruct hdr {
@@ -33,29 +34,52 @@ module Version = struct
   let write t buf =
     let length = Cstruct.len buf in
     let needed = sizeof t in
-    if length < needed
-    then Error (`TooSmall(needed, length))
-    else begin
-      set_hdr_msize buf t.msize;
-      set_hdr_version_len buf (String.length t.version);
-      Ok ()
-    end
+    ( if length < needed
+      then error_msg "Version.write: buffer is too small (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    set_hdr_msize buf t.msize;
+    set_hdr_version_len buf (String.length t.version);
+    return ()
 
   let read buf =
     let length = Cstruct.len buf in
-    if length < sizeof_hdr
-    then Error (`Msg "Version.read: truncated input")
+    ( if length < sizeof_hdr
+      then error_msg "Version.read: input buffer is too small for header (%d < %d)" length sizeof_hdr
+      else return ()
+    ) >>= fun () ->
+    let msize = get_hdr_msize buf in
+    let version_len = get_hdr_version_len buf in
+    let rest = Cstruct.shift buf sizeof_hdr in
+    let remaining = Cstruct.len rest in
+    ( if remaining < version_len
+      then error_msg "Version.read: input buffer too small for version"
+      else return ()
+    ) >>= fun () ->
+    let version = Cstruct.(to_string (sub buf sizeof_hdr version_len)) in
+    return { msize; version }
+end
+
+module Auth = struct
+
+  type t = {
+    afid: int32;
+    uname: string;
+    aname: string;
+  }
+
+  let sizeof t = 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+
+  let write t buf =
+    let length = Cstruct.len buf in
+    let needed = sizeof t in
+    if length < needed
+    then Error (needed, length)
     else begin
-      let msize = get_hdr_msize buf in
-      let version_len = get_hdr_version_len buf in
-      let rest = Cstruct.shift buf sizeof_hdr in
-      let remaining = Cstruct.len rest in
-      if remaining < version_len
-      then Error (`Msg "Version.T.unmarshal: truncated input")
-      else begin
-        let version = Cstruct.(to_string (sub buf sizeof_hdr version_len)) in
-        Ok { msize; version }
-      end
+      Cstruct.LE.set_uint32 buf 0 t.afid;
+      let uname = Data.of_string t.uname in
+      let aname = Data.of_string t.aname in
+      assert false
     end
 end
 
