@@ -1,0 +1,32 @@
+OASISFormat: 0.3
+Name:        9p-protocol
+Version:     0.1
+Synopsis:    9P filesystem protocol
+Authors:     David Scott
+License:     ISC
+Plugins:     META (0.3)
+BuildTools:  ocamlbuild
+
+Flag lwt
+  Description: build the Lwt library
+  Default:     false
+
+Flag lwt_unix
+  Description: build the Lwt-unix library
+  Default:     false
+
+Flag async
+  Description: build the Core/Async library
+  Default:     false
+
+Flag js
+  Description: build the Javascript client library
+  Default:     false
+
+Library protocol_9p
+  Pack:               true
+  CompiledObject:     best
+  Path:               lib
+  Findlibname:        9p-protocol
+  Modules:            S, M
+  BuildDepends:       result, cstruct, cstruct.syntax

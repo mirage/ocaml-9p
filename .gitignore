@@ -1,0 +1,23 @@
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
+_build
+*.native
+setup.bin
+setup.data
+setup.log
+
+# REMOVE to release the package
+_tags
+lib/META
+*.mldylib
+*.mllib
+*.mlpack
+myocamlbuild.ml
+setup.ml
