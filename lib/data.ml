@@ -56,39 +56,41 @@ module Int32 = struct
     return ()
 end
 
-type t = Cstruct.t
+module Data = struct
+  type t = Cstruct.t
 
-let of_string x =
-  let t = Cstruct.create (String.length x) in
-  Cstruct.blit_from_string x 0 t 0 (String.length x);
-  t
+  let of_string x =
+    let t = Cstruct.create (String.length x) in
+    Cstruct.blit_from_string x 0 t 0 (String.length x);
+    t
 
-let to_string = Cstruct.to_string
+  let to_string = Cstruct.to_string
 
-let sizeof t = 2 + (Cstruct.len t)
+  let sizeof t = 2 + (Cstruct.len t)
 
-let read buf =
-  let length = Cstruct.len buf in
-  ( if length < 2
-    then error_msg "Buffer is too short to contain a string length"
-    else return ()
-  ) >>= fun () ->
-  let required = Cstruct.LE.get_uint16 buf 0 in
-  let rest = Cstruct.shift buf 2 in
-  let remaining = Cstruct.len rest in
-  ( if remaining < required
-    then error_msg "Buffer is too short to contain string payload"
-    else return ()
-  ) >>= fun () ->
-  return (Cstruct.sub rest 0 required)
+  let read buf =
+    let length = Cstruct.len buf in
+    ( if length < 2
+      then error_msg "Buffer is too short to contain a string length"
+      else return ()
+    ) >>= fun () ->
+    let required = Cstruct.LE.get_uint16 buf 0 in
+    let rest = Cstruct.shift buf 2 in
+    let remaining = Cstruct.len rest in
+    ( if remaining < required
+      then error_msg "Buffer is too short to contain string payload"
+      else return ()
+    ) >>= fun () ->
+    return (Cstruct.sub rest 0 required)
 
-let write t buf =
-  let length = Cstruct.len buf in
-  let needed = sizeof t in
-  ( if needed < length
-    then error_msg "Buffer is too small for Data.t (%d < %d)" needed length
-    else return ()
-  ) >>= fun () ->
-  Cstruct.LE.set_uint16 buf 0 (Cstruct.len t);
-  Cstruct.blit t 0 buf 2 (Cstruct.len t);
-  return ()
+  let write t buf =
+    let length = Cstruct.len buf in
+    let needed = sizeof t in
+    ( if needed < length
+      then error_msg "Buffer is too small for Data.t (%d < %d)" needed length
+      else return ()
+    ) >>= fun () ->
+    Cstruct.LE.set_uint16 buf 0 (Cstruct.len t);
+    Cstruct.blit t 0 buf 2 (Cstruct.len t);
+    return ()
+end

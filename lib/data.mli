@@ -33,7 +33,7 @@ module Int32 : sig
 end
 
 
-(* module Data : sig *)
+module Data : sig
   type t = Cstruct.t
   (** A length-prefixed chunk of data which may include embedded NULLs, or may be
       interpreted later as UTF-8 text. *)
@@ -43,4 +43,4 @@ end
   val to_string: t -> string
 
   include S.SERIALISABLE with type t := t
-(* end *)
+end
