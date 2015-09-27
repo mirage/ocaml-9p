@@ -219,6 +219,8 @@ module Stat = struct
     return ( {stat}, rest )
 end
 
+module Wstat = Clunk
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -239,6 +241,7 @@ type payload =
   | Clunk of Clunk.t
   | Remove of Remove.t
   | Stat of Stat.t
+  | Wstat of Wstat.t
 
 type t = {
   tag: int;
@@ -259,4 +262,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Clunk x -> Clunk.sizeof x
   | Remove x -> Remove.sizeof x
   | Stat x -> Stat.sizeof x
+  | Wstat x -> Wstat.sizeof x
 )

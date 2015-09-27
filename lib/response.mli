@@ -134,6 +134,13 @@ module Stat : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Wstat : sig
+  type t = unit
+  (** The payload of a Wstat response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -148,6 +155,7 @@ type payload =
   | Clunk of Clunk.t
   | Remove of Remove.t
   | Stat of Stat.t
+  | Wstat of Wstat.t
 
 type t = {
   tag: int;

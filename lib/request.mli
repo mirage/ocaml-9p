@@ -141,6 +141,15 @@ module Stat : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Wstat : sig
+  type t = {
+    fid: int32;
+    stat: Types.Stat.t;
+  }
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -154,6 +163,7 @@ type payload =
   | Clunk of Clunk.t
   | Remove of Remove.t
   | Stat of Stat.t
+  | Wstat of Wstat.t
 
 type t = {
   tag: int;
