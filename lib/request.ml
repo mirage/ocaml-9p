@@ -19,12 +19,6 @@ open Data
 open Error
 
 module Version = struct
-  cstruct hdr {
-    uint32_t msize;
-    uint16_t version_len;
-    (* version_len bytes *)
-  } as little_endian
-
   type t = {
     msize: int32;
     version: string;
@@ -32,32 +26,20 @@ module Version = struct
 
   let sizeof t = 4 + 2 + (String.length t.version)
 
-  let write t buf =
-    let length = Cstruct.len buf in
-    let needed = sizeof t in
-    ( if length < needed
-      then error_msg "Version.write: buffer is too small (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
-    set_hdr_msize buf t.msize;
-    set_hdr_version_len buf (String.length t.version);
-    return ()
+  let write t rest =
+    Int32.write t.msize rest
+    >>= fun () ->
+    let rest = Cstruct.shift rest (Int32.sizeof t.msize) in
+    let version = Data.of_string t.version in
+    Data.write version rest
 
-  let read buf =
-    let length = Cstruct.len buf in
-    ( if length < sizeof_hdr
-      then error_msg "Version.read: input buffer is too small for header (%d < %d)" length sizeof_hdr
-      else return ()
-    ) >>= fun () ->
-    let msize = get_hdr_msize buf in
-    let version_len = get_hdr_version_len buf in
-    let rest = Cstruct.shift buf sizeof_hdr in
-    let remaining = Cstruct.len rest in
-    ( if remaining < version_len
-      then error_msg "Version.read: input buffer too small for version"
-      else return ()
-    ) >>= fun () ->
-    let version = Cstruct.(to_string (sub buf sizeof_hdr version_len)) in
+  let read rest =
+    Int32.read rest
+    >>= fun msize ->
+    let rest = Cstruct.shift rest (Int32.sizeof msize) in
+    Data.read rest
+    >>= fun version ->
+    let version = Data.to_string version in
     return { msize; version }
 end
 
@@ -71,15 +53,10 @@ module Auth = struct
 
   let sizeof t = 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
 
-  let write t buf =
-    let length = Cstruct.len buf in
-    let needed = sizeof t in
-    ( if length < needed
-      then error_msg "Auth.write: output buffer too small (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
-    Cstruct.LE.set_uint32 buf 0 t.afid;
-    let rest = Cstruct.shift buf 4 in
+  let write t rest =
+    Int32.write t.afid rest
+    >>= fun () ->
+    let rest = Cstruct.shift rest (Int32.sizeof t.afid) in
     let uname = Data.of_string t.uname in
     Data.write uname rest
     >>= fun () ->
@@ -87,14 +64,10 @@ module Auth = struct
     let aname = Data.of_string t.aname in
     Data.write aname rest
 
-  let read buf =
-    let length = Cstruct.len buf in
-    ( if length < 4
-      then error_msg "Auth.read: output buffer too small for afid"
-      else return ()
-    ) >>= fun () ->
-    let afid = Cstruct.LE.get_uint32 buf 0 in
-    let rest = Cstruct.shift buf 4 in
+  let read rest =
+    Int32.read rest
+    >>= fun afid ->
+    let rest = Cstruct.shift rest (Int32.sizeof afid) in
     Data.read rest
     >>= fun uname ->
     let rest = Cstruct.shift rest (Data.sizeof uname) in
@@ -112,24 +85,12 @@ module Flush = struct
 
   let sizeof _ = 2
 
-  let write t buf =
-    let length = Cstruct.len buf in
-    let needed = sizeof t in
-    ( if length < needed
-      then error_msg "Flush.write: output buffer too small (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
-    Cstruct.LE.set_uint16 buf 0 t.oldtag;
-    return ()
+  let write t rest =
+    Int16.write t.oldtag rest
 
   let read buf =
-    let length = Cstruct.len buf in
-    let needed = 2 in
-    ( if length < needed
-      then error_msg "Flush.read: input buffer too small (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
-    let oldtag = Cstruct.LE.get_uint16 buf 0 in
+    Int16.read buf
+    >>= fun oldtag ->
     return { oldtag }
 end
 

@@ -15,6 +15,12 @@
  *
  *)
 
+module Int16 : sig
+  type t = int
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Int32 : sig
   type t = int32
 
