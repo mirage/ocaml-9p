@@ -74,12 +74,23 @@ module Walk : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Open : sig
+  type t = {
+    fid: int32;
+    mode: int;
+  }
+  (** The payload of an Open message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Flush of Flush.t
   | Attach of Attach.t
   | Walk of Walk.t
+  | Open of Open.t
 
 type t = {
   tag: int;

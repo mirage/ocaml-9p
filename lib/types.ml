@@ -22,6 +22,23 @@ let big_enough_for name buf needed =
   then error_msg "%s: buffer too small (%d < %d)" name length needed
   else return ()
 
+module Int8 = struct
+  type t = int
+
+  let sizeof _ = 1
+
+  let read buf =
+    big_enough_for "Int8.read" buf 1
+    >>= fun () ->
+    return (Cstruct.get_uint8 buf 0, Cstruct.shift buf 1)
+
+  let write t buf =
+    big_enough_for "Int8.write" buf 1
+    >>= fun () ->
+    Cstruct.set_uint8 buf 0 t;
+    return (Cstruct.shift buf 1)
+end
+
 module Int16 = struct
   type t = int
 

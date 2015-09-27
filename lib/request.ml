@@ -168,6 +168,27 @@ module Walk = struct
     return ( { fid; newfid; wnames }, rest)
 end
 
+module Open = struct
+  type t = {
+    fid: int32;
+    mode: int;
+  }
+
+  let sizeof _ = 5
+
+  let write t rest =
+    Int32.write t.fid rest
+    >>= fun rest ->
+    Int8.write t.mode rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (fid, rest) ->
+    Int8.read rest
+    >>= fun (mode, rest) ->
+    return ({ fid; mode }, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -180,6 +201,7 @@ type payload =
   | Flush of Flush.t
   | Attach of Attach.t
   | Walk of Walk.t
+  | Open of Open.t
 
 type t = {
   tag: int;
@@ -192,4 +214,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Flush x -> Flush.sizeof x
   | Attach x -> Attach.sizeof x
   | Walk x -> Walk.sizeof x
+  | Open x -> Open.sizeof x
 )

@@ -20,6 +20,12 @@ val big_enough_for: string -> Cstruct.t -> int -> unit Error.t
     if buffer [buf] is smaller than [length]. The [name] will be included
     in the error message. *)
 
+module Int8 : sig
+  type t = int
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Int16 : sig
   type t = int
 
