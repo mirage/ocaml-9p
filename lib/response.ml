@@ -15,6 +15,7 @@
  *
  *)
 open Error
+open Data
 
 module Version = Request.Version
 
@@ -26,22 +27,16 @@ module Auth = struct
   let sizeof _ = 13
 
   let write t buf =
-    let length = Cstruct.len buf in
-    let needed = sizeof t in
-    ( if length < needed
-      then error_msg "Auth.write: buffer is too small for aqid (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
+    let needed = 13 in
+    big_enough_for "Auth.write" buf needed
+    >>= fun () ->
     Cstruct.blit_from_string t.aqid 0 buf 0 needed;
     return ()
 
   let read buf =
-    let length = Cstruct.len buf in
     let needed = 13 in
-    ( if length < needed
-      then error_msg "Auth.read: buffer is too small for aqid (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
+    big_enough_for "Auth.read" buf needed
+    >>= fun () ->
     let aqid = Cstruct.(to_string (sub buf 0 needed)) in
     return { aqid }
 end
@@ -54,12 +49,6 @@ module Err = struct
   let sizeof t = 2 + (String.length t.ename)
 
   let write t buf =
-    let length = Cstruct.len buf in
-    let needed = sizeof t in
-    ( if length < needed
-      then error_msg "Err.write: buffer is too small for ename (%d < %d)" length needed
-      else return ()
-    ) >>= fun () ->
     let ename = Data.of_string t.ename in
     Data.write ename buf
 

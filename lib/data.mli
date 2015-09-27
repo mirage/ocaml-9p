@@ -15,6 +15,11 @@
  *
  *)
 
+val big_enough_for: string -> Cstruct.t -> int -> unit Error.t
+(** [big_enough_for name buf length] returns an error with a log message
+    if buffer [buf] is smaller than [length]. The [name] will be included
+    in the error message. *)
+
 module Int16 : sig
   type t = int
 
