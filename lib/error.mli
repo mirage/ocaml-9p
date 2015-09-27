@@ -24,7 +24,6 @@ type 'a t = ('a, error) result
 
 val return: 'a -> ('a, error) result
 
-val error_msg: ('a, unit, bytes, ('b, [> `Msg of bytes ]) result) format4 -> 'a
+val error_msg: ('a, unit, string, ('b, [> `Msg of string ]) result) format4 -> 'a
 
 val ( >>= ) : ('a, 'b) result -> ('a -> ('c, 'b) result) -> ('c, 'b) result
-
