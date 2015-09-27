@@ -181,7 +181,7 @@ module Stat = struct
     muid: string;
   } with sexp
 
-  let sizeof t = 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
+  let sizeof t = 2 + 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
     + 2 + (String.length t.name) + 2 + (String.length t.uid)
     + 2 + (String.length t.gid) + 2 + (String.length t.muid)
 
