@@ -46,6 +46,30 @@ module Auth = struct
     return { aqid }
 end
 
+module Err = struct
+  type t = {
+    ename: string;
+  }
+
+  let sizeof t = 2 + (String.length t.ename)
+
+  let write t buf =
+    let length = Cstruct.len buf in
+    let needed = sizeof t in
+    ( if length < needed
+      then error_msg "Err.write: buffer is too small for ename (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    let ename = Data.of_string t.ename in
+    Data.write ename buf
+
+  let read buf =
+    Data.read buf
+    >>= fun ename ->
+    let ename = Data.to_string ename in
+    return { ename }
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -55,6 +79,7 @@ cstruct hdr {
 type payload =
   | Version of Version.t
   | Auth of Auth.t
+  | Err of Err.t
 
 type t = {
   tag: int;
@@ -64,4 +89,5 @@ type t = {
 let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
   | Auth x -> Auth.sizeof x
+  | Err x -> Err.sizeof x
 )

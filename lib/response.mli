@@ -37,9 +37,20 @@ module Auth : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Err : sig
+
+  type t = {
+    ename: string;
+  }
+  (** The pauload of an error response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
+  | Err of Err.t
 
 type t = {
   tag: int;
