@@ -1,0 +1,35 @@
+opam-version: "1.2"
+name: "protocol-9p"
+maintainer: "dave@recoil.org"
+version: "0.0"
+authors: [ "David Scott" ]
+license: "ISC"
+homepage: "https://github.com/djs55/ocaml-9p"
+dev-repo: "https://github.com/djs55/ocaml-9p.git"
+bug-reports: "https://github.com/djs55/ocaml-9p/issues"
+
+tags: [
+]
+
+build: [
+  [make "PREFIX=%{prefix}%"]
+]
+
+install: [make "PREFIX=%{prefix}%" "install"]
+
+remove: [["ocamlfind" "remove" "protocol-9p"]]
+
+depends: [
+  "base-bytes"
+  "ocamlfind" {build}
+  "ounit" {test}
+]
+build-doc: ["ocaml" "setup.ml" "-doc"]
+
+build-test: [
+  ["ocaml" "setup.ml" "-configure" "--enable-tests"]
+  ["ocaml" "setup.ml" "-build"]
+  ["ocaml" "setup.ml" "-test"]
+]
+
+available: [ocaml-version >= "4.01.0"]
