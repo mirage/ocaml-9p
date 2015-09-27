@@ -69,6 +69,21 @@ module Flush = struct
   let read buf = return ((), buf)
 end
 
+module Attach = struct
+  type t = {
+    qid: Qid.t
+  }
+
+  let sizeof t = Qid.sizeof t.qid
+
+  let write t buf = Qid.write t.qid buf
+
+  let read buf =
+    Qid.read buf
+    >>= fun (qid, rest) ->
+    return ({ qid }, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -80,6 +95,7 @@ type payload =
   | Auth of Auth.t
   | Err of Err.t
   | Flush of Flush.t
+  | Attach of Attach.t
 
 type t = {
   tag: int;
@@ -91,4 +107,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Auth x -> Auth.sizeof x
   | Err x -> Err.sizeof x
   | Flush x -> Flush.sizeof x
+  | Attach x -> Attach.sizeof x
 )

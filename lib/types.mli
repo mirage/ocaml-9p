@@ -32,6 +32,11 @@ module Int32 : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Qid : sig
+  type t = string
+
+  include S.SERIALISABLE with type t := t
+end
 
 module Data : sig
   type t = Cstruct.t

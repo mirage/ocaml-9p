@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Types
 open Result
 
 module Version : sig
@@ -54,11 +55,21 @@ module Flush : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Attach : sig
+  type t = {
+    qid: Qid.t
+  }
+  (** The payload of an attach response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Err of Err.t
   | Flush of Flush.t
+  | Attach of Attach.t
 
 type t = {
   tag: int;

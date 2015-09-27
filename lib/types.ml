@@ -56,6 +56,27 @@ module Int32 = struct
     return (Cstruct.shift buf 4)
 end
 
+module Qid = struct
+  type t = string
+
+  let needed = 13
+
+  let sizeof _ = needed
+
+  let write t buf =
+    big_enough_for "Qid.write" buf needed
+    >>= fun () ->
+    Cstruct.blit_from_string t 0 buf 0 needed;
+    return (Cstruct.shift buf needed)
+
+  let read buf =
+    big_enough_for "Qid.read" buf needed
+    >>= fun () ->
+    let qid = Cstruct.(to_string (sub buf 0 needed)) in
+    return (qid, Cstruct.shift buf needed)
+
+end
+
 module Data = struct
   type t = Cstruct.t
 
