@@ -102,6 +102,15 @@ module Read : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Write : sig
+  type t = {
+    count: int32
+  }
+  (** The payload of a Write response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t

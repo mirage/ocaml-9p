@@ -249,6 +249,44 @@ module Read = struct
 
 end
 
+module Write = struct
+  type t = {
+    fid: int32;
+    offset: int64;
+    data: Cstruct.t;
+  }
+
+  let sizeof t = 4 + 8 + 4 + (Cstruct.len t.data)
+
+  let write t rest =
+    Int32.write t.fid rest
+    >>= fun rest ->
+    Int64.write t.offset rest
+    >>= fun rest ->
+    let len = Cstruct.len t.data in
+    Int32.write (Int32.of_int len) rest
+    >>= fun rest ->
+    big_enough_for "Write.data" rest len
+    >>= fun () ->
+    Cstruct.blit t.data 0 rest 0 len;
+    let rest = Cstruct.shift rest len in
+    return rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (fid, rest) ->
+    Int64.read rest
+    >>= fun (offset, rest) ->
+    Int32.read rest
+    >>= fun (len, rest) ->
+    let len = Int32.to_int len in
+    big_enough_for "Write.data" rest len
+    >>= fun () ->
+    let data = Cstruct.sub rest 0 len in
+    let rest = Cstruct.shift rest len in
+    return ({ fid; offset; data }, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -264,6 +302,7 @@ type payload =
   | Open of Open.t
   | Create of Create.t
   | Read of Read.t
+  | Write of Write.t
 
 type t = {
   tag: int;
@@ -279,4 +318,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Open x -> Open.sizeof x
   | Create x -> Create.sizeof x
   | Read x -> Read.sizeof x
+  | Write x -> Write.sizeof x
 )

@@ -107,6 +107,16 @@ module Read : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Write : sig
+  type t = {
+    fid: int32;
+    offset: int64;
+    data: Cstruct.t;
+  }
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -116,6 +126,7 @@ type payload =
   | Open of Open.t
   | Create of Create.t
   | Read of Read.t
+  | Write of Write.t
 
 type t = {
   tag: int;

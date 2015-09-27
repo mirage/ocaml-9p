@@ -180,6 +180,21 @@ module Read = struct
     return ({ data }, rest)
 end
 
+module Write = struct
+  type t = {
+    count: int32
+  }
+  let sizeof _ = 4
+
+  let write t rest =
+    Int32.write t.count rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (count, rest) ->
+    return ({ count }, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
