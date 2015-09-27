@@ -46,7 +46,7 @@ Executable test_parse_print
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       oUnit (>= 1.0.2)
+  BuildDepends:       protocol-9p, oUnit (>= 1.0.2)
 
 Test test_parse_print
   Run$:               flag(tests)
