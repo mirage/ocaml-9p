@@ -104,6 +104,34 @@ module Auth = struct
     return { afid; uname; aname }
 end
 
+module Flush = struct
+  type t = {
+    oldtag: int;
+  }
+
+  let sizeof _ = 2
+
+  let write t buf =
+    let length = Cstruct.len buf in
+    let needed = sizeof t in
+    ( if length < needed
+      then error_msg "Flush.write: output buffer too small (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    Cstruct.LE.set_uint16 buf 0 t.oldtag;
+    return ()
+
+  let read buf =
+    let length = Cstruct.len buf in
+    let needed = 2 in
+    ( if length < needed
+      then error_msg "Flush.read: input buffer too small (%d < %d)" length needed
+      else return ()
+    ) >>= fun () ->
+    let oldtag = Cstruct.LE.get_uint16 buf 0 in
+    return { oldtag }
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -113,6 +141,7 @@ cstruct hdr {
 type payload =
   | Version of Version.t
   | Auth of Auth.t
+  | Flush of Flush.t
 
 type t = {
   tag: int;
@@ -122,5 +151,6 @@ type t = {
 let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
   | Auth x -> Auth.sizeof x
+  | Flush x -> Flush.sizeof x
 )
 

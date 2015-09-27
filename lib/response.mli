@@ -47,10 +47,18 @@ module Err : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Flush : sig
+  type t = unit
+  (** The payload of a flush response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Err of Err.t
+  | Flush of Flush.t
 
 type t = {
   tag: int;

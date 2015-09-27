@@ -39,9 +39,20 @@ module Auth : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Flush : sig
+
+  type t = {
+    oldtag: int;
+  }
+  (** The payload of a flush message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
+  | Flush of Flush.t
 
 type t = {
   tag: int;

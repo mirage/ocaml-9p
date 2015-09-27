@@ -70,6 +70,16 @@ module Err = struct
     return { ename }
 end
 
+module Flush = struct
+  type t = unit
+
+  let sizeof _ = 0
+
+  let write t buf = return ()
+
+  let read buf = return ()
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -80,6 +90,7 @@ type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Err of Err.t
+  | Flush of Flush.t
 
 type t = {
   tag: int;
@@ -90,4 +101,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
   | Auth x -> Auth.sizeof x
   | Err x -> Err.sizeof x
+  | Flush x -> Flush.sizeof x
 )
