@@ -189,6 +189,39 @@ module Open = struct
     return ({ fid; mode }, rest)
 end
 
+module Create = struct
+  type t = {
+    fid: int32;
+    name: string;
+    perm: int32;
+    mode: int
+  }
+
+  let sizeof t = 4 + 2 + (String.length t.name) + 4 + 1
+
+  let write t rest =
+    Int32.write t.fid rest
+    >>= fun rest ->
+    let name = Data.of_string t.name in
+    Data.write name rest
+    >>= fun rest ->
+    Int32.write t.perm rest
+    >>= fun rest ->
+    Int8.write t.mode rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (fid, rest) ->
+    Data.read rest
+    >>= fun (name, rest) ->
+    Int32.read rest
+    >>= fun (perm, rest) ->
+    Int8.read rest
+    >>= fun (mode, rest) ->
+    let name = Data.to_string name in
+    return ({ fid; name; perm; mode}, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -202,6 +235,7 @@ type payload =
   | Attach of Attach.t
   | Walk of Walk.t
   | Open of Open.t
+  | Create of Create.t
 
 type t = {
   tag: int;
@@ -215,4 +249,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Attach x -> Attach.sizeof x
   | Walk x -> Walk.sizeof x
   | Open x -> Open.sizeof x
+  | Create x -> Create.sizeof x
 )

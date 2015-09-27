@@ -84,6 +84,18 @@ module Open : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Create : sig
+  type t = {
+    fid: int32;
+    name: string;
+    perm: int32;
+    mode: int
+  }
+  (** The payload of a Create message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -91,6 +103,7 @@ type payload =
   | Attach of Attach.t
   | Walk of Walk.t
   | Open of Open.t
+  | Create of Create.t
 
 type t = {
   tag: int;

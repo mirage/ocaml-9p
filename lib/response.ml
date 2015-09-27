@@ -130,6 +130,27 @@ module Open = struct
     return ({ qid; iounit }, rest)
 end
 
+module Create = struct
+  type t = {
+    qid: Qid.t;
+    iounit: int32;
+  }
+
+  let sizeof t = Qid.sizeof t.qid + 4
+
+  let write t rest =
+    Qid.write t.qid rest
+    >>= fun rest ->
+    Int32.write t.iounit rest
+
+  let read rest =
+    Qid.read rest
+    >>= fun (qid, rest) ->
+    Int32.read rest
+    >>= fun (iounit, rest) ->
+    return ( {qid; iounit}, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -144,6 +165,7 @@ type payload =
   | Attach of Attach.t
   | Walk of Walk.t
   | Open of Open.t
+  | Create of Create.t
 
 type t = {
   tag: int;
@@ -158,4 +180,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Attach x -> Attach.sizeof x
   | Walk x -> Walk.sizeof x
   | Open x -> Open.sizeof x
+  | Create x -> Create.sizeof x
 )
