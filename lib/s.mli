@@ -28,7 +28,7 @@ module type SERIALISABLE = sig
       unused remainder of the buffer. If the buffer cannot
       be parsed then return an error.*)
 
-  val write: t -> Cstruct.t -> (unit, [ `Msg of string]) result
+  val write: t -> Cstruct.t -> (Cstruct.t, [ `Msg of string]) result
   (** Write a [t] into the given buffer. If the buffer is too small,
-      then return an error. *)
+      then return an error. Return the unused remainder of the buffer.*)
 end

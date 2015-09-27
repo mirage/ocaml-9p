@@ -31,7 +31,7 @@ module Auth = struct
     big_enough_for "Auth.write" buf needed
     >>= fun () ->
     Cstruct.blit_from_string t.aqid 0 buf 0 needed;
-    return ()
+    return (Cstruct.shift buf needed)
 
   let read buf =
     let needed = 13 in
@@ -64,7 +64,7 @@ module Flush = struct
 
   let sizeof _ = 0
 
-  let write t buf = return ()
+  let write t buf = return buf
 
   let read buf = return ((), buf)
 end

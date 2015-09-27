@@ -36,7 +36,7 @@ module Int16 = struct
     big_enough_for "Int16.write" buf 2
     >>= fun () ->
     Cstruct.LE.set_uint16 buf 0 t;
-    return ()
+    return (Cstruct.shift buf 2)
 end
 
 module Int32 = struct
@@ -53,7 +53,7 @@ module Int32 = struct
     big_enough_for "Int32.read" buf 4
     >>= fun () ->
     Cstruct.LE.set_uint32 buf 0 t;
-    return ()
+    return (Cstruct.shift buf 4)
 end
 
 module Data = struct
@@ -94,5 +94,5 @@ module Data = struct
     ) >>= fun () ->
     Cstruct.LE.set_uint16 buf 0 (Cstruct.len t);
     Cstruct.blit t 0 buf 2 (Cstruct.len t);
-    return ()
+    return (Cstruct.shift buf needed)
 end

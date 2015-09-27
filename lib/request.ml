@@ -28,8 +28,7 @@ module Version = struct
 
   let write t rest =
     Int32.write t.msize rest
-    >>= fun () ->
-    let rest = Cstruct.shift rest (Int32.sizeof t.msize) in
+    >>= fun rest ->
     let version = Data.of_string t.version in
     Data.write version rest
 
@@ -54,12 +53,10 @@ module Auth = struct
 
   let write t rest =
     Int32.write t.afid rest
-    >>= fun () ->
-    let rest = Cstruct.shift rest (Int32.sizeof t.afid) in
+    >>= fun rest ->
     let uname = Data.of_string t.uname in
     Data.write uname rest
-    >>= fun () ->
-    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    >>= fun rest ->
     let aname = Data.of_string t.aname in
     Data.write aname rest
 
@@ -103,15 +100,12 @@ module Attach = struct
 
   let write t rest =
     Int32.write t.fid rest
-    >>= fun () ->
-    let rest = Cstruct.shift rest (Int32.sizeof t.fid) in
+    >>= fun rest ->
     Int32.write t.afid rest
-    >>= fun () ->
-    let rest = Cstruct.shift rest (Int32.sizeof t.afid) in
+    >>= fun rest ->
     let uname = Data.of_string t.uname in
     Data.write uname rest
-    >>= fun () ->
-    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    >>= fun rest ->
     let aname = Data.of_string t.aname in
     Data.write aname rest
 
