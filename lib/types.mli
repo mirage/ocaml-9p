@@ -33,7 +33,7 @@ module Int32 : sig
 end
 
 module Qid : sig
-  type t = string
+  type t = string (** 13 bytes long *)
 
   include S.SERIALISABLE with type t := t
 end

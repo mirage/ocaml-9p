@@ -21,24 +21,17 @@ module Version = Request.Version
 
 module Auth = struct
   type t = {
-    aqid: string; (* 13 bytes long *)
+    aqid: Qid.t;
   }
 
-  let sizeof _ = 13
+  let sizeof t = Qid.sizeof t.aqid
 
-  let write t buf =
-    let needed = 13 in
-    big_enough_for "Auth.write" buf needed
-    >>= fun () ->
-    Cstruct.blit_from_string t.aqid 0 buf 0 needed;
-    return (Cstruct.shift buf needed)
+  let write t buf = Qid.write t.aqid buf
 
   let read buf =
-    let needed = 13 in
-    big_enough_for "Auth.read" buf needed
-    >>= fun () ->
-    let aqid = Cstruct.(to_string (sub buf 0 needed)) in
-    return ({ aqid }, Cstruct.shift buf needed)
+    Qid.read buf
+    >>= fun (aqid, rest) ->
+    return ( { aqid }, rest )
 end
 
 module Err = struct
