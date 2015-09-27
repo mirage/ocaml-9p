@@ -20,7 +20,8 @@ open OUnit
 
 let requests =
   let open Request in [
-    { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) }
+    { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) };
+    { tag = 12; payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
   ]
 
 let expect_ok = function

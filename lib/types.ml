@@ -157,7 +157,7 @@ module Data = struct
   let write t buf =
     let length = Cstruct.len buf in
     let needed = sizeof t in
-    ( if needed < length
+    ( if length < needed
       then error_msg "Buffer is too small for Data.t (%d < %d)" needed length
       else return ()
     ) >>= fun () ->
