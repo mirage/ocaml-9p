@@ -162,4 +162,4 @@ type t = {
   payload: payload;
 }
 
-val sizeof: t -> int
+include S.SERIALISABLE with type t := t

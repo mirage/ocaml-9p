@@ -264,3 +264,70 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Stat x -> Stat.sizeof x
   | Wstat x -> Wstat.sizeof x
 )
+
+let write t rest =
+  let needed = sizeof t in
+  big_enough_for "Response" rest needed
+  >>= fun () ->
+  let ty = match t.payload with
+    | Version _ -> 101
+    | Auth _    -> 103
+    | Err _     -> 107
+    | Flush _   -> 109
+    | Attach _  -> 105
+    | Walk _    -> 111
+    | Open _    -> 113
+    | Create _  -> 115
+    | Read _    -> 117
+    | Write _   -> 119
+    | Clunk _   -> 121
+    | Remove _  -> 123
+    | Stat _    -> 125
+    | Wstat _   -> 127 in
+  Int32.write (Int32.of_int needed) rest
+  >>= fun rest ->
+  Int8.write ty rest
+  >>= fun rest ->
+  Int16.write t.tag rest
+  >>= fun rest ->
+  match t.payload with
+    | Version x -> Version.write x rest
+    | Auth x -> Auth.write x rest
+    | Err x -> Err.write x rest
+    | Flush x -> Flush.write x rest
+    | Attach x -> Attach.write x rest
+    | Walk x -> Walk.write x rest
+    | Open x -> Open.write x rest
+    | Create x -> Create.write x rest
+    | Read x -> Read.write x rest
+    | Write x -> Write.write x rest
+    | Clunk x -> Clunk.write x rest
+    | Remove x -> Remove.write x rest
+    | Stat x -> Stat.write x rest
+    | Wstat x -> Wstat.write x rest
+
+let read rest =
+  Int32.read rest
+  >>= fun (len, rest) ->
+  Int8.read rest
+  >>= fun (ty, rest) ->
+  Int16.read rest
+  >>= fun (tag, rest) ->
+  ( match ty with
+    | 101 -> Version.read rest >>= fun (x, rest) -> return ((Version x), rest)
+    | 103 -> Auth.read rest    >>= fun (x, rest) -> return ((Auth x), rest)
+    | 107 -> Err.read rest     >>= fun (x, rest) -> return ((Err x), rest)
+    | 109 -> Flush.read rest   >>= fun (x, rest) -> return ((Flush x), rest)
+    | 105 -> Attach.read rest  >>= fun (x, rest) -> return ((Attach x), rest)
+    | 111 -> Walk.read rest    >>= fun (x, rest) -> return ((Walk x), rest)
+    | 113 -> Open.read rest    >>= fun (x, rest) -> return ((Open x), rest)
+    | 115 -> Create.read rest  >>= fun (x, rest) -> return ((Create x), rest)
+    | 117 -> Read.read rest    >>= fun (x, rest) -> return ((Read x), rest)
+    | 119 -> Write.read rest   >>= fun (x, rest) -> return ((Write x), rest)
+    | 121 -> Clunk.read rest   >>= fun (x, rest) -> return ((Clunk x), rest)
+    | 123 -> Remove.read rest  >>= fun (x, rest) -> return ((Remove x), rest)
+    | 125 -> Stat.read rest    >>= fun (x, rest) -> return ((Stat x), rest)
+    | 127 -> Wstat.read rest   >>= fun (x, rest) -> return ((Wstat x), rest)
+    | ty  -> error_msg "Response.read: unknown packet type %d" ty
+  ) >>= fun (payload, rest) ->
+  return ( { tag; payload }, rest )
