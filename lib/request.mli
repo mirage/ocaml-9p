@@ -49,10 +49,24 @@ module Flush : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Attach : sig
+
+  type t = {
+    fid: int32;
+    afid: int32;
+    uname: string;
+    aname: string;
+  }
+  (** The payload of an attach message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Flush of Flush.t
+  | Attach of Attach.t
 
 type t = {
   tag: int;

@@ -16,6 +16,29 @@
  *)
 open Error
 
+let big_enough_for name buf needed =
+  let length = Cstruct.len buf in
+  if length < needed
+  then error_msg "%s: buffer too small (%d < %d)" name length needed
+  else return ()
+
+module Int32 = struct
+  type t = int32
+
+  let sizeof _ = 4
+
+  let read buf =
+    big_enough_for "Int32.read" buf 4
+    >>= fun () ->
+    return (Cstruct.LE.get_uint32 buf 0)
+
+  let write t buf =
+    big_enough_for "Int32.read" buf 4
+    >>= fun () ->
+    Cstruct.LE.set_uint32 buf 0 t;
+    return ()
+end
+
 type t = Cstruct.t
 
 let of_string x =

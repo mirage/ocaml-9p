@@ -14,12 +14,22 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
-type t = Cstruct.t
-(** A length-prefixed chunk of data which may include embedded NULLs, or may be
-    interpreted later as UTF-8 text. *)
 
-val of_string: string -> t
+module Int32 : sig
+  type t = int32
 
-val to_string: t -> string
+  include S.SERIALISABLE with type t := t
+end
 
-include S.SERIALISABLE with type t := t
+
+(* module Data : sig *)
+  type t = Cstruct.t
+  (** A length-prefixed chunk of data which may include embedded NULLs, or may be
+      interpreted later as UTF-8 text. *)
+
+  val of_string: string -> t
+
+  val to_string: t -> string
+
+  include S.SERIALISABLE with type t := t
+(* end *)

@@ -15,6 +15,7 @@
  *
  *)
 open Result
+open Data
 open Error
 
 module Version = struct
@@ -132,6 +133,47 @@ module Flush = struct
     return { oldtag }
 end
 
+module Attach = struct
+  type t = {
+    fid: int32;
+    afid: int32;
+    uname: string;
+    aname: string;
+  }
+
+  let sizeof t = 4 + 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+
+  let write t rest =
+    Int32.write t.fid rest
+    >>= fun () ->
+    let rest = Cstruct.shift rest (Int32.sizeof t.fid) in
+    Int32.write t.afid rest
+    >>= fun () ->
+    let rest = Cstruct.shift rest (Int32.sizeof t.afid) in
+    let uname = Data.of_string t.uname in
+    Data.write uname rest
+    >>= fun () ->
+    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    let aname = Data.of_string t.aname in
+    Data.write aname rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun fid ->
+    let rest = Cstruct.shift rest (Int32.sizeof fid) in
+    Int32.read rest
+    >>= fun afid ->
+    let rest = Cstruct.shift rest (Int32.sizeof afid) in
+    Data.read rest
+    >>= fun uname ->
+    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    Data.read rest
+    >>= fun aname ->
+    let uname = Data.to_string uname in
+    let aname = Data.to_string aname in
+    return { fid; afid; uname; aname }
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -142,6 +184,7 @@ type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Flush of Flush.t
+  | Attach of Attach.t
 
 type t = {
   tag: int;
@@ -152,5 +195,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
   | Auth x -> Auth.sizeof x
   | Flush x -> Flush.sizeof x
+  | Attach x -> Attach.sizeof x
 )
-
