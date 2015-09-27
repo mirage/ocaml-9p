@@ -33,7 +33,13 @@ module Int16 : sig
 end
 
 module Int32 : sig
-  type t = int32
+  include module type of Int32
+
+  include S.SERIALISABLE with type t := t
+end
+
+module Int64 : sig
+  type t = int64
 
   include S.SERIALISABLE with type t := t
 end

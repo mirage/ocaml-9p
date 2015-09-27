@@ -93,6 +93,15 @@ module Create : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Read : sig
+  type t = {
+    data: Cstruct.t
+  }
+  (** The payload of a Read response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -102,6 +111,7 @@ type payload =
   | Walk of Walk.t
   | Open of Open.t
   | Create of Create.t
+  | Read of Read.t
 
 type t = {
   tag: int;

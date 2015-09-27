@@ -57,7 +57,7 @@ module Int16 = struct
 end
 
 module Int32 = struct
-  type t = int32
+  include Int32
 
   let sizeof _ = 4
 
@@ -71,6 +71,23 @@ module Int32 = struct
     >>= fun () ->
     Cstruct.LE.set_uint32 buf 0 t;
     return (Cstruct.shift buf 4)
+end
+
+module Int64 = struct
+  type t = int64
+
+  let sizeof _ = 8
+
+  let read buf =
+    big_enough_for "Int64.read" buf 8
+    >>= fun () ->
+    return (Cstruct.LE.get_uint64 buf 0, Cstruct.shift buf 8)
+
+  let write t buf =
+    big_enough_for "Int64.read" buf 8
+    >>= fun () ->
+    Cstruct.LE.set_uint64 buf 0 t;
+    return (Cstruct.shift buf 8)
 end
 
 module Qid = struct

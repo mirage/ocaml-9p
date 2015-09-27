@@ -151,6 +151,35 @@ module Create = struct
     return ( {qid; iounit}, rest)
 end
 
+module Read = struct
+  type t = {
+    data: Cstruct.t
+  }
+
+  let sizeof t = 4 + (Cstruct.len t.data)
+
+  let write t rest =
+    let len = Cstruct.len t.data in
+    Int32.write (Int32.of_int len) rest
+    >>= fun rest ->
+    let rest = Cstruct.shift rest 4 in
+    big_enough_for "Read.data" rest len
+    >>= fun () ->
+    Cstruct.blit t.data 0 rest 0 len;
+    let rest = Cstruct.shift rest len in
+    return rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (len, rest) ->
+    let len = Int32.to_int len in
+    big_enough_for "Read.data" rest len
+    >>= fun () ->
+    let data = Cstruct.sub rest 0 len in (* by reference, no copy *)
+    let rest = Cstruct.shift rest len in
+    return ({ data }, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -166,6 +195,7 @@ type payload =
   | Walk of Walk.t
   | Open of Open.t
   | Create of Create.t
+  | Read of Read.t
 
 type t = {
   tag: int;
@@ -181,4 +211,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Walk x -> Walk.sizeof x
   | Open x -> Open.sizeof x
   | Create x -> Create.sizeof x
+  | Read x -> Read.sizeof x
 )

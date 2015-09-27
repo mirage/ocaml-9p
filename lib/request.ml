@@ -222,6 +222,33 @@ module Create = struct
     return ({ fid; name; perm; mode}, rest)
 end
 
+module Read = struct
+  type t = {
+    fid: int32;
+    offset: int64;
+    count: int32;
+  }
+
+  let sizeof _ = 4 + 8 + 4
+
+  let write t rest =
+    Int32.write t.fid rest
+    >>= fun rest ->
+    Int64.write t.offset rest
+    >>= fun rest ->
+    Int32.write t.count rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (fid, rest) ->
+    Int64.read rest
+    >>= fun (offset, rest) ->
+    Int32.read rest
+    >>= fun (count, rest) ->
+    return ({ fid; offset; count}, rest)
+
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -236,6 +263,7 @@ type payload =
   | Walk of Walk.t
   | Open of Open.t
   | Create of Create.t
+  | Read of Read.t
 
 type t = {
   tag: int;
@@ -250,4 +278,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Walk x -> Walk.sizeof x
   | Open x -> Open.sizeof x
   | Create x -> Create.sizeof x
+  | Read x -> Read.sizeof x
 )
