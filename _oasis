@@ -29,4 +29,4 @@ Library protocol_9p
   Path:               lib
   Findlibname:        9p-protocol
   Modules:            S, Request, Error, Response, Types
-  BuildDepends:       result, cstruct, cstruct.syntax
+  BuildDepends:       result, cstruct

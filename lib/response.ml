@@ -221,12 +221,6 @@ end
 
 module Wstat = Clunk
 
-cstruct hdr {
-  uint32_t size;
-  uint8_t ty;
-  uint16_t tag;
-} as little_endian
-
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -248,7 +242,7 @@ type t = {
   payload: payload;
 }
 
-let sizeof t = sizeof_hdr + (match t.payload with
+let sizeof t = 4 + 1 + 2 + (match t.payload with
   | Version x -> Version.sizeof x
   | Auth x -> Auth.sizeof x
   | Err x -> Err.sizeof x
