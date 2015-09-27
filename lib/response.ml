@@ -77,6 +77,38 @@ module Attach = struct
     return ({ qid }, rest)
 end
 
+module Walk = struct
+  type t = {
+    wqids: Qid.t list
+  }
+
+  let sizeof t = 2 + (List.fold_left (+) 0 (List.map (fun q -> Qid.sizeof q) t.wqids))
+
+  let write t rest =
+    Int16.write (List.length t.wqids) rest
+    >>= fun rest ->
+    let rec loop rest = function
+      | [] -> return rest
+      | wqid :: wqids ->
+        Qid.write wqid rest
+        >>= fun rest ->
+        loop rest wqids in
+    loop rest t.wqids
+
+  let read rest =
+    Int16.read rest
+    >>= fun (nwqids, rest) ->
+    let rec loop rest acc = function
+      | 0 -> return (List.rev acc, rest)
+      | n ->
+        Qid.read rest
+        >>= fun (wqid, rest) ->
+        loop rest (wqid :: acc) (n - 1) in
+    loop rest [] nwqids
+    >>= fun (wqids, rest) ->
+    return ( { wqids }, rest )
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -89,6 +121,7 @@ type payload =
   | Err of Err.t
   | Flush of Flush.t
   | Attach of Attach.t
+  | Walk of Walk.t
 
 type t = {
   tag: int;
@@ -101,4 +134,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Err x -> Err.sizeof x
   | Flush x -> Flush.sizeof x
   | Attach x -> Attach.sizeof x
+  | Walk x -> Walk.sizeof x
 )
