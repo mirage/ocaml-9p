@@ -118,6 +118,13 @@ module Clunk : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Remove : sig
+  type t = unit
+  (** The payload of a Remove response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -130,6 +137,7 @@ type payload =
   | Read of Read.t
   | Write of Write.t
   | Clunk of Clunk.t
+  | Remove of Remove.t
 
 type t = {
   tag: int;
