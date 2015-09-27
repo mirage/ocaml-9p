@@ -195,6 +195,13 @@ module Write = struct
     return ({ count }, rest)
 end
 
+module Clunk = struct
+  type t = unit
+  let sizeof _ = 0
+  let write t rest = return rest
+  let read rest = return ((), rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -211,6 +218,8 @@ type payload =
   | Open of Open.t
   | Create of Create.t
   | Read of Read.t
+  | Write of Write.t
+  | Clunk of Clunk.t
 
 type t = {
   tag: int;
@@ -227,4 +236,6 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Open x -> Open.sizeof x
   | Create x -> Create.sizeof x
   | Read x -> Read.sizeof x
+  | Write x -> Write.sizeof x
+  | Clunk x -> Clunk.sizeof x
 )

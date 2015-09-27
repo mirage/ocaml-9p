@@ -111,6 +111,13 @@ module Write : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Clunk : sig
+  type t = unit
+  (** The payload of a Clunk response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -121,6 +128,8 @@ type payload =
   | Open of Open.t
   | Create of Create.t
   | Read of Read.t
+  | Write of Write.t
+  | Clunk of Clunk.t
 
 type t = {
   tag: int;

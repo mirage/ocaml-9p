@@ -287,6 +287,21 @@ module Write = struct
     return ({ fid; offset; data }, rest)
 end
 
+module Clunk = struct
+  type t = {
+    fid: int32
+  }
+
+  let sizeof _ = 4
+
+  let write t rest = Int32.write t.fid rest
+
+  let read rest =
+    Int32.read rest
+    >>= fun (fid, rest) ->
+    return ( { fid }, rest )
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -303,6 +318,7 @@ type payload =
   | Create of Create.t
   | Read of Read.t
   | Write of Write.t
+  | Clunk of Clunk.t
 
 type t = {
   tag: int;
@@ -319,4 +335,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Create x -> Create.sizeof x
   | Read x -> Read.sizeof x
   | Write x -> Write.sizeof x
+  | Clunk x -> Clunk.sizeof x
 )
