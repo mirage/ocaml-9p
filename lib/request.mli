@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Sexplib.Std
 open Result
 
 module Version : sig
@@ -21,7 +22,7 @@ module Version : sig
   type t = {
     msize: int32;
     version: string;
-  }
+  } with sexp
   (** The payload of a version message *)
 
   include S.SERIALISABLE with type t := t
@@ -33,7 +34,7 @@ module Auth : sig
     afid: int32;
     uname: string;
     aname: string;
-  }
+  } with sexp
   (** The payload of a version message *)
 
   include S.SERIALISABLE with type t := t
@@ -43,7 +44,7 @@ module Flush : sig
 
   type t = {
     oldtag: int;
-  }
+  } with sexp
   (** The payload of a flush message *)
 
   include S.SERIALISABLE with type t := t
@@ -56,7 +57,7 @@ module Attach : sig
     afid: int32;
     uname: string;
     aname: string;
-  }
+  } with sexp
   (** The payload of an attach message *)
 
   include S.SERIALISABLE with type t := t
@@ -68,7 +69,7 @@ module Walk : sig
     fid: int32;
     newfid: int32;
     wnames: string list;
-  }
+  } with sexp
   (** The payload of a walk message *)
 
   include S.SERIALISABLE with type t := t
@@ -78,7 +79,7 @@ module Open : sig
   type t = {
     fid: int32;
     mode: int;
-  }
+  } with sexp
   (** The payload of an Open message *)
 
   include S.SERIALISABLE with type t := t
@@ -90,7 +91,7 @@ module Create : sig
     name: string;
     perm: int32;
     mode: int
-  }
+  } with sexp
   (** The payload of a Create message *)
 
   include S.SERIALISABLE with type t := t
@@ -101,7 +102,7 @@ module Read : sig
     fid: int32;
     offset: int64;
     count: int32;
-  }
+  } with sexp
   (** The payload of a Read message *)
 
   include S.SERIALISABLE with type t := t
@@ -112,7 +113,7 @@ module Write : sig
     fid: int32;
     offset: int64;
     data: Cstruct.t;
-  }
+  } with sexp
 
   include S.SERIALISABLE with type t := t
 end
@@ -120,7 +121,7 @@ end
 module Clunk : sig
   type t = {
     fid: int32
-  }
+  } with sexp
 
   include S.SERIALISABLE with type t := t
 end
@@ -128,7 +129,7 @@ end
 module Remove : sig
   type t = {
     fid: int32
-  }
+  } with sexp
 
   include S.SERIALISABLE with type t := t
 end
@@ -136,7 +137,7 @@ end
 module Stat : sig
   type t = {
     fid: int32
-  }
+  } with sexp
 
   include S.SERIALISABLE with type t := t
 end
@@ -145,7 +146,7 @@ module Wstat : sig
   type t = {
     fid: int32;
     stat: Types.Stat.t;
-  }
+  } with sexp
 
   include S.SERIALISABLE with type t := t
 end
@@ -164,10 +165,13 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
+with sexp
 
 type t = {
   tag: int;
   payload: payload;
-}
+} with sexp
 
 include S.SERIALISABLE with type t := t
+
+val to_string: t -> string

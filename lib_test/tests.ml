@@ -14,12 +14,38 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
-
+open Protocol_9p
+open Result
 open OUnit
 
-let tests = [
+let requests =
+  let open Request in [
+    { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) }
+  ]
 
-]
+let expect_ok = function
+  | Ok x -> x
+  | Error (`Msg m) -> failwith m
+
+let print_parse_request r () =
+  let open Error in
+  expect_ok (
+    let needed = Request.sizeof r in
+    let buf = Cstruct.create needed in
+    Request.write r buf
+    >>= fun remaining ->
+    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
+    Request.read buf
+    >>= fun (r', remaining) ->
+    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
+    assert_equal ~printer:Request.to_string r r';
+    return ()
+  )
+
+let tests =
+  List.map (fun r ->
+    Printf.sprintf "print then parse %s" (Request.to_string r) >:: (print_parse_request r)
+  ) requests
 
 let _ =
   let suite = "parse and print" >::: tests in

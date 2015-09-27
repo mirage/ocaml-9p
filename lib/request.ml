@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Sexplib.Std
 open Result
 open Types
 open Error
@@ -22,7 +23,7 @@ module Version = struct
   type t = {
     msize: int32;
     version: string;
-  }
+  } with sexp
 
   let sizeof t = 4 + 2 + (String.length t.version)
 
@@ -36,7 +37,7 @@ module Version = struct
     Int32.read rest
     >>= fun (msize, rest) ->
     Data.read rest
-    >>= fun (version, _) ->
+    >>= fun (version, rest) ->
     let version = Data.to_string version in
     return ({ msize; version }, rest)
 end
@@ -47,7 +48,7 @@ module Auth = struct
     afid: int32;
     uname: string;
     aname: string;
-  }
+  } with sexp
 
   let sizeof t = 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
 
@@ -75,7 +76,7 @@ end
 module Flush = struct
   type t = {
     oldtag: int;
-  }
+  } with sexp
 
   let sizeof _ = 2
 
@@ -94,7 +95,7 @@ module Attach = struct
     afid: int32;
     uname: string;
     aname: string;
-  }
+  } with sexp
 
   let sizeof t = 4 + 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
 
@@ -129,7 +130,7 @@ module Walk = struct
     fid: int32;
     newfid: int32;
     wnames: string list;
-  }
+  } with sexp
 
   let sizeof t = 4 + 4 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
 
@@ -172,7 +173,7 @@ module Open = struct
   type t = {
     fid: int32;
     mode: int;
-  }
+  } with sexp
 
   let sizeof _ = 5
 
@@ -195,7 +196,7 @@ module Create = struct
     name: string;
     perm: int32;
     mode: int
-  }
+  } with sexp
 
   let sizeof t = 4 + 2 + (String.length t.name) + 4 + 1
 
@@ -227,7 +228,7 @@ module Read = struct
     fid: int32;
     offset: int64;
     count: int32;
-  }
+  } with sexp
 
   let sizeof _ = 4 + 8 + 4
 
@@ -254,7 +255,7 @@ module Write = struct
     fid: int32;
     offset: int64;
     data: Cstruct.t;
-  }
+  } with sexp
 
   let sizeof t = 4 + 8 + 4 + (Cstruct.len t.data)
 
@@ -290,7 +291,7 @@ end
 module Clunk = struct
   type t = {
     fid: int32
-  }
+  } with sexp
 
   let sizeof _ = 4
 
@@ -310,7 +311,7 @@ module Wstat = struct
   type t = {
     fid: int32;
     stat: Types.Stat.t;
-  }
+  } with sexp
 
   let sizeof t = 4 + (Types.Stat.sizeof t.stat)
 
@@ -341,11 +342,12 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
+with sexp
 
 type t = {
   tag: int;
   payload: payload
-}
+} with sexp
 
 let sizeof t = 4 + 1 + 2 + (match t.payload with
   | Version x -> Version.sizeof x
@@ -426,3 +428,5 @@ let read rest =
     | ty  -> error_msg "Request.read: unknown packet type %d" ty
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
+
+let to_string t = Sexplib.Sexp.to_string_hum (sexp_of_t t)

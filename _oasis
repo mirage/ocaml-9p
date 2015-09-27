@@ -29,7 +29,7 @@ Library protocol_9p
   Path:               lib
   Findlibname:        protocol-9p
   Modules:            S, Request, Error, Response, Types
-  BuildDepends:       result, cstruct
+  BuildDepends:       result, cstruct, sexplib, sexplib.syntax
 
 Document protocol_9p
   Title:                9P docs

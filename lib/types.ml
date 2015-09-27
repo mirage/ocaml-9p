@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Sexplib.Std
 open Error
 
 let big_enough_for name buf needed =
@@ -23,7 +24,7 @@ let big_enough_for name buf needed =
   else return ()
 
 module Int8 = struct
-  type t = int
+  type t = int with sexp
 
   let sizeof _ = 1
 
@@ -40,7 +41,7 @@ module Int8 = struct
 end
 
 module Int16 = struct
-  type t = int
+  type t = int with sexp
 
   let sizeof _ = 2
 
@@ -59,6 +60,10 @@ end
 module Int32 = struct
   include Int32
 
+  type _t = int32 with sexp
+  let sexp_of_t = sexp_of__t
+  let t_of_sexp = _t_of_sexp
+
   let sizeof _ = 4
 
   let read buf =
@@ -74,7 +79,7 @@ module Int32 = struct
 end
 
 module Int64 = struct
-  type t = int64
+  type t = int64 with sexp
 
   let sizeof _ = 8
 
@@ -91,7 +96,7 @@ module Int64 = struct
 end
 
 module Qid = struct
-  type t = string
+  type t = string with sexp
 
   let needed = 13
 
@@ -113,6 +118,15 @@ end
 
 module Data = struct
   type t = Cstruct.t
+
+  type _t = string with sexp
+  let sexp_of_t t = sexp_of__t (Cstruct.to_string t)
+  let t_of_sexp s =
+    let _t = _t_of_sexp s in
+    let len = String.length _t in
+    let buf = Cstruct.create len in
+    Cstruct.blit_from_string _t 0 buf 0 len;
+    buf
 
   let of_string x =
     let t = Cstruct.create (String.length x) in
@@ -165,7 +179,7 @@ module Stat = struct
     uid: string;
     gid: string;
     muid: string;
-  }
+  } with sexp
 
   let sizeof t = 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
     + 2 + (String.length t.name) + 2 + (String.length t.uid)

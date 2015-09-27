@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Sexplib
 
 val big_enough_for: string -> Cstruct.t -> int -> unit Error.t
 (** [big_enough_for name buf length] returns an error with a log message
@@ -21,13 +22,13 @@ val big_enough_for: string -> Cstruct.t -> int -> unit Error.t
     in the error message. *)
 
 module Int8 : sig
-  type t = int
+  type t = int with sexp
 
   include S.SERIALISABLE with type t := t
 end
 
 module Int16 : sig
-  type t = int
+  type t = int with sexp
 
   include S.SERIALISABLE with type t := t
 end
@@ -35,23 +36,26 @@ end
 module Int32 : sig
   include module type of Int32
 
+  val t_of_sexp: Sexp.t -> t
+  val sexp_of_t: t -> Sexp.t
+
   include S.SERIALISABLE with type t := t
 end
 
 module Int64 : sig
-  type t = int64
+  type t = int64 with sexp
 
   include S.SERIALISABLE with type t := t
 end
 
 module Qid : sig
-  type t = string (** 13 bytes long *)
+  type t = string with sexp (** 13 bytes long *)
 
   include S.SERIALISABLE with type t := t
 end
 
 module Data : sig
-  type t = Cstruct.t
+  type t = Cstruct.t with sexp
   (** A length-prefixed chunk of data which may include embedded NULLs, or may be
       interpreted later as UTF-8 text. *)
 
@@ -75,7 +79,7 @@ module Stat : sig
     uid: string;   (** owner name *)
     gid: string;   (** group name *)
     muid: string;  (** name of last user who modified the file *)
-  }
+  } with sexp
 
   include S.SERIALISABLE with type t := t
 end
