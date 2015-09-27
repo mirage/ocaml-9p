@@ -22,6 +22,7 @@ remove: [["ocamlfind" "remove" "protocol-9p"]]
 depends: [
   "base-bytes"
   "ocamlfind" {build}
+  "oasis" {build}
   "ounit" {test}
 ]
 build-doc: ["ocaml" "setup.ml" "-doc"]
