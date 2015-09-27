@@ -22,6 +22,9 @@ let requests =
   let open Request in [
     { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) };
     { tag = 12; payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
+    { tag = 13; payload = Flush Flush.({ oldtag = 123 }) };
+    { tag = 14; payload = Attach Attach.({ fid = 3l; afid = 2l; uname = "who"; aname = "areyou?" })};
+    { tag = 15; payload = Walk Walk.( { fid = 4l; newfid = 5l; wnames = [ "one"; "two"; "three" ]})};
   ]
 
 let expect_ok = function

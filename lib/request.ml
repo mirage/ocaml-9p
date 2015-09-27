@@ -132,7 +132,7 @@ module Walk = struct
     wnames: string list;
   } with sexp
 
-  let sizeof t = 4 + 4 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
+  let sizeof t = 4 + 4 + 2 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
 
   let write t rest =
     Int32.write t.fid rest
