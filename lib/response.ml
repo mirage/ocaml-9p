@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Sexplib.Std
 open Error
 open Types
 
@@ -22,7 +23,7 @@ module Version = Request.Version
 module Auth = struct
   type t = {
     aqid: Qid.t;
-  }
+  } with sexp
 
   let sizeof t = Qid.sizeof t.aqid
 
@@ -37,7 +38,7 @@ end
 module Err = struct
   type t = {
     ename: string;
-  }
+  } with sexp
 
   let sizeof t = 2 + (String.length t.ename)
 
@@ -53,7 +54,7 @@ module Err = struct
 end
 
 module Flush = struct
-  type t = unit
+  type t = unit with sexp
 
   let sizeof _ = 0
 
@@ -65,7 +66,7 @@ end
 module Attach = struct
   type t = {
     qid: Qid.t
-  }
+  } with sexp
 
   let sizeof t = Qid.sizeof t.qid
 
@@ -80,7 +81,7 @@ end
 module Walk = struct
   type t = {
     wqids: Qid.t list
-  }
+  } with sexp
 
   let sizeof t = 2 + (List.fold_left (+) 0 (List.map (fun q -> Qid.sizeof q) t.wqids))
 
@@ -113,7 +114,7 @@ module Open = struct
   type t = {
     qid: Qid.t;
     iounit: int32
-  }
+  } with sexp
 
   let sizeof t = Qid.sizeof t.qid + 4
 
@@ -134,7 +135,7 @@ module Create = struct
   type t = {
     qid: Qid.t;
     iounit: int32;
-  }
+  } with sexp
 
   let sizeof t = Qid.sizeof t.qid + 4
 
@@ -155,6 +156,15 @@ module Read = struct
   type t = {
     data: Cstruct.t
   }
+
+  type _t = string with sexp
+  let sexp_of_t t = sexp_of__t (Cstruct.to_string t.data)
+  let t_of_sexp s =
+    let _t = _t_of_sexp s in
+    let len = String.length _t in
+    let buf = Cstruct.create len in
+    Cstruct.blit_from_string _t 0 buf 0 len;
+    { data = buf }
 
   let sizeof t = 4 + (Cstruct.len t.data)
 
@@ -183,7 +193,7 @@ end
 module Write = struct
   type t = {
     count: int32
-  }
+  } with sexp
   let sizeof _ = 4
 
   let write t rest =
@@ -196,7 +206,7 @@ module Write = struct
 end
 
 module Clunk = struct
-  type t = unit
+  type t = unit with sexp
   let sizeof _ = 0
   let write t rest = return rest
   let read rest = return ((), rest)
@@ -207,7 +217,7 @@ module Remove = Clunk
 module Stat = struct
   type t = {
     stat: Stat.t;
-  }
+  } with sexp
 
   let sizeof t = Types.Stat.sizeof t.stat
 
@@ -236,11 +246,12 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
+with sexp
 
 type t = {
   tag: int;
   payload: payload;
-}
+} with sexp
 
 let sizeof t = 4 + 1 + 2 + (match t.payload with
   | Version x -> Version.sizeof x
@@ -325,3 +336,5 @@ let read rest =
     | ty  -> error_msg "Response.read: unknown packet type %d" ty
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
+
+let to_string t = Sexplib.Sexp.to_string_hum (sexp_of_t t)

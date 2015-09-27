@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+open Sexplib
 open Types
 open Result
 
@@ -22,7 +23,7 @@ module Version : sig
   type t = {
     msize: int32;
     version: string;
-  }
+  } with sexp
   (** The payload of a version message *)
 
   include S.SERIALISABLE with type t := t
@@ -32,7 +33,7 @@ module Auth : sig
 
   type t = {
     aqid: string; (* 13 bytes long *)
-  }
+  } with sexp
   (** The payload of an authentication response *)
 
   include S.SERIALISABLE with type t := t
@@ -42,14 +43,14 @@ module Err : sig
 
   type t = {
     ename: string;
-  }
+  } with sexp
   (** The pauload of an error response *)
 
   include S.SERIALISABLE with type t := t
 end
 
 module Flush : sig
-  type t = unit
+  type t = unit with sexp
   (** The payload of a flush response *)
 
   include S.SERIALISABLE with type t := t
@@ -58,7 +59,7 @@ end
 module Attach : sig
   type t = {
     qid: Qid.t
-  }
+  } with sexp
   (** The payload of an attach response *)
 
   include S.SERIALISABLE with type t := t
@@ -67,7 +68,7 @@ end
 module Walk : sig
   type t = {
     wqids: Qid.t list
-  }
+  } with sexp
   (** The payload of a walk response *)
 
   include S.SERIALISABLE with type t := t
@@ -77,7 +78,7 @@ module Open : sig
   type t = {
     qid: Qid.t;
     iounit: int32;
-  }
+  } with sexp
   (** The payload of an Open response *)
 
   include S.SERIALISABLE with type t := t
@@ -87,7 +88,7 @@ module Create : sig
   type t = {
     qid: Qid.t;
     iounit: int32;
-  }
+  } with sexp
   (** The payload of a Create response *)
 
   include S.SERIALISABLE with type t := t
@@ -96,7 +97,7 @@ end
 module Read : sig
   type t = {
     data: Cstruct.t
-  }
+  } with sexp
   (** The payload of a Read response *)
 
   include S.SERIALISABLE with type t := t
@@ -105,21 +106,21 @@ end
 module Write : sig
   type t = {
     count: int32
-  }
+  } with sexp
   (** The payload of a Write response *)
 
   include S.SERIALISABLE with type t := t
 end
 
 module Clunk : sig
-  type t = unit
+  type t = unit with sexp
   (** The payload of a Clunk response *)
 
   include S.SERIALISABLE with type t := t
 end
 
 module Remove : sig
-  type t = unit
+  type t = unit with sexp
   (** The payload of a Remove response *)
 
   include S.SERIALISABLE with type t := t
@@ -128,14 +129,14 @@ end
 module Stat : sig
   type t = {
     stat: Stat.t;
-  }
+  } with sexp
   (** The payload of a Stat response *)
 
   include S.SERIALISABLE with type t := t
 end
 
 module Wstat : sig
-  type t = unit
+  type t = unit with sexp
   (** The payload of a Wstat response *)
 
   include S.SERIALISABLE with type t := t
@@ -156,10 +157,13 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
+with sexp
 
 type t = {
   tag: int;
   payload: payload;
-}
+} with sexp
 
 include S.SERIALISABLE with type t := t
+
+val to_string: t -> string
