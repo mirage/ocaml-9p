@@ -18,25 +18,30 @@ open Protocol_9p
 open Result
 open OUnit
 
-let requests =
+let example_data =
   let data = Cstruct.create 1 in
   for i = 0 to Cstruct.len data - 1 do
     Cstruct.set_char data i '\000'
   done;
-  let qid = "1234567890123" in
-  let stat = Types.Stat.({
-    ty = 1;
-    dev = 2l;
-    qid;
-    mode = 3l;
-    atime = 4l;
-    mtime = 5l;
-    length = 6L;
-    name = "name";
-    uid = "uid";
-    gid = "gid";
-    muid = "muid";
-    }) in
+  data
+
+let qid = "1234567890123"
+
+let stat = Types.Stat.({
+  ty = 1;
+  dev = 2l;
+  qid;
+  mode = 3l;
+  atime = 4l;
+  mtime = 5l;
+  length = 6L;
+  name = "name";
+  uid = "uid";
+  gid = "gid";
+  muid = "muid";
+  })
+
+let requests =
   let open Request in [
     { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) };
     { tag = 12; payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
@@ -46,11 +51,29 @@ let requests =
     { tag = 16; payload = Open Open.( { fid = 6l; mode = 123 })};
     { tag = 17; payload = Create Create.( { fid = 7l; name = "woohoo"; perm = 44l; mode = 101 })};
     { tag = 18; payload = Read Read.( { fid = 8l; offset = 123456L; count = 123l })};
-    { tag = 19; payload = Write Write.( { fid = 9l; offset = 98765L; data })};
+    { tag = 19; payload = Write Write.( { fid = 9l; offset = 98765L; data = example_data })};
     { tag = 20; payload = Clunk Clunk.( { fid = 10l })};
     { tag = 21; payload = Remove Remove.( { fid = 11l })};
     { tag = 22; payload = Stat Stat.( { fid = 12l })};
     { tag = 23; payload = Wstat Wstat.( { fid = 13l; stat })};
+  ]
+
+let responses =
+  let open Response in [
+    { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) };
+    { tag = 12; payload = Auth Auth.({ aqid = qid }) };
+    { tag = 10; payload = Err Err.({ ename = "it went wrong!" })};
+    { tag = 13; payload = Flush Flush.( () ) };
+    { tag = 14; payload = Attach Attach.({ qid })};
+    { tag = 15; payload = Walk Walk.( { wqids = [ qid; qid ] })};
+    { tag = 16; payload = Open Open.( { qid; iounit = 2l })};
+    { tag = 17; payload = Create Create.( { qid; iounit = 3l; })};
+    { tag = 18; payload = Read Read.( { data = example_data })};
+    { tag = 19; payload = Write Write.( { count = 7l })};
+    { tag = 20; payload = Clunk Clunk.( () )};
+    { tag = 21; payload = Remove Remove.( () )};
+    { tag = 22; payload = Stat Stat.( { stat })};
+    { tag = 23; payload = Wstat Wstat.( () )};
   ]
 
 let expect_ok = function
@@ -72,10 +95,31 @@ let print_parse_request r () =
     return ()
   )
 
+let print_parse_response r () =
+  let open Error in
+  expect_ok (
+    let needed = Response.sizeof r in
+    let buf = Cstruct.create needed in
+    Response.write r buf
+    >>= fun remaining ->
+    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
+    Response.read buf
+    >>= fun (r', remaining) ->
+    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
+    assert_equal ~printer:(fun x -> x) (Response.to_string r) (Response.to_string r');
+    return ()
+  )
+
 let tests =
-  List.map (fun r ->
-    Printf.sprintf "print then parse %s" (Request.to_string r) >:: (print_parse_request r)
-  ) requests
+  let requests =
+    List.map (fun r ->
+      Printf.sprintf "print then parse %s" (Request.to_string r) >:: (print_parse_request r)
+    ) requests in
+  let responses =
+    List.map (fun r ->
+      Printf.sprintf "print then parse %s" (Response.to_string r) >:: (print_parse_response r)
+    ) responses in
+  requests @ responses
 
 let _ =
   let suite = "parse and print" >::: tests in

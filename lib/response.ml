@@ -172,7 +172,6 @@ module Read = struct
     let len = Cstruct.len t.data in
     Int32.write (Int32.of_int len) rest
     >>= fun rest ->
-    let rest = Cstruct.shift rest 4 in
     big_enough_for "Read.data" rest len
     >>= fun () ->
     Cstruct.blit t.data 0 rest 0 len;
