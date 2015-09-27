@@ -29,7 +29,7 @@ Library protocol_9p
   Path:               lib
   Findlibname:        protocol-9p
   Modules:            S, Request, Error, Response, Types
-  BuildDepends:       result, cstruct, sexplib, sexplib.syntax
+  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, bisect
 
 Document protocol_9p
   Title:                9P docs
@@ -46,7 +46,7 @@ Executable test_parse_print
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       protocol-9p, oUnit (>= 1.0.2)
+  BuildDepends:       protocol-9p, oUnit (>= 1.0.2), bisect
 
 Test test_parse_print
   Run$:               flag(tests)

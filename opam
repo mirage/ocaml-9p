@@ -24,6 +24,7 @@ depends: [
   "cstruct"
   "sexplib"
   "result"
+  "bisect"
   "ocamlfind" {build}
   "oasis" {build}
   "ounit" {test}
