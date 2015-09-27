@@ -15,7 +15,7 @@
  *
  *)
 open Error
-open Data
+open Types
 
 module Version = Request.Version
 

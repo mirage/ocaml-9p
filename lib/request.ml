@@ -15,7 +15,7 @@
  *
  *)
 open Result
-open Data
+open Types
 open Error
 
 module Version = struct
