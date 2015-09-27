@@ -62,11 +62,24 @@ module Attach : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Walk : sig
+
+  type t = {
+    fid: int32;
+    newfid: int32;
+    wnames: string list;
+  }
+  (** The payload of a walk message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
   | Flush of Flush.t
   | Attach of Attach.t
+  | Walk of Walk.t
 
 type t = {
   tag: int;

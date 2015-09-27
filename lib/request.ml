@@ -123,6 +123,51 @@ module Attach = struct
     return ({ fid; afid; uname; aname }, rest)
 end
 
+module Walk = struct
+
+  type t = {
+    fid: int32;
+    newfid: int32;
+    wnames: string list;
+  }
+
+  let sizeof t = 4 + 4 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
+
+  let write t rest =
+    Int32.write t.fid rest
+    >>= fun rest ->
+    Int32.write t.newfid rest
+    >>= fun rest ->
+    Int16.write (List.length t.wnames) rest
+    >>= fun rest ->
+    let rec loop rest = function
+      | [] -> return rest
+      | wname :: wnames ->
+        let wname = Data.of_string wname in
+        Data.write wname rest
+        >>= fun rest ->
+        loop rest wnames in
+    loop rest t.wnames
+
+  let read rest =
+    Int32.read rest
+    >>= fun (fid, rest) ->
+    Int32.read rest
+    >>= fun (newfid, rest) ->
+    Int16.read rest
+    >>= fun (length, rest) ->
+    let rec loop rest acc = function
+      | 0 -> return (List.rev acc, rest)
+      | n ->
+        Data.read rest
+        >>= fun (wname, rest) ->
+        let wname = Data.to_string wname in
+        loop rest (wname :: acc) (n - 1) in
+    loop rest [] length
+    >>= fun (wnames, rest) ->
+    return ( { fid; newfid; wnames }, rest)
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -134,6 +179,7 @@ type payload =
   | Auth of Auth.t
   | Flush of Flush.t
   | Attach of Attach.t
+  | Walk of Walk.t
 
 type t = {
   tag: int;
@@ -145,4 +191,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Auth x -> Auth.sizeof x
   | Flush x -> Flush.sizeof x
   | Attach x -> Attach.sizeof x
+  | Walk x -> Walk.sizeof x
 )
