@@ -112,6 +112,7 @@ cstruct hdr {
 
 type payload =
   | Version of Version.t
+  | Auth of Auth.t
 
 type t = {
   tag: int;
@@ -120,5 +121,6 @@ type t = {
 
 let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
+  | Auth x -> Auth.sizeof x
 )
 

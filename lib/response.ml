@@ -32,7 +32,7 @@ module Auth = struct
       then error_msg "Auth.write: buffer is too small for aqid (%d < %d)" length needed
       else return ()
     ) >>= fun () ->
-    Cstruct.blit_from_string t 0 buf 0 needed;
+    Cstruct.blit_from_string t.aqid 0 buf 0 needed;
     return ()
 
   let read buf =
@@ -42,7 +42,8 @@ module Auth = struct
       then error_msg "Auth.read: buffer is too small for aqid (%d < %d)" length needed
       else return ()
     ) >>= fun () ->
-    return Cstruct.(to_string (sub buf 0 needed))
+    let aqid = Cstruct.(to_string (sub buf 0 needed)) in
+    return { aqid }
 end
 
 cstruct hdr {
@@ -53,6 +54,7 @@ cstruct hdr {
 
 type payload =
   | Version of Version.t
+  | Auth of Auth.t
 
 type t = {
   tag: int;
@@ -61,4 +63,5 @@ type t = {
 
 let sizeof t = sizeof_hdr + (match t.payload with
   | Version x -> Version.sizeof x
+  | Auth x -> Auth.sizeof x
 )

@@ -27,8 +27,19 @@ module Version : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Auth : sig
+
+  type t = {
+    aqid: string; (* 13 bytes long *)
+  }
+  (** The payload of an authentication response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
+  | Auth of Auth.t
 
 type t = {
   tag: int;

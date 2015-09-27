@@ -27,8 +27,21 @@ module Version : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Auth : sig
+
+  type t = {
+    afid: int32;
+    uname: string;
+    aname: string;
+  }
+  (** The payload of a version message *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
+  | Auth of Auth.t
 
 type t = {
   tag: int;
