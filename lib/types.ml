@@ -151,3 +151,85 @@ module Data = struct
     Cstruct.blit t 0 buf 2 (Cstruct.len t);
     return (Cstruct.shift buf needed)
 end
+
+module Stat = struct
+  type t = {
+    ty: int;
+    dev: int32;
+    qid: Qid.t;
+    mode: int32;
+    atime: int32;
+    mtime: int32;
+    length: int64;
+    name: string;
+    uid: string;
+    gid: string;
+    muid: string;
+  }
+
+  let sizeof t = 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
+    + 2 + (String.length t.name) + 2 + (String.length t.uid)
+    + 2 + (String.length t.gid) + 2 + (String.length t.muid)
+
+  let read rest =
+    Int16.read rest
+    >>= fun (_len, rest) ->
+    Int16.read rest
+    >>= fun (ty, rest) ->
+    Int32.read rest
+    >>= fun (dev, rest) ->
+    Qid.read rest
+    >>= fun (qid, rest) ->
+    Int32.read rest
+    >>= fun (mode, rest) ->
+    Int32.read rest
+    >>= fun (atime, rest) ->
+    Int32.read rest
+    >>= fun (mtime, rest) ->
+    Int64.read rest
+    >>= fun (length, rest) ->
+    Data.read rest
+    >>= fun (name, rest) ->
+    let name = Data.to_string name in
+    Data.read rest
+    >>= fun (uid, rest) ->
+    let uid = Data.to_string uid in
+    Data.read rest
+    >>= fun (gid, rest) ->
+    let gid = Data.to_string gid in
+    Data.read rest
+    >>= fun (muid, rest) ->
+    let muid = Data.to_string muid in
+    return ( { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }, rest)
+
+  let write t rest =
+    let len = sizeof t in
+    Int16.write len rest
+    >>= fun rest ->
+    Int16.write t.ty rest
+    >>= fun rest ->
+    Int32.write t.dev rest
+    >>= fun rest ->
+    Qid.write t.qid rest
+    >>= fun rest ->
+    Int32.write t.mode rest
+    >>= fun rest ->
+    Int32.write t.atime rest
+    >>= fun rest ->
+    Int32.write t.mtime rest
+    >>= fun rest ->
+    Int64.write t.length rest
+    >>= fun rest ->
+    let name = Data.of_string t.name in
+    let uid = Data.of_string t.uid in
+    let gid = Data.of_string t.gid in
+    let muid = Data.of_string t.muid in
+    Data.write name rest
+    >>= fun rest ->
+    Data.write uid rest
+    >>= fun rest ->
+    Data.write gid rest
+    >>= fun rest ->
+    Data.write muid rest
+
+end

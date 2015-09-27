@@ -125,6 +125,15 @@ module Remove : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Stat : sig
+  type t = {
+    stat: Stat.t;
+  }
+  (** The payload of a Stat response *)
+
+  include S.SERIALISABLE with type t := t
+end
+
 type payload =
   | Version of Version.t
   | Auth of Auth.t
@@ -138,6 +147,7 @@ type payload =
   | Write of Write.t
   | Clunk of Clunk.t
   | Remove of Remove.t
+  | Stat of Stat.t
 
 type t = {
   tag: int;

@@ -204,6 +204,21 @@ end
 
 module Remove = Clunk
 
+module Stat = struct
+  type t = {
+    stat: Stat.t;
+  }
+
+  let sizeof t = Types.Stat.sizeof t.stat
+
+  let write t rest = Types.Stat.write t.stat rest
+
+  let read rest =
+    Types.Stat.read rest
+    >>= fun (stat, rest) ->
+    return ( {stat}, rest )
+end
+
 cstruct hdr {
   uint32_t size;
   uint8_t ty;
@@ -223,6 +238,7 @@ type payload =
   | Write of Write.t
   | Clunk of Clunk.t
   | Remove of Remove.t
+  | Stat of Stat.t
 
 type t = {
   tag: int;
@@ -242,4 +258,5 @@ let sizeof t = sizeof_hdr + (match t.payload with
   | Write x -> Write.sizeof x
   | Clunk x -> Clunk.sizeof x
   | Remove x -> Remove.sizeof x
+  | Stat x -> Stat.sizeof x
 )

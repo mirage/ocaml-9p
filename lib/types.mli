@@ -61,3 +61,21 @@ module Data : sig
 
   include S.SERIALISABLE with type t := t
 end
+
+module Stat : sig
+  type t = {
+    ty: int;       (** for kernel use *)
+    dev: int32;    (** for kernel use *)
+    qid: Qid.t;
+    mode: int32;   (** permissions and flags *)
+    atime: int32;  (** last access time *)
+    mtime: int32;  (** last modification time *)
+    length: int64; (** length of the file in bytes *)
+    name: string;  (** file name. Must be '/' if the file is the root *)
+    uid: string;   (** owner name *)
+    gid: string;   (** group name *)
+    muid: string;  (** name of last user who modified the file *)
+  }
+
+  include S.SERIALISABLE with type t := t
+end
