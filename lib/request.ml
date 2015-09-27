@@ -35,12 +35,11 @@ module Version = struct
 
   let read rest =
     Int32.read rest
-    >>= fun msize ->
-    let rest = Cstruct.shift rest (Int32.sizeof msize) in
+    >>= fun (msize, rest) ->
     Data.read rest
-    >>= fun version ->
+    >>= fun (version, _) ->
     let version = Data.to_string version in
-    return { msize; version }
+    return ({ msize; version }, rest)
 end
 
 module Auth = struct
@@ -66,16 +65,14 @@ module Auth = struct
 
   let read rest =
     Int32.read rest
-    >>= fun afid ->
-    let rest = Cstruct.shift rest (Int32.sizeof afid) in
+    >>= fun (afid, rest) ->
     Data.read rest
-    >>= fun uname ->
-    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    >>= fun (uname, rest) ->
     Data.read rest
-    >>= fun aname ->
+    >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    return { afid; uname; aname }
+    return ({ afid; uname; aname }, rest)
 end
 
 module Flush = struct
@@ -90,8 +87,8 @@ module Flush = struct
 
   let read buf =
     Int16.read buf
-    >>= fun oldtag ->
-    return { oldtag }
+    >>= fun (oldtag, rest) ->
+    return ({ oldtag }, rest)
 end
 
 module Attach = struct
@@ -120,19 +117,16 @@ module Attach = struct
 
   let read rest =
     Int32.read rest
-    >>= fun fid ->
-    let rest = Cstruct.shift rest (Int32.sizeof fid) in
+    >>= fun (fid, rest) ->
     Int32.read rest
-    >>= fun afid ->
-    let rest = Cstruct.shift rest (Int32.sizeof afid) in
+    >>= fun (afid, rest) ->
     Data.read rest
-    >>= fun uname ->
-    let rest = Cstruct.shift rest (Data.sizeof uname) in
+    >>= fun (uname, rest) ->
     Data.read rest
-    >>= fun aname ->
+    >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    return { fid; afid; uname; aname }
+    return ({ fid; afid; uname; aname }, rest)
 end
 
 cstruct hdr {

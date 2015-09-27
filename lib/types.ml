@@ -30,7 +30,7 @@ module Int16 = struct
   let read buf =
     big_enough_for "Int16.read" buf 2
     >>= fun () ->
-    return (Cstruct.LE.get_uint16 buf 0)
+    return (Cstruct.LE.get_uint16 buf 0, Cstruct.shift buf 2)
 
   let write t buf =
     big_enough_for "Int16.write" buf 2
@@ -47,7 +47,7 @@ module Int32 = struct
   let read buf =
     big_enough_for "Int32.read" buf 4
     >>= fun () ->
-    return (Cstruct.LE.get_uint32 buf 0)
+    return (Cstruct.LE.get_uint32 buf 0, Cstruct.shift buf 4)
 
   let write t buf =
     big_enough_for "Int32.read" buf 4
@@ -81,7 +81,9 @@ module Data = struct
       then error_msg "Buffer is too short to contain string payload"
       else return ()
     ) >>= fun () ->
-    return (Cstruct.sub rest 0 required)
+    let data = Cstruct.sub rest 0 required in
+    let rest = Cstruct.shift rest required in
+    return (data, rest)
 
   let write t buf =
     let length = Cstruct.len buf in

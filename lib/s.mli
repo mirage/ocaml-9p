@@ -23,9 +23,10 @@ module type SERIALISABLE = sig
   val sizeof: t -> int
   (** The size of a buffer needed to hold [t] *)
 
-  val read: Cstruct.t -> (t, [ `Msg of string]) result
-  (** Read a [t] from the given buffer. If the buffer cannot
-      be parsed then return an error. *)
+  val read: Cstruct.t -> (t * Cstruct.t, [ `Msg of string]) result
+  (** Read a [t] from the given buffer and return it, along with the
+      unused remainder of the buffer. If the buffer cannot
+      be parsed then return an error.*)
 
   val write: t -> Cstruct.t -> (unit, [ `Msg of string]) result
   (** Write a [t] into the given buffer. If the buffer is too small,

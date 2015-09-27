@@ -38,7 +38,7 @@ module Auth = struct
     big_enough_for "Auth.read" buf needed
     >>= fun () ->
     let aqid = Cstruct.(to_string (sub buf 0 needed)) in
-    return { aqid }
+    return ({ aqid }, Cstruct.shift buf needed)
 end
 
 module Err = struct
@@ -54,9 +54,9 @@ module Err = struct
 
   let read buf =
     Data.read buf
-    >>= fun ename ->
+    >>= fun (ename, rest) ->
     let ename = Data.to_string ename in
-    return { ename }
+    return ({ ename }, rest)
 end
 
 module Flush = struct
@@ -66,7 +66,7 @@ module Flush = struct
 
   let write t buf = return ()
 
-  let read buf = return ()
+  let read buf = return ((), buf)
 end
 
 cstruct hdr {
