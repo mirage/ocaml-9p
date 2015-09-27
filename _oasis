@@ -31,6 +31,14 @@ Library protocol_9p
   Modules:            S, Request, Error, Response, Types
   BuildDepends:       result, cstruct
 
+Document protocol_9p
+  Title:                9P docs
+  Type:                 ocamlbuild (0.3)
+  BuildTools+:          ocamldoc
+  Install:              true
+  XOCamlbuildPath:      lib
+  XOCamlbuildLibraries: protocol-9p
+
 Executable test_parse_print
   Path:               lib_test
   MainIs:             tests.ml

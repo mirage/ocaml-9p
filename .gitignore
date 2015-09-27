@@ -21,3 +21,5 @@ lib/META
 *.mlpack
 myocamlbuild.ml
 setup.ml
+*.odocl
+*.docdir
