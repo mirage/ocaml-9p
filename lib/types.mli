@@ -48,6 +48,15 @@ module Int64 : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Version : sig
+  type t with sexp
+
+  val default: t
+  val unknown: t
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Qid : sig
   type t = string with sexp (** 13 bytes long *)
 
@@ -59,7 +68,7 @@ module Tag : sig
 
   val notag: t
   (** The special tag value used during authentication *)
-  
+
   val of_int: int -> t Error.t
 
   include S.SERIALISABLE with type t := t

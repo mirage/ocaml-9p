@@ -52,7 +52,7 @@ let make_tag =
 
 let requests =
   let open Request in [
-    { tag = make_tag (); payload = Version Version.({ msize = 55l; version = "some version"}) };
+    { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.default}) };
     { tag = make_tag (); payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
     { tag = make_tag (); payload = Flush Flush.({ oldtag = 123 }) };
     { tag = make_tag (); payload = Attach Attach.({ fid = 3l; afid = 2l; uname = "who"; aname = "areyou?" })};
@@ -69,7 +69,7 @@ let requests =
 
 let responses =
   let open Response in [
-    { tag = make_tag (); payload = Version Version.({ msize = 55l; version = "some version"}) };
+    { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.unknown}) };
     { tag = make_tag (); payload = Auth Auth.({ aqid = qid }) };
     { tag = make_tag (); payload = Err Err.({ ename = "it went wrong!" })};
     { tag = make_tag (); payload = Flush Flush.( () ) };

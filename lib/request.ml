@@ -22,23 +22,21 @@ open Error
 module Version = struct
   type t = {
     msize: int32;
-    version: string;
+    version: Types.Version.t;
   } with sexp
 
-  let sizeof t = 4 + 2 + (String.length t.version)
-
+  let sizeof t = 4 + (Types.Version.sizeof t.version)
+  
   let write t rest =
     Int32.write t.msize rest
     >>= fun rest ->
-    let version = Data.of_string t.version in
-    Data.write version rest
+    Types.Version.write t.version rest
 
   let read rest =
     Int32.read rest
     >>= fun (msize, rest) ->
-    Data.read rest
+    Types.Version.read rest
     >>= fun (version, rest) ->
-    let version = Data.to_string version in
     return ({ msize; version }, rest)
 end
 

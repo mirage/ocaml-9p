@@ -95,6 +95,7 @@ module Int64 = struct
     return (Cstruct.shift buf 8)
 end
 
+
 module Qid = struct
   type t = string with sexp
 
@@ -197,6 +198,41 @@ module Data = struct
     Cstruct.LE.set_uint16 buf 0 (Cstruct.len t);
     Cstruct.blit t 0 buf 2 (Cstruct.len t);
     return (Cstruct.shift buf needed)
+end
+
+
+module Version = struct
+  type t =
+    | Unknown
+    | TwoThousand
+  with sexp
+
+  let to_string = function
+    | Unknown     -> "unknown"
+    | TwoThousand -> "9P2000"
+
+  let default = TwoThousand
+  let unknown = Unknown
+
+  let of_string x =
+    let prefix =
+      try
+        let dot = String.index x '.' in
+        String.sub x 0 (dot - 1)
+      with Not_found -> x in
+    if String.length prefix >= 2 && (String.sub prefix 0 2 = "9P")
+    then TwoThousand (* there may be future versions, but we don't know them *)
+    else Unknown
+
+  let sizeof x = 2 + (String.length (to_string x))
+
+  let read rest =
+    Data.read rest
+    >>= fun (x, rest) ->
+    return (of_string (Data.to_string x), rest)
+
+  let write t rest =
+    Data.write (Data.of_string (to_string t)) rest
 end
 
 module Stat = struct

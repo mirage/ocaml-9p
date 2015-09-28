@@ -21,8 +21,8 @@ open Result
 module Version : sig
 
   type t = {
-    msize: int32;
-    version: string;
+    msize: int32;    (** the server's maximum message size, must be less than the client's *)
+    version: Types.Version.t;
   } with sexp
   (** The payload of a version message *)
 
