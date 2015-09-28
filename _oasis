@@ -46,7 +46,7 @@ Library protocol_9p_unix
   Findlibparent:      protocol_9p
   Findlibname:        unix
   Modules:            Flow_lwt_unix
-  BuildDepends:       mirage-types.lwt, lwt, cstruct, bisect
+  BuildDepends:       mirage-types.lwt, lwt, cstruct, cstruct.lwt, bisect
 
 Executable "9p"
   Path:               src
@@ -54,7 +54,7 @@ Executable "9p"
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       protocol-9p, cmdliner, lwt, lwt.unix
+  BuildDepends:       protocol-9p, protocol-9p.unix, cmdliner, lwt, lwt.unix
 
 Executable test_parse_print
   Path:               lib_test

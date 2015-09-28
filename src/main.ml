@@ -20,6 +20,8 @@ open Lwt
 let project_url = "http://github.com/djs55/ocaml-9p"
 let version = "0.0"
 
+module Client = Client.Make(Flow_lwt_unix)
+
 let with_connection address f =
   let hostname, port =
     try
@@ -46,7 +48,13 @@ let ls address path =
   let t =
     with_connection address
       (fun s ->
-        return ()
+        let flow = Flow_lwt_unix.connect s in
+        Client.connect flow ~msize:1024l
+        >>= function
+        | Error (`Msg x) -> failwith x
+        | Ok t ->
+          Printf.fprintf stderr "Successfully negotiated a connection.\n%!";
+          return ()
       ) in
   try
     Lwt_main.run t;
