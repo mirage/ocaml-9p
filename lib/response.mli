@@ -32,7 +32,7 @@ end
 module Auth : sig
 
   type t = {
-    aqid: string; (* 13 bytes long *)
+    aqid: Qid.t;
   } with sexp
   (** The payload of an authentication response *)
 

@@ -68,7 +68,20 @@ module Fid : sig
 end
 
 module Qid : sig
-  type t = string with sexp (** 13 bytes long *)
+  type flag =
+    | Directory  (** file is a directory *)
+    | AppendOnly (** writes always hit the end of the file *)
+    | Exclusive  (** file is opened for exclusive use *)
+    | Temporary  (** file is temporary and won't be backed up *)
+  with sexp
+
+  type t = {
+   flags: flag list;
+   version: int32;
+   id: int64;
+  } with sexp
+  (** The server's unique id for the file. Two files are the same
+      if and only if the Qids are the same. *)
 
   include S.SERIALISABLE with type t := t
 end

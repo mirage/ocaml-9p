@@ -103,7 +103,7 @@ module Fid = struct
   let of_int32 x =
     if x = nofid
     then error_msg "%ld is an invalid fid (it is defined to be NOFID in the spec)" x
-    else Ok x
+    else Result.Ok x
 
   let sizeof _ = 4
 
@@ -112,23 +112,48 @@ module Fid = struct
 end
 
 module Qid = struct
-  type t = string with sexp
+  type flag = Directory | AppendOnly | Exclusive | Temporary with sexp
+
+  type t = {
+   flags: flag list;
+   version: int32;
+   id: int64;
+  } with sexp
+
+  let flags = [
+    Directory,  0x80;
+    AppendOnly, 0x40;
+    Exclusive,  0x20;
+    Temporary,  0x04
+  ]
+  let flags' = List.map (fun (x, y) -> y, x) flags
 
   let needed = 13
 
   let sizeof _ = needed
 
-  let write t buf =
-    big_enough_for "Qid.write" buf needed
+  let write t rest =
+    big_enough_for "Qid.write" rest needed
     >>= fun () ->
-    Cstruct.blit_from_string t 0 buf 0 needed;
-    return (Cstruct.shift buf needed)
+    let ty = List.fold_left (lor) 0 (List.map (fun x -> List.assoc x flags) t.flags) in
+    Int8.write ty rest
+    >>= fun rest ->
+    Int32.write t.version rest
+    >>= fun rest ->
+    Int64.write t.id rest
 
-  let read buf =
-    big_enough_for "Qid.read" buf needed
+  let read rest =
+    big_enough_for "Qid.read" rest needed
     >>= fun () ->
-    let qid = Cstruct.(to_string (sub buf 0 needed)) in
-    return (qid, Cstruct.shift buf needed)
+    Int8.read rest
+    >>= fun (ty, rest) ->
+    let flags = List.map snd (List.filter (fun (bit, flag) -> ty land bit <> 0) flags') in
+    Int32.read rest
+    >>= fun (version, rest) ->
+    Int64.read rest
+    >>= fun (id, rest) ->
+    let qid = { flags; version; id } in
+    return (qid, rest)
 
 end
 

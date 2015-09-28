@@ -25,7 +25,11 @@ let example_data =
   done;
   data
 
-let qid = "1234567890123"
+let qid = {
+  Types.Qid.flags = [ Types.Qid.Directory ];
+  id = 5L;
+  version = 4l;
+}
 
 let stat = Types.Stat.({
   ty = 1;
