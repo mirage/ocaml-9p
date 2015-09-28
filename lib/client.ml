@@ -69,29 +69,50 @@ module Make(FLOW: V1_LWT.FLOW) = struct
     Cstruct.blit length_buffer 0 buffer 0 (Cstruct.len length_buffer);
     Cstruct.blit packet_buffer 0 buffer (Cstruct.len length_buffer) (Cstruct.len packet_buffer);
     Lwt.return (Ok buffer)
+    >>*= fun buffer ->
+    Lwt.return (Response.read buffer)
+    >>*= fun (response, _) ->
+    Lwt.return (Ok response)
 
-  let connect flow ~msize =
-    let client_version = {
-      Request.tag = Types.Tag.notag;
-      payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
-    } in
-    let sizeof = Request.sizeof client_version in
+  let send_one_packet flow request =
+    let sizeof = Request.sizeof request in
     let buffer = Cstruct.create sizeof in
-    Lwt.return (Request.write client_version buffer)
+    Lwt.return (Request.write request buffer)
     >>*= fun _ ->
     FLOW.write flow buffer
     >>|= fun () ->
+    Lwt.return (Ok ())
+
+  let connect flow ?(msize = 1024l) ?(uname = "nobody") ?(aname = "/") () =
+    send_one_packet flow {
+      Request.tag = Types.Tag.notag;
+      payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
+    } >>*= fun () ->
 
     let t = { flow; msize; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
-    >>*= fun buffer ->
-    Lwt.return (Response.read buffer)
-    >>*= fun (response, _) ->
+    >>*= fun response ->
     match response with
     | { Response.payload = Response.Version { Response.Version.msize; version }} when version = Types.Version.default ->
       let msize = min t.msize msize in
-      Lwt.return (Ok { t with msize })
+      let t = { t with msize } in
+
+      let fid = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
+      let afid = Types.Fid.nofid in
+      send_one_packet flow {
+        Request.tag = Types.Tag.notag;
+        payload = Request.Attach Request.Attach.({ fid; afid; uname; aname })
+      } >>*= fun () ->
+      read_one_packet t
+      >>*= fun response ->
+      begin match response with
+      | { Response.payload = Response.Attach { Response.Attach.qid } } ->
+        Printf.fprintf stderr "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
+        Lwt.return (Ok { t with msize })
+      | _ ->
+        Lwt.return (error_msg "Server sent unexpected attach reply: %s" (Response.to_string response))
+      end
     | _ ->
       Lwt.return (error_msg "Server sent unexpected version reply: %s" (Response.to_string response))
 end

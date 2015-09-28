@@ -49,7 +49,7 @@ let ls address path =
     with_connection address
       (fun s ->
         let flow = Flow_lwt_unix.connect s in
-        Client.connect flow ~msize:1024l
+        Client.connect flow ()
         >>= function
         | Error (`Msg x) -> failwith x
         | Ok t ->
