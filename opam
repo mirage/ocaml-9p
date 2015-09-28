@@ -24,6 +24,8 @@ depends: [
   "cstruct"
   "sexplib"
   "result"
+  "mirage-types-lwt"
+  "lwt"
   "bisect"
   "ocamlfind" {build}
   "oasis" {build}

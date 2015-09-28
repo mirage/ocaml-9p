@@ -28,8 +28,8 @@ Library protocol_9p
   CompiledObject:     best
   Path:               lib
   Findlibname:        protocol-9p
-  Modules:            S, Request, Error, Response, Types
-  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, bisect
+  Modules:            S, Request, Error, Response, Types, Client
+  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, bisect
 
 Document protocol_9p
   Title:                9P docs
