@@ -45,7 +45,7 @@ Executable "9p"
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       protocol-9p, cmdliner
+  BuildDepends:       protocol-9p, cmdliner, lwt, lwt.unix
 
 Executable test_parse_print
   Path:               lib_test

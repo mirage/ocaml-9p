@@ -15,13 +15,44 @@
  *
  *)
 open Protocol_9p
+open Lwt
 
 let project_url = "http://github.com/djs55/ocaml-9p"
 let version = "0.0"
 
+let with_connection address f =
+  let hostname, port =
+    try
+      let colon = String.index address ':' in
+      String.sub address 0 colon, String.sub address (colon + 1) (String.length address - colon - 1)
+    with Not_found ->
+      address, "5640" in
+  Printf.fprintf stderr "Connecting to %s port %s\n%!" hostname port;
+  let port = int_of_string port in
+  Lwt_unix.gethostbyname hostname
+  >>= fun h ->
+  ( if Array.length h.Lwt_unix.h_addr_list = 0
+    then fail (Failure (Printf.sprintf "gethostbyname returned 0 addresses for '%s'" hostname))
+    else return h.Lwt_unix.h_addr_list.(0)
+  ) >>= fun inet_addr ->
+  let s = Lwt_unix.socket h.Lwt_unix.h_addrtype Lwt_unix.SOCK_STREAM 0 in
+  Lwt_unix.connect s (Lwt_unix.ADDR_INET(inet_addr, port))
+  >>= fun () ->
+  Lwt.catch
+    (fun () -> f s >>= fun r -> Lwt_unix.close s >>= fun () -> return r)
+    (fun e -> Lwt_unix.close s >>= fun () -> fail e)
+
 let ls address path =
-  Printf.fprintf stderr "OK\n%!";
-  `Ok ()
+  let t =
+    with_connection address
+      (fun s ->
+        return ()
+      ) in
+  try
+    Lwt_main.run t;
+    `Ok ()
+  with e ->
+    `Error(false, Printexc.to_string e)
 
 open Cmdliner
 
