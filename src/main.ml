@@ -44,12 +44,12 @@ let with_connection address f =
     (fun () -> f s >>= fun r -> Lwt_unix.close s >>= fun () -> return r)
     (fun e -> Lwt_unix.close s >>= fun () -> fail e)
 
-let ls address path =
+let ls address path username =
   let t =
     with_connection address
       (fun s ->
         let flow = Flow_lwt_unix.connect s in
-        Client.connect flow ()
+        Client.connect flow ?username ()
         >>= function
         | Error (`Msg x) -> failwith x
         | Ok t ->
@@ -79,13 +79,17 @@ let path =
   let doc = "Path on the 9P fileserver" in
   Arg.(value & pos 0 string "/" & info [] ~doc)
 
+let username =
+  let doc = "Username to present to the 9P fileserver" in
+  Arg.(value & opt (some string) None & info [ "username"; "u" ] ~doc)
+
 let ls_cmd =
   let doc = "Read a directory" in
   let man = [
     `S "DESCRIPTION";
     `P "List the contents of a directory on the fileserver."
   ] @ help in
-  Term.(ret(pure ls $ address $ path)),
+  Term.(ret(pure ls $ address $ path $ username)),
   Term.info "ls" ~doc ~man
 
 let default_cmd =

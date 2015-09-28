@@ -83,7 +83,7 @@ module Make(FLOW: V1_LWT.FLOW) = struct
     >>|= fun () ->
     Lwt.return (Ok ())
 
-  let connect flow ?(msize = 1024l) ?(uname = "nobody") ?(aname = "/") () =
+  let connect flow ?(msize = 1024l) ?(username = "nobody") ?(aname = "/") () =
     send_one_packet flow {
       Request.tag = Types.Tag.notag;
       payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
@@ -98,11 +98,12 @@ module Make(FLOW: V1_LWT.FLOW) = struct
       let msize = min t.msize msize in
       let t = { t with msize } in
 
+      let tag = match Types.Tag.of_int 0 with Ok x -> x | _ -> assert false in
       let fid = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
       let afid = Types.Fid.nofid in
       send_one_packet flow {
-        Request.tag = Types.Tag.notag;
-        payload = Request.Attach Request.Attach.({ fid; afid; uname; aname })
+        Request.tag;
+        payload = Request.Attach Request.Attach.({ fid; afid; uname = username; aname })
       } >>*= fun () ->
       read_one_packet t
       >>*= fun response ->
