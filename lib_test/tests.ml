@@ -50,21 +50,30 @@ let make_tag =
     | Ok x -> x
     | Error _ -> failwith "Test program ran out of tags!"
 
+let make_fid =
+  let next = ref 0l in
+  fun () ->
+    let this = !next in
+    next := Int32.succ !next;
+    match Types.Fid.of_int32 this with
+    | Ok x -> x
+    | Error _ -> failwith "Test program ran out of fids!"
+
 let requests =
   let open Request in [
     { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.default}) };
-    { tag = make_tag (); payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
+    { tag = make_tag (); payload = Auth Auth.({ afid = make_fid (); uname = "hello"; aname = "there" }) };
     { tag = make_tag (); payload = Flush Flush.({ oldtag = 123 }) };
-    { tag = make_tag (); payload = Attach Attach.({ fid = 3l; afid = 2l; uname = "who"; aname = "areyou?" })};
-    { tag = make_tag (); payload = Walk Walk.( { fid = 4l; newfid = 5l; wnames = [ "one"; "two"; "three" ]})};
-    { tag = make_tag (); payload = Open Open.( { fid = 6l; mode = 123 })};
-    { tag = make_tag (); payload = Create Create.( { fid = 7l; name = "woohoo"; perm = 44l; mode = 101 })};
-    { tag = make_tag (); payload = Read Read.( { fid = 8l; offset = 123456L; count = 123l })};
-    { tag = make_tag (); payload = Write Write.( { fid = 9l; offset = 98765L; data = example_data })};
-    { tag = make_tag (); payload = Clunk Clunk.( { fid = 10l })};
-    { tag = make_tag (); payload = Remove Remove.( { fid = 11l })};
-    { tag = make_tag (); payload = Stat Stat.( { fid = 12l })};
-    { tag = make_tag (); payload = Wstat Wstat.( { fid = 13l; stat })};
+    { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?" })};
+    { tag = make_tag (); payload = Walk Walk.( { fid = make_fid (); newfid = make_fid (); wnames = [ "one"; "two"; "three" ]})};
+    { tag = make_tag (); payload = Open Open.( { fid = make_fid (); mode = 123 })};
+    { tag = make_tag (); payload = Create Create.( { fid = make_fid (); name = "woohoo"; perm = 44l; mode = 101 })};
+    { tag = make_tag (); payload = Read Read.( { fid = make_fid (); offset = 123456L; count = 123l })};
+    { tag = make_tag (); payload = Write Write.( { fid = make_fid (); offset = 98765L; data = example_data })};
+    { tag = make_tag (); payload = Clunk Clunk.( { fid = make_fid () })};
+    { tag = make_tag (); payload = Remove Remove.( { fid = make_fid () })};
+    { tag = make_tag (); payload = Stat Stat.( { fid = make_fid () })};
+    { tag = make_tag (); payload = Wstat Wstat.( { fid = make_fid (); stat })};
   ]
 
 let responses =

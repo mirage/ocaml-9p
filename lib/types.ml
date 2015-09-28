@@ -95,6 +95,21 @@ module Int64 = struct
     return (Cstruct.shift buf 8)
 end
 
+module Fid = struct
+  type t = int32 with sexp
+
+  let nofid = 0xffffffffl
+
+  let of_int32 x =
+    if x = nofid
+    then error_msg "%ld is an invalid fid (it is defined to be NOFID in the spec)" x
+    else Ok x
+
+  let sizeof _ = 4
+
+  let read = Int32.read
+  let write = Int32.write
+end
 
 module Qid = struct
   type t = string with sexp

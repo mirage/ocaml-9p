@@ -31,7 +31,7 @@ end
 module Auth : sig
 
   type t = {
-    afid: int32;
+    afid: Types.Fid.t;
     uname: string;
     aname: string;
   } with sexp
@@ -53,8 +53,8 @@ end
 module Attach : sig
 
   type t = {
-    fid: int32;
-    afid: int32;
+    fid: Types.Fid.t;
+    afid: Types.Fid.t;
     uname: string;
     aname: string;
   } with sexp
@@ -66,8 +66,8 @@ end
 module Walk : sig
 
   type t = {
-    fid: int32;
-    newfid: int32;
+    fid: Types.Fid.t;
+    newfid: Types.Fid.t;
     wnames: string list;
   } with sexp
   (** The payload of a walk message *)
@@ -77,7 +77,7 @@ end
 
 module Open : sig
   type t = {
-    fid: int32;
+    fid: Types.Fid.t;
     mode: int;
   } with sexp
   (** The payload of an Open message *)
@@ -87,7 +87,7 @@ end
 
 module Create : sig
   type t = {
-    fid: int32;
+    fid: Types.Fid.t;
     name: string;
     perm: int32;
     mode: int
@@ -99,7 +99,7 @@ end
 
 module Read : sig
   type t = {
-    fid: int32;
+    fid: Types.Fid.t;
     offset: int64;
     count: int32;
   } with sexp
@@ -110,7 +110,7 @@ end
 
 module Write : sig
   type t = {
-    fid: int32;
+    fid: Types.Fid.t;
     offset: int64;
     data: Cstruct.t;
   } with sexp
@@ -120,7 +120,7 @@ end
 
 module Clunk : sig
   type t = {
-    fid: int32
+    fid: Types.Fid.t
   } with sexp
 
   include S.SERIALISABLE with type t := t
@@ -128,7 +128,7 @@ end
 
 module Remove : sig
   type t = {
-    fid: int32
+    fid: Types.Fid.t
   } with sexp
 
   include S.SERIALISABLE with type t := t
@@ -136,7 +136,7 @@ end
 
 module Stat : sig
   type t = {
-    fid: int32
+    fid: Types.Fid.t
   } with sexp
 
   include S.SERIALISABLE with type t := t
@@ -144,7 +144,7 @@ end
 
 module Wstat : sig
   type t = {
-    fid: int32;
+    fid: Types.Fid.t;
     stat: Types.Stat.t;
   } with sexp
 

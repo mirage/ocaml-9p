@@ -57,6 +57,16 @@ module Version : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Fid : sig
+  type t with sexp
+
+  val nofid: t
+
+  val of_int32: int32 -> t Error.t
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Qid : sig
   type t = string with sexp (** 13 bytes long *)
 

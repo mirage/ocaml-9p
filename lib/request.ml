@@ -43,15 +43,15 @@ end
 module Auth = struct
 
   type t = {
-    afid: int32;
+    afid: Fid.t;
     uname: string;
     aname: string;
   } with sexp
 
-  let sizeof t = 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+  let sizeof t = (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
 
   let write t rest =
-    Int32.write t.afid rest
+    Fid.write t.afid rest
     >>= fun rest ->
     let uname = Data.of_string t.uname in
     Data.write uname rest
@@ -60,7 +60,7 @@ module Auth = struct
     Data.write aname rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (afid, rest) ->
     Data.read rest
     >>= fun (uname, rest) ->
@@ -89,18 +89,18 @@ end
 
 module Attach = struct
   type t = {
-    fid: int32;
-    afid: int32;
+    fid: Fid.t;
+    afid: Fid.t;
     uname: string;
     aname: string;
   } with sexp
 
-  let sizeof t = 4 + 4 + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+  let sizeof t = (Fid.sizeof t.fid) + (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
-    Int32.write t.afid rest
+    Fid.write t.afid rest
     >>= fun rest ->
     let uname = Data.of_string t.uname in
     Data.write uname rest
@@ -109,9 +109,9 @@ module Attach = struct
     Data.write aname rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
-    Int32.read rest
+    Fid.read rest
     >>= fun (afid, rest) ->
     Data.read rest
     >>= fun (uname, rest) ->
@@ -125,17 +125,17 @@ end
 module Walk = struct
 
   type t = {
-    fid: int32;
-    newfid: int32;
+    fid: Fid.t;
+    newfid: Fid.t;
     wnames: string list;
   } with sexp
 
-  let sizeof t = 4 + 4 + 2 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
+  let sizeof t = (Fid.sizeof t.fid) + (Fid.sizeof t.newfid) + 2 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
-    Int32.write t.newfid rest
+    Fid.write t.newfid rest
     >>= fun rest ->
     Int16.write (List.length t.wnames) rest
     >>= fun rest ->
@@ -149,9 +149,9 @@ module Walk = struct
     loop rest t.wnames
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
-    Int32.read rest
+    Fid.read rest
     >>= fun (newfid, rest) ->
     Int16.read rest
     >>= fun (length, rest) ->
@@ -169,19 +169,19 @@ end
 
 module Open = struct
   type t = {
-    fid: int32;
+    fid: Fid.t;
     mode: int;
   } with sexp
 
   let sizeof _ = 5
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
     Int8.write t.mode rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
     Int8.read rest
     >>= fun (mode, rest) ->
@@ -190,16 +190,16 @@ end
 
 module Create = struct
   type t = {
-    fid: int32;
+    fid: Fid.t;
     name: string;
     perm: int32;
     mode: int
   } with sexp
 
-  let sizeof t = 4 + 2 + (String.length t.name) + 4 + 1
+  let sizeof t = (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
     let name = Data.of_string t.name in
     Data.write name rest
@@ -209,7 +209,7 @@ module Create = struct
     Int8.write t.mode rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
     Data.read rest
     >>= fun (name, rest) ->
@@ -223,22 +223,22 @@ end
 
 module Read = struct
   type t = {
-    fid: int32;
+    fid: Fid.t;
     offset: int64;
     count: int32;
   } with sexp
 
-  let sizeof _ = 4 + 8 + 4
+  let sizeof t = (Fid.sizeof t.fid) + 8 + 4
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
     Int64.write t.offset rest
     >>= fun rest ->
     Int32.write t.count rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
     Int64.read rest
     >>= fun (offset, rest) ->
@@ -250,15 +250,15 @@ end
 
 module Write = struct
   type t = {
-    fid: int32;
+    fid: Fid.t;
     offset: int64;
     data: Cstruct.t;
   } with sexp
 
-  let sizeof t = 4 + 8 + 4 + (Cstruct.len t.data)
+  let sizeof t = (Fid.sizeof t.fid) + 8 + 4 + (Cstruct.len t.data)
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
     Int64.write t.offset rest
     >>= fun rest ->
@@ -272,7 +272,7 @@ module Write = struct
     return rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
     Int64.read rest
     >>= fun (offset, rest) ->
@@ -288,15 +288,15 @@ end
 
 module Clunk = struct
   type t = {
-    fid: int32
+    fid: Fid.t
   } with sexp
 
-  let sizeof _ = 4
+  let sizeof t = Fid.sizeof t.fid
 
-  let write t rest = Int32.write t.fid rest
+  let write t rest = Fid.write t.fid rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
     return ( { fid }, rest )
 end
@@ -307,19 +307,19 @@ module Stat = Clunk
 
 module Wstat = struct
   type t = {
-    fid: int32;
+    fid: Fid.t;
     stat: Types.Stat.t;
   } with sexp
 
-  let sizeof t = 4 + (Types.Stat.sizeof t.stat)
+  let sizeof t = (Fid.sizeof t.fid) + (Types.Stat.sizeof t.stat)
 
   let write t rest =
-    Int32.write t.fid rest
+    Fid.write t.fid rest
     >>= fun rest ->
     Types.Stat.write t.stat rest
 
   let read rest =
-    Int32.read rest
+    Fid.read rest
     >>= fun (fid, rest) ->
     Types.Stat.read rest
     >>= fun (stat, rest) ->
