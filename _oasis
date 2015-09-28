@@ -39,6 +39,15 @@ Document protocol_9p
   XOCamlbuildPath:      lib
   XOCamlbuildLibraries: protocol-9p
 
+Library protocol_9p_unix
+  Pack:               false
+  CompiledObject:     best
+  Path:               unix
+  Findlibparent:      protocol_9p
+  Findlibname:        unix
+  Modules:            Flow_lwt_unix
+  BuildDepends:       mirage-types.lwt, lwt, cstruct, bisect
+
 Executable "9p"
   Path:               src
   MainIs:             main.ml
