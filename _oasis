@@ -39,6 +39,14 @@ Document protocol_9p
   XOCamlbuildPath:      lib
   XOCamlbuildLibraries: protocol-9p
 
+Executable "9p"
+  Path:               src
+  MainIs:             main.ml
+  Custom:             true
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       protocol-9p, cmdliner
+
 Executable test_parse_print
   Path:               lib_test
   MainIs:             tests.ml
