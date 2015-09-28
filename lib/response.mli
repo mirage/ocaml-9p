@@ -160,7 +160,7 @@ type payload =
 with sexp
 
 type t = {
-  tag: int;
+  tag: Types.Tag.t;
   payload: payload;
 } with sexp
 

@@ -116,6 +116,39 @@ module Qid = struct
 
 end
 
+module Tag = struct
+  type t = int option with sexp
+
+  let of_int x =
+    if x >= 0xffff || x < 0
+    then error_msg "Valid tags must be between 0 <= tag < 0xffff (not %d)" x
+    else return (Some x)
+
+  let notag = None
+
+  let needed = 2
+
+  let sizeof _ = needed
+
+  let write t buf =
+    big_enough_for "Tag.write" buf needed
+    >>= fun () ->
+    let x = match t with
+      | None -> 0xffff
+      | Some x -> x in
+    Cstruct.LE.set_uint16 buf 0 x;
+    return (Cstruct.shift buf needed)
+
+  let read buf =
+    big_enough_for "Tag.read" buf needed
+    >>= fun () ->
+    let x = match Cstruct.LE.get_uint16 buf 0 with
+      | 0xffff -> None
+      | x -> Some x in
+    return (x, Cstruct.shift buf needed)
+
+end
+
 module Data = struct
   type t = Cstruct.t
 

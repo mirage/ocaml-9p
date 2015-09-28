@@ -248,7 +248,7 @@ type payload =
 with sexp
 
 type t = {
-  tag: int;
+  tag: Types.Tag.t;
   payload: payload;
 } with sexp
 
@@ -292,7 +292,7 @@ let write t rest =
   >>= fun rest ->
   Int8.write ty rest
   >>= fun rest ->
-  Int16.write t.tag rest
+  Tag.write t.tag rest
   >>= fun rest ->
   match t.payload with
     | Version x -> Version.write x rest
@@ -315,7 +315,7 @@ let read rest =
   >>= fun (len, rest) ->
   Int8.read rest
   >>= fun (ty, rest) ->
-  Int16.read rest
+  Tag.read rest
   >>= fun (tag, rest) ->
   ( match ty with
     | 101 -> Version.read rest >>= fun (x, rest) -> return ((Version x), rest)

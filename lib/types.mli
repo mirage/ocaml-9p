@@ -54,6 +54,17 @@ module Qid : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Tag : sig
+  type t with sexp
+
+  val notag: t
+  (** The special tag value used during authentication *)
+  
+  val of_int: int -> t Error.t
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Data : sig
   type t = Cstruct.t with sexp
   (** A length-prefixed chunk of data which may include embedded NULLs, or may be

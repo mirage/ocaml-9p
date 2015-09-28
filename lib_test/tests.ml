@@ -41,39 +41,48 @@ let stat = Types.Stat.({
   muid = "muid";
   })
 
+let make_tag =
+  let next = ref 0 in
+  fun () ->
+    let this = !next in
+    incr next;
+    match Types.Tag.of_int this with
+    | Ok x -> x
+    | Error _ -> failwith "Test program ran out of tags!"
+
 let requests =
   let open Request in [
-    { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) };
-    { tag = 12; payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
-    { tag = 13; payload = Flush Flush.({ oldtag = 123 }) };
-    { tag = 14; payload = Attach Attach.({ fid = 3l; afid = 2l; uname = "who"; aname = "areyou?" })};
-    { tag = 15; payload = Walk Walk.( { fid = 4l; newfid = 5l; wnames = [ "one"; "two"; "three" ]})};
-    { tag = 16; payload = Open Open.( { fid = 6l; mode = 123 })};
-    { tag = 17; payload = Create Create.( { fid = 7l; name = "woohoo"; perm = 44l; mode = 101 })};
-    { tag = 18; payload = Read Read.( { fid = 8l; offset = 123456L; count = 123l })};
-    { tag = 19; payload = Write Write.( { fid = 9l; offset = 98765L; data = example_data })};
-    { tag = 20; payload = Clunk Clunk.( { fid = 10l })};
-    { tag = 21; payload = Remove Remove.( { fid = 11l })};
-    { tag = 22; payload = Stat Stat.( { fid = 12l })};
-    { tag = 23; payload = Wstat Wstat.( { fid = 13l; stat })};
+    { tag = make_tag (); payload = Version Version.({ msize = 55l; version = "some version"}) };
+    { tag = make_tag (); payload = Auth Auth.({ afid = 1l; uname = "hello"; aname = "there" }) };
+    { tag = make_tag (); payload = Flush Flush.({ oldtag = 123 }) };
+    { tag = make_tag (); payload = Attach Attach.({ fid = 3l; afid = 2l; uname = "who"; aname = "areyou?" })};
+    { tag = make_tag (); payload = Walk Walk.( { fid = 4l; newfid = 5l; wnames = [ "one"; "two"; "three" ]})};
+    { tag = make_tag (); payload = Open Open.( { fid = 6l; mode = 123 })};
+    { tag = make_tag (); payload = Create Create.( { fid = 7l; name = "woohoo"; perm = 44l; mode = 101 })};
+    { tag = make_tag (); payload = Read Read.( { fid = 8l; offset = 123456L; count = 123l })};
+    { tag = make_tag (); payload = Write Write.( { fid = 9l; offset = 98765L; data = example_data })};
+    { tag = make_tag (); payload = Clunk Clunk.( { fid = 10l })};
+    { tag = make_tag (); payload = Remove Remove.( { fid = 11l })};
+    { tag = make_tag (); payload = Stat Stat.( { fid = 12l })};
+    { tag = make_tag (); payload = Wstat Wstat.( { fid = 13l; stat })};
   ]
 
 let responses =
   let open Response in [
-    { tag = 11; payload = Version Version.({ msize = 55l; version = "some version"}) };
-    { tag = 12; payload = Auth Auth.({ aqid = qid }) };
-    { tag = 10; payload = Err Err.({ ename = "it went wrong!" })};
-    { tag = 13; payload = Flush Flush.( () ) };
-    { tag = 14; payload = Attach Attach.({ qid })};
-    { tag = 15; payload = Walk Walk.( { wqids = [ qid; qid ] })};
-    { tag = 16; payload = Open Open.( { qid; iounit = 2l })};
-    { tag = 17; payload = Create Create.( { qid; iounit = 3l; })};
-    { tag = 18; payload = Read Read.( { data = example_data })};
-    { tag = 19; payload = Write Write.( { count = 7l })};
-    { tag = 20; payload = Clunk Clunk.( () )};
-    { tag = 21; payload = Remove Remove.( () )};
-    { tag = 22; payload = Stat Stat.( { stat })};
-    { tag = 23; payload = Wstat Wstat.( () )};
+    { tag = make_tag (); payload = Version Version.({ msize = 55l; version = "some version"}) };
+    { tag = make_tag (); payload = Auth Auth.({ aqid = qid }) };
+    { tag = make_tag (); payload = Err Err.({ ename = "it went wrong!" })};
+    { tag = make_tag (); payload = Flush Flush.( () ) };
+    { tag = make_tag (); payload = Attach Attach.({ qid })};
+    { tag = make_tag (); payload = Walk Walk.( { wqids = [ qid; qid ] })};
+    { tag = make_tag (); payload = Open Open.( { qid; iounit = 2l })};
+    { tag = make_tag (); payload = Create Create.( { qid; iounit = 3l; })};
+    { tag = make_tag (); payload = Read Read.( { data = example_data })};
+    { tag = make_tag (); payload = Write Write.( { count = 7l })};
+    { tag = make_tag (); payload = Clunk Clunk.( () )};
+    { tag = make_tag (); payload = Remove Remove.( () )};
+    { tag = make_tag (); payload = Stat Stat.( { stat })};
+    { tag = make_tag (); payload = Wstat Wstat.( () )};
   ]
 
 let expect_ok = function
