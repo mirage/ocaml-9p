@@ -59,7 +59,9 @@ let ls address path =
   try
     Lwt_main.run t;
     `Ok ()
-  with e ->
+  with Failure e ->
+    `Error(false, e)
+  | e ->
     `Error(false, Printexc.to_string e)
 
 open Cmdliner

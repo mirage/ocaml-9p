@@ -110,9 +110,13 @@ module Make(FLOW: V1_LWT.FLOW) = struct
       | { Response.payload = Response.Attach { Response.Attach.qid } } ->
         Printf.fprintf stderr "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
         Lwt.return (Ok { t with msize })
+      | { Response.payload = Response.Err { Response.Err.ename } } ->
+        Lwt.return (Error (`Msg ename))
       | _ ->
         Lwt.return (error_msg "Server sent unexpected attach reply: %s" (Response.to_string response))
       end
+    | { Response.payload = Response.Err { Response.Err.ename } } ->
+      Lwt.return (Error (`Msg ename))
     | _ ->
       Lwt.return (error_msg "Server sent unexpected version reply: %s" (Response.to_string response))
 end
