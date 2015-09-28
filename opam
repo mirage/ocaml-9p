@@ -26,6 +26,7 @@ depends: [
   "result"
   "mirage-types-lwt"
   "lwt"
+  "cmdliner"
   "bisect"
   "ocamlfind" {build}
   "oasis" {build}
