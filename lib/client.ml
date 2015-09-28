@@ -62,7 +62,7 @@ module Make(FLOW: V1_LWT.FLOW) = struct
     read_exactly t 4
     >>*= fun length_buffer ->
     let length = Cstruct.LE.get_uint32 length_buffer 0 in
-    read_exactly t (Int32.to_int length)
+    read_exactly t (Int32.to_int length - 4)
     >>*= fun packet_buffer ->
     (* XXX: remove this data copy *)
     let buffer = Cstruct.create (Cstruct.len length_buffer + (Cstruct.len packet_buffer)) in
