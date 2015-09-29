@@ -29,7 +29,7 @@ Library protocol_9p
   Path:               lib
   Findlibname:        protocol-9p
   Modules:            S, Request, Error, Response, Types, Client
-  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, bisect
+  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, stringext, bisect
 
 Document protocol_9p
   Title:                9P docs

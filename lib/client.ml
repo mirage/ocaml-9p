@@ -205,7 +205,29 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | response -> return_error response
   end
 
+  let read t path offset count =
+    let open LowLevel in
+    let fid = t.root in
+    let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
+    let wnames = path in
+    walk t fid newfid wnames
+    >>*= fun _ -> (* I don't need to know the qids *)
+    openfid t newfid Types.Mode.Read
+    >>*= fun _ ->
+    let rec loop acc offset remaining =
+      let to_request = min remaining t.maximum_payload in
+      read t t.root offset to_request
+      >>*= fun { Response.Read.data } ->
+      let n = Cstruct.len data in
+      if n = 0
+      then Lwt.return (Ok (List.rev acc))
+      else
+        loop (data :: acc) Int64.(add offset (of_int n)) Int32.(sub remaining (of_int n)) in
+    loop [] offset count
+
   module KV_RO = struct
+    open Lwt
+
     type 'a io = 'a Lwt.t
 
     type t = connection
@@ -217,7 +239,17 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     type page_aligned_buffer = Cstruct.t
 
-    let read t key offset length = Lwt.return (`Error (Unknown_key key))
+    let parse_path x = Stringext.split x ~on:'/'
+
+    let read t key offset length =
+      let path = parse_path key in
+      let offset = Int64.of_int offset in
+      let count = Int32.of_int length in
+      read t path offset count
+      >>= function
+      | Ok bufs -> return (`Ok bufs)
+      | _ -> return (`Error (Unknown_key key))
+
     let size t key = Lwt.return (`Error (Unknown_key key))
 
     let disconnect t = failwith "disconnect: unimplemented"
