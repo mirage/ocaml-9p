@@ -54,5 +54,10 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
     (** [clunk t fid] informs the server that the reference [fid] should be
         forgotten about. When this call returns, it is safe for the client to
         re-use the fid. *)
+
+    val remove: t -> Types.Fid.t -> Response.Remove.t Error.t Lwt.t
+    (** [remove t fid] removes the file associated with [fid] from the file
+        server. The server will "clunk" the fid whether the call succeeds or
+        fails. *)
   end
 end

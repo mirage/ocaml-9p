@@ -189,6 +189,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= function
       | Response.Clunk x -> Lwt.return (Ok x)
       | response -> return_error response
+
+    let remove t fid =
+      rpc t Request.(Remove { Remove.fid })
+      >>*= function
+      | Response.Remove x -> Lwt.return (Ok x)
+      | response -> return_error response
   end
 
   let readdir t path =
