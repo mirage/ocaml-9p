@@ -219,10 +219,13 @@ module Create = struct
     fid: Fid.t;
     name: string;
     perm: int32;
-    mode: OpenMode.t
+    mode: OpenMode.t;
+    extension: string option;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
+  let sizeof t =
+    (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
+    + (match t.extension with Some x -> 2 + (String.length x) | None -> 0)
 
   let write t rest =
     Fid.write t.fid rest
@@ -233,6 +236,10 @@ module Create = struct
     Int32.write t.perm rest
     >>= fun rest ->
     OpenMode.write t.mode rest
+    >>= fun rest ->
+    match t.extension with
+    | None -> return rest
+    | Some x -> Data.(write (of_string x) rest)
 
   let read rest =
     Fid.read rest
@@ -244,7 +251,12 @@ module Create = struct
     OpenMode.read rest
     >>= fun (mode, rest) ->
     let name = Data.to_string name in
-    return ({ fid; name; perm; mode}, rest)
+    if Cstruct.len rest = 0
+    then return ({ fid; name; perm; mode; extension = None}, rest)
+    else
+      Data.read rest
+      >>= fun (x, rest) ->
+      return ({ fid; name; perm; mode; extension = Some (Data.to_string x)}, rest)
 end
 
 module Read = struct

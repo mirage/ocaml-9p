@@ -95,7 +95,8 @@ module Create : sig
     fid: Types.Fid.t;
     name: string;
     perm: int32;
-    mode: Types.OpenMode.t; 
+    mode: Types.OpenMode.t;
+    extension: string option; (** 9P2000.u: a symlink target, or a device description e.g. "b 1 2" *)
   } with sexp
   (** The payload of a Create message *)
 
