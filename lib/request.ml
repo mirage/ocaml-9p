@@ -73,16 +73,16 @@ end
 
 module Flush = struct
   type t = {
-    oldtag: int;
+    oldtag: Types.Tag.t;
   } with sexp
 
   let sizeof _ = 2
 
   let write t rest =
-    Int16.write t.oldtag rest
+    Types.Tag.write t.oldtag rest
 
   let read buf =
-    Int16.read buf
+    Types.Tag.read buf
     >>= fun (oldtag, rest) ->
     return ({ oldtag }, rest)
 end

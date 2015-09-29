@@ -100,6 +100,8 @@ let ls debug address path username =
             Printf.printf "%!";
             return ()
           end
+          >>= fun () ->
+          Client.disconnect t
       ) in
   try
     Lwt_main.run t;

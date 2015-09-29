@@ -28,6 +28,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     msize: int32;
     maximum_payload: int32;
     transmit_m: Lwt_mutex.t;
+    mutable please_shutdown: bool;
+    shutdown_complete_t: unit Lwt.t;
     mutable wakeners: Response.payload Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
     mutable free_fids: Types.Fid.Set.t;
@@ -152,18 +154,21 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   (* The dispatcher thread reads responses from the FLOW and wakes up
      the thread blocked in the rpc function. *)
-  let rec dispatcher_t t =
-    read_one_packet t
+  let rec dispatcher_t shutdown_complete_wakener t =
+    if t.please_shutdown then begin
+      Lwt.wakeup shutdown_complete_wakener ();
+      Lwt.return (Ok ())
+    end else read_one_packet t
     >>*= fun response ->
     let tag = response.Response.tag in
     if not(Types.Tag.Map.mem tag t.wakeners) then begin
       let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
       error "Received response with unexpected tag: %s" pretty_printed;
-      dispatcher_t t
+      dispatcher_t shutdown_complete_wakener t
     end else begin
       let wakener = Types.Tag.Map.find tag t.wakeners in
       Lwt.wakeup_later wakener response.Response.payload;
-      dispatcher_t t
+      dispatcher_t shutdown_complete_wakener t
     end
 
   let return_error = function
@@ -173,6 +178,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       Lwt.return (error_msg "Server sent unexpected reply: %s" (Sexplib.Sexp.to_string (Response.sexp_of_payload  payload)))
 
   module LowLevel = struct
+
+    let flush t oldtag =
+      rpc t Request.(Flush { Flush.oldtag })
+      >>*= function
+      | Response.Flush x -> Lwt.return (Ok x)
+      | response -> return_error response
 
     let walk t fid newfid wnames =
       rpc t Request.(Walk { Walk.fid; newfid; wnames })
@@ -273,6 +284,16 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt.return (Ok stat)
       )
 
+  let disconnect t =
+    let open Lwt in
+    (* Mark the connection as shutting down, so the dispatcher will quit *)
+    t.please_shutdown <- true;
+    (* Send a request, to unblock the dispatcher *)
+    LowLevel.flush t Types.Tag.notag
+    >>= fun _ ->
+    (* Wait for the dispatcher to shutdown *)
+    t.shutdown_complete_t
+
   module KV_RO = struct
     open Lwt
 
@@ -305,7 +326,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Ok stat -> return (`Ok stat.Types.Stat.length)
       | _ -> return (`Error (Unknown_key key))
 
-    let disconnect t = failwith "disconnect: unimplemented"
+    let disconnect = disconnect
   end
 
   let readdir t path =
@@ -332,6 +353,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
             loop (acc @ stats) Int64.(add offset (of_int (Cstruct.len data))) in
         loop [] 0L
     )
+
   (* 8215 = 8192 + 23 (maximum overhead in a write packet) *)
   let connect flow ?(msize = 8215l) ?(username = "nobody") ?(aname = "/") () =
     write_one_packet flow {
@@ -343,12 +365,14 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
        this one so we can always re-explore the filesystem from the root. *)
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
     let transmit_m = Lwt_mutex.create () in
+    let please_shutdown = false in
+    let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
     let wakeners = Types.Tag.Map.empty in
     let free_tags = Types.Tag.recommended in
     let free_fids = Types.Fid.recommended in
     let free_fids_c = Lwt_condition.create () in
     let maximum_payload = 0l in (* recomputed when the server responds *)
-    let t = { flow; root; msize; maximum_payload; transmit_m; wakeners; free_tags; free_fids; free_fids_c; input_buffer = Cstruct.create 0 } in
+    let t = { flow; root; msize; maximum_payload; transmit_m; please_shutdown; shutdown_complete_t; wakeners; free_tags; free_fids; free_fids_c; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->
@@ -380,7 +404,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         let maximum_payload = min maximum_read_payload maximum_write_payload in
         debug "We will use a global maximum payload of: %ld bytes" maximum_payload;
         let t = { t with msize; maximum_payload } in
-        Lwt.async (fun () -> dispatcher_t t);
+        Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener t);
         Lwt.return (Ok t)
       | { Response.payload = Response.Err { Response.Err.ename } } ->
         Lwt.return (Error (`Msg ename))

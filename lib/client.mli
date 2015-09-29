@@ -26,6 +26,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
       is the username to present to the remote server. [aname] is the name of
       the exported filesystem. *)
 
+  val disconnect: t -> unit Lwt.t
+  (** Disconnect from the 9P server, but leave the underlying FLOW connected. *)
+
   val read: t -> string list -> int64 -> int32 -> Cstruct.t list Error.t Lwt.t
   (** [read t path offset count] returns a list of buffers containing [count]
       bytes from offset [offset] in the file given by [path] *)

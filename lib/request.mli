@@ -43,7 +43,7 @@ end
 module Flush : sig
 
   type t = {
-    oldtag: int;
+    oldtag: Types.Tag.t;
   } with sexp
   (** The payload of a flush message *)
 
