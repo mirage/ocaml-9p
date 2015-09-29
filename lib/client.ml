@@ -36,6 +36,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     mutable input_buffer: Cstruct.t;
   }
 
+  type connection = t
+
   (* For converting flow errors *)
   let (>>|=) m f =
     let open Lwt in
@@ -201,6 +203,24 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= function
       | Response.Remove x -> Lwt.return (Ok x)
       | response -> return_error response
+  end
+
+  module KV_RO = struct
+    type 'a io = 'a Lwt.t
+
+    type t = connection
+
+    type error =
+      | Unknown_key of string
+
+    type id = unit
+
+    type page_aligned_buffer = Cstruct.t
+
+    let read t key offset length = Lwt.return (`Error (Unknown_key key))
+    let size t key = Lwt.return (`Error (Unknown_key key))
+
+    let disconnect t = failwith "disconnect: unimplemented"
   end
 
   let readdir t path =

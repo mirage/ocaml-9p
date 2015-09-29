@@ -29,6 +29,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
   (** Return the contents of a named directory. *)
 
+  module KV_RO : V1_LWT.KV_RO
+
   module LowLevel : sig
     (** The functions in this module are mapped directly onto individual 9P
         RPCs. The client must carefully respect the rules on managing fids
