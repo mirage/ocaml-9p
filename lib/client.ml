@@ -158,31 +158,35 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     | payload ->
       Lwt.return (error_msg "Server sent unexpected reply: %s" (Sexplib.Sexp.to_string (Response.sexp_of_payload  payload)))
 
-  let walk t fid newfid wnames =
-    rpc t Request.(Walk { Walk.fid; newfid; wnames })
-    >>*= function
-    | Response.Walk x -> Lwt.return (Ok x)
-    | response -> return_error response
+  module LowLevel = struct
 
-  let openfid t fid mode =
-    rpc t Request.(Open { Open.fid; mode })
-    >>*= function
-    | Response.Open x -> Lwt.return (Ok x)
-    | response -> return_error response
+    let walk t fid newfid wnames =
+      rpc t Request.(Walk { Walk.fid; newfid; wnames })
+      >>*= function
+      | Response.Walk x -> Lwt.return (Ok x)
+      | response -> return_error response
 
-  let stat t fid =
-    rpc t Request.(Stat { Stat.fid })
-    >>*= function
-    | Response.Stat x -> Lwt.return (Ok x)
-    | response -> return_error response
+    let openfid t fid mode =
+      rpc t Request.(Open { Open.fid; mode })
+      >>*= function
+      | Response.Open x -> Lwt.return (Ok x)
+      | response -> return_error response
 
-  let read t fid offset count =
-    rpc t Request.(Read { Read.fid; offset; count })
-    >>*= function
-    | Response.Read x -> Lwt.return (Ok x)
-    | response -> return_error response
- 
+    let stat t fid =
+      rpc t Request.(Stat { Stat.fid })
+      >>*= function
+      | Response.Stat x -> Lwt.return (Ok x)
+      | response -> return_error response
+
+    let read t fid offset count =
+      rpc t Request.(Read { Read.fid; offset; count })
+      >>*= function
+      | Response.Read x -> Lwt.return (Ok x)
+      | response -> return_error response
+  end
+
   let readdir t path =
+    let open LowLevel in
     let fid = t.root in
     let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
     let wnames = path in
