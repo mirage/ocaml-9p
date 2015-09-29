@@ -122,7 +122,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         (* Lock the flow for output and transmit the packet *)
         Lwt_mutex.with_lock t.transmit_m
           (fun () ->
-            write_one_packet t.flow { Request.tag; payload = request }
+            let request = { Request.tag; payload = request } in
+            debug "-> %s" (Request.to_string request);
+            write_one_packet t.flow request
           )
         >>*= fun () ->
         (* Wait for the response to be read *)
@@ -136,9 +138,11 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   let rec dispatcher_t t =
     read_one_packet t
     >>*= fun response ->
+    let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
+    debug "<- %s" pretty_printed;
     let tag = response.Response.tag in
     if not(TagMap.mem tag t.wakeners) then begin
-      error "Received response with unexpected tag: %s" (Sexplib.Sexp.to_string (Response.sexp_of_t response));
+      error "Received response with unexpected tag: %s" pretty_printed;
       dispatcher_t t
     end else begin
       let wakener = TagMap.find tag t.wakeners in
