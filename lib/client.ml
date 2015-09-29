@@ -150,24 +150,6 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         return (Ok response)
       )
 
-  let rec allocate_fid t =
-    let open Lwt in
-    if t.free_fids = Types.Fid.Set.empty
-    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
-    else
-      let fid = Types.Fid.Set.min_elt t.free_fids in
-      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
-      return fid
-  let deallocate_fid t fid =
-    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
-    Lwt_condition.signal t.free_fids_c ();
-    Lwt.return ()
-  let with_fid t f =
-    let open Lwt in
-    allocate_fid t
-    >>= fun fid ->
-    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
-
   (* The dispatcher thread reads responses from the FLOW and wakes up
      the thread blocked in the rpc function. *)
   let rec dispatcher_t t =
@@ -234,6 +216,24 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Response.Remove x -> Lwt.return (Ok x)
       | response -> return_error response
   end
+
+  let rec allocate_fid t =
+    let open Lwt in
+    if t.free_fids = Types.Fid.Set.empty
+    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+    else
+      let fid = Types.Fid.Set.min_elt t.free_fids in
+      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
+      return fid
+  let deallocate_fid t fid =
+    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+    Lwt_condition.signal t.free_fids_c ();
+    Lwt.return ()
+  let with_fid t f =
+    let open Lwt in
+    allocate_fid t
+    >>= fun fid ->
+    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
 
   let read t path offset count =
     let open LowLevel in
