@@ -60,6 +60,7 @@ module Attach : sig
     afid: Types.Fid.t;
     uname: string;
     aname: string;
+    n_uname: int32 option;
   } with sexp
   (** The payload of an attach message *)
 

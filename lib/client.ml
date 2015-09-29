@@ -385,7 +385,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       let afid = Types.Fid.nofid in
       write_one_packet flow {
         Request.tag;
-        payload = Request.Attach Request.Attach.({ fid = root; afid; uname = username; aname })
+        payload = Request.Attach Request.Attach.({ fid = root; afid; uname = username; aname; n_uname = None })
       } >>*= fun () ->
       read_one_packet t
       >>*= fun response ->
