@@ -225,6 +225,17 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         loop (data :: acc) Int64.(add offset (of_int n)) Int32.(sub remaining (of_int n)) in
     loop [] offset count
 
+  let stat t path =
+    let open LowLevel in
+    let fid = t.root in
+    let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
+    let wnames = path in
+    walk t fid newfid wnames
+    >>*= fun _ -> (* I don't need to know the qids *)
+    stat t newfid
+    >>*= fun { Response.Stat.stat } ->
+    Lwt.return (Ok stat)
+
   module KV_RO = struct
     open Lwt
 
@@ -250,7 +261,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Ok bufs -> return (`Ok bufs)
       | _ -> return (`Error (Unknown_key key))
 
-    let size t key = Lwt.return (`Error (Unknown_key key))
+    let size t key =
+      let path = parse_path key in
+      stat t path
+      >>= function
+      | Ok stat -> return (`Ok stat.Types.Stat.length)
+      | _ -> return (`Error (Unknown_key key))
 
     let disconnect t = failwith "disconnect: unimplemented"
   end
