@@ -64,9 +64,34 @@ let ls address path username =
           begin Client.readdir t [ path ] >>= function
           | Error (`Msg x) -> failwith x
           | Ok stats ->
-            List.iter (fun x ->
-              print_endline (Sexplib.Sexp.to_string (Types.Stat.sexp_of_t x))
-            ) stats;
+            let row_of_stat x =
+              let perms = Printf.sprintf "%c---------" (if List.mem Types.Qid.Directory x.Types.Stat.qid.Types.Qid.flags then 'd' else 'f') in
+              let links = "?" in
+              let uid = x.Types.Stat.uid in
+              let gid = x.Types.Stat.gid in
+              let length = Int64.to_string x.Types.Stat.length in
+              let tm = Unix.gmtime (Int32.to_float x.Types.Stat.mtime) in
+              let month = match tm.Unix.tm_mon with
+                | 0 -> "Jan" | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May" | 5 -> "Jun"
+                | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct" | 10 -> "Nov" | 11 -> "Dec"
+                | x -> string_of_int x in
+              let day = string_of_int tm.Unix.tm_mday in
+              let year = string_of_int (1900 + tm.Unix.tm_year) in
+              let name = x.Types.Stat.name in
+              Array.of_list [ perms; links; uid; gid; length; month; day; year; name ] in
+            let rows = Array.of_list (List.map row_of_stat stats) in
+            let padto n x =
+              let extra = max 0 (n - (String.length x)) in
+              x ^ (String.make extra ' ') in
+            Array.iter (fun row ->
+              Array.iteri (fun i txt ->
+                let column = Array.map (fun row -> row.(i)) rows in
+                let biggest = Array.fold_left (fun acc x -> max acc (String.length x)) 0 column in
+                Printf.printf "%s " (padto biggest txt)
+              ) row;
+              Printf.printf "\n";
+            ) rows;
+            Printf.printf "%!";
             return ()
           end
       ) in
