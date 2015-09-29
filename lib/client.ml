@@ -190,16 +190,22 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun _ -> (* I don't need to know the qids *)
     openfid t newfid Types.Mode.Read
     >>*= fun _ ->
-    read t t.root 0L t.maximum_payload
-    >>*= fun { Response.Read.data } ->
-    (* Data should be an integral number of marshalled Stat.ts *)
-    let module StatArray = Types.Arr(Types.Stat) in
-    (Lwt.return (StatArray.read data))
-    >>*= fun (stats, rest) ->
-    assert (Cstruct.len rest = 0); 
-    Lwt.return (Ok stats)
+    let rec loop acc offset =
+      read t t.root offset t.maximum_payload
+      >>*= fun { Response.Read.data } ->
+      if Cstruct.len data = 0
+      then Lwt.return (Ok acc)
+      else
+        (* Data should be an integral number of marshalled Stat.ts *)
+        let module StatArray = Types.Arr(Types.Stat) in
+        (Lwt.return (StatArray.read data))
+        >>*= fun (stats, rest) ->
+        assert (Cstruct.len rest = 0);
+        loop (acc @ stats) Int64.(add offset (of_int (Cstruct.len data))) in
+    loop [] 0L
 
-  let connect flow ?(msize = 16384l) ?(username = "nobody") ?(aname = "/") () =
+  (* 8215 = 8192 + 23 (maximum overhead in a write packet) *)
+  let connect flow ?(msize = 8215l) ?(username = "nobody") ?(aname = "/") () =
     write_one_packet flow {
       Request.tag = Types.Tag.notag;
       payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
