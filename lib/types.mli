@@ -105,11 +105,19 @@ module FileMode : sig
     exclusive: bool;        (** true if only one client may have it open at a time *)
     is_auth: bool;          (** true if the file is a special authentication file *)
     temporary: bool;        (** true if the file is temporary and should be skipped from nightly backups *)
+    is_device: bool;        (** 9P2000.u: true if file is a char/block device *)
+    is_symlink: bool;       (** 9P2000.u: true if file is a symlink *)
+    is_namedpipe: bool;     (** 9P2000.u: true if file is a nomed pipe *)
+    is_socket: bool;        (** 9P2000.u: true if file is a socket *)
+    is_setuid: bool;        (** 9P2000.u: true if file is setuid *)
+    is_setgid: bool;        (** 9P2000.u: true if file is setgid *)
   } with sexp
   (** A 'mode' returned from a call to "Stat" *)
 
   val make: ?owner:permission list -> ?group:permission list -> ?other:permission list ->
-    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_auth:bool -> ?temporary:bool -> unit -> t
+    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_auth:bool -> ?temporary:bool ->
+    ?is_device:bool -> ?is_symlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
+    ?is_setgid:bool -> unit -> t
 
   include S.SERIALISABLE with type t := t
 end
@@ -120,6 +128,7 @@ module Qid : sig
     | AppendOnly (** writes always hit the end of the file *)
     | Exclusive  (** file is opened for exclusive use *)
     | Temporary  (** file is temporary and won't be backed up *)
+
   with sexp
 
   type t = {
