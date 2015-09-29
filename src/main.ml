@@ -71,7 +71,15 @@ let ls debug address path username =
           | Error (`Msg x) -> failwith x
           | Ok stats ->
             let row_of_stat x =
-              let perms = Printf.sprintf "%c---------" (if List.mem Types.Qid.Directory x.Types.Stat.qid.Types.Qid.flags then 'd' else '-') in
+              let permissions p =
+                  (if List.mem `Read p then "r" else "-")
+                ^ (if List.mem `Write p then "w" else "-")
+                ^ (if List.mem `Execute p then "x" else "-") in
+              let owner = permissions x.Types.Stat.mode.Types.FileMode.owner in
+              let group = permissions x.Types.Stat.mode.Types.FileMode.group in
+              let other = permissions x.Types.Stat.mode.Types.FileMode.other in
+              let kind = if List.mem Types.Qid.Directory x.Types.Stat.qid.Types.Qid.flags then "d" else "-" in
+              let perms = kind ^ owner ^ group ^ other in
               let links = "?" in
               let uid = x.Types.Stat.uid in
               let gid = x.Types.Stat.gid in

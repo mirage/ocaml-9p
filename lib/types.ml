@@ -150,6 +150,73 @@ module OpenMode = struct
   let write t rest = Int8.write (to_int t) rest
 end
 
+module FileMode = struct
+  type permission = [ `Read | `Write | `Execute ] with sexp
+
+  type t = {
+    owner: permission list;
+    group: permission list;
+    other: permission list;
+    is_directory: bool;
+    append_only: bool;
+    exclusive: bool;
+    is_auth: bool;
+    temporary: bool;
+  } with sexp
+
+  let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
+    ?(append_only=false) ?(exclusive=false) ?(is_auth=false) ?(temporary=false) () = {
+    owner; group; other; is_directory; append_only; exclusive;
+    is_auth; temporary;
+  }
+
+  let sizeof _ = 4
+
+  let is_set x n = Int32.(logand x (shift_left 1l n) <> 0l)
+
+  let permissions_of_nibble x =
+      ( if is_set x 2 then [ `Read ] else [] )
+    @ ( if is_set x 1 then [ `Write ] else [] )
+    @ ( if is_set x 0 then [ `Execute ] else [] )
+
+  let bit = Int32.shift_left 1l
+
+  let nibble_of_permissions permissions =
+    let to_nibble = function
+      | `Read    -> bit 2
+      | `Write   -> bit 1
+      | `Execute -> bit 0 in
+    List.fold_left Int32.logor 0l (List.map to_nibble permissions)
+
+  let read rest =
+    Int32.read rest
+    >>= fun (x, rest) ->
+    let is_directory = is_set x 31 in
+    let append_only  = is_set x 30 in
+    let exclusive    = is_set x 29 in
+    let is_auth      = is_set x 27 in
+    let temporary    = is_set x 26 in
+    let owner = permissions_of_nibble (Int32.shift_right x 6) in
+    let group = permissions_of_nibble (Int32.shift_right x 3) in
+    let other = permissions_of_nibble (Int32.shift_right x 0) in
+    let t = { owner; group; other; is_directory; append_only; exclusive; is_auth; temporary } in
+    return (t, rest)
+
+  let write t rest =
+    let x = List.fold_left Int32.logor 0l [
+      if t.is_directory then bit 31 else 0l;
+      if t.append_only  then bit 30 else 0l;
+      if t.exclusive    then bit 29 else 0l;
+      if t.is_auth      then bit 27 else 0l;
+      if t.temporary    then bit 26 else 0l;
+      Int32.shift_left (nibble_of_permissions t.owner) 6;
+      Int32.shift_left (nibble_of_permissions t.group) 3;
+      Int32.shift_left (nibble_of_permissions t.other) 0;
+    ] in
+    Int32.write x rest
+end
+
+
 module Qid = struct
   type flag = Directory | AppendOnly | Exclusive | Temporary with sexp
 
@@ -351,7 +418,7 @@ module Stat = struct
     ty: int;
     dev: int32;
     qid: Qid.t;
-    mode: int32;
+    mode: FileMode.t;
     atime: int32;
     mtime: int32;
     length: int64;
@@ -361,10 +428,8 @@ module Stat = struct
     muid: string;
   } with sexp
 
-  let make ~name ~qid ?mode ?(length=0L) ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none") () =
+  let make ~name ~qid ?(mode=FileMode.make ()) ?(length=0L) ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none") () =
     let ty = 0 and dev = 0l in
-    (* XXX: need permissino bits too *)
-    let mode = Int32.of_int (Qid.(to_int qid.flags) lsl 24) in
     { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }
 
   let sizeof t = 2 + 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
@@ -380,7 +445,7 @@ module Stat = struct
     >>= fun (dev, rest) ->
     Qid.read rest
     >>= fun (qid, rest) ->
-    Int32.read rest
+    FileMode.read rest
     >>= fun (mode, rest) ->
     Int32.read rest
     >>= fun (atime, rest) ->
@@ -412,7 +477,7 @@ module Stat = struct
     >>= fun rest ->
     Qid.write t.qid rest
     >>= fun rest ->
-    Int32.write t.mode rest
+    FileMode.write t.mode rest
     >>= fun rest ->
     Int32.write t.atime rest
     >>= fun rest ->

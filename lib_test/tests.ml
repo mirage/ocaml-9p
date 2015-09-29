@@ -35,7 +35,7 @@ let stat = Types.Stat.({
   ty = 1;
   dev = 2l;
   qid;
-  mode = 3l;
+  mode = Types.FileMode.make ();
   atime = 4l;
   mtime = 5l;
   length = 6L;

@@ -86,6 +86,31 @@ module OpenMode : sig
   include S.SERIALISABLE with type t := t
 end
 
+module FileMode : sig
+  type permission = [
+    | `Read    (** subject has read access *)
+    | `Write   (** subject has write access *)
+    | `Execute (** subject may execute the file as a program *)
+  ] with sexp
+
+  type t = {
+    owner: permission list; (** file owner has these permissions *)
+    group: permission list; (** anyone in the same group has these permissions *)
+    other: permission list; (** all other users have these permissions *)
+    is_directory: bool;     (** true if the file is a directory *)
+    append_only: bool;      (** true if the file is append-only (and therefore offsets in writes are ignored) *)
+    exclusive: bool;        (** true if only one client may have it open at a time *)
+    is_auth: bool;          (** true if the file is a special authentication file *)
+    temporary: bool;        (** true if the file is temporary and should be skipped from nightly backups *)
+  } with sexp
+  (** A 'mode' returned from a call to "Stat" *)
+
+  val make: ?owner:permission list -> ?group:permission list -> ?other:permission list ->
+    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_auth:bool -> ?temporary:bool -> unit -> t
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Qid : sig
   type flag =
     | Directory  (** file is a directory *)
@@ -144,20 +169,20 @@ end
 
 module Stat : sig
   type t = {
-    ty: int;       (** for kernel use *)
-    dev: int32;    (** for kernel use *)
+    ty: int;          (** for kernel use *)
+    dev: int32;       (** for kernel use *)
     qid: Qid.t;
-    mode: int32;   (** permissions and flags *)
-    atime: int32;  (** last access time *)
-    mtime: int32;  (** last modification time *)
-    length: int64; (** length of the file in bytes *)
-    name: string;  (** file name. Must be '/' if the file is the root *)
-    uid: string;   (** owner name *)
-    gid: string;   (** group name *)
-    muid: string;  (** name of last user who modified the file *)
+    mode: FileMode.t; (** permissions and flags *)
+    atime: int32;     (** last access time *)
+    mtime: int32;     (** last modification time *)
+    length: int64;    (** length of the file in bytes *)
+    name: string;     (** file name. Must be '/' if the file is the root *)
+    uid: string;      (** owner name *)
+    gid: string;      (** group name *)
+    muid: string;     (** name of last user who modified the file *)
   } with sexp
 
-  val make: name:string -> qid:Qid.t -> ?mode:int32 -> ?length:int64 -> ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string -> unit -> t
+  val make: name:string -> qid:Qid.t -> ?mode:FileMode.t -> ?length:int64 -> ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string -> unit -> t
 
   include S.SERIALISABLE with type t := t
 end
