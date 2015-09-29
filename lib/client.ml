@@ -187,8 +187,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | { Response.payload = Response.Attach { Response.Attach.qid } } ->
         info "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
         (* Negotiation complete: start the dispatcher thread *)
+        let t = { t with msize } in
         Lwt.async (fun () -> dispatcher_t t);
-        Lwt.return (Ok { t with msize })
+        Lwt.return (Ok t)
       | { Response.payload = Response.Err { Response.Err.ename } } ->
         Lwt.return (Error (`Msg ename))
       | _ ->
