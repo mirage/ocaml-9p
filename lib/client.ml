@@ -29,6 +29,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     flow: FLOW.flow;
     root: fid;
     msize: int32;
+    maximum_payload: int32;
     transmit_m: Lwt_mutex.t;
     mutable wakeners: Response.payload Lwt.u TagMap.t;
     mutable free_tags: TagSet.t;
@@ -82,9 +83,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun buffer ->
     Lwt.return (Response.read buffer)
     >>*= fun (response, _) ->
+    let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
+    debug "<- %s" pretty_printed;
     Lwt.return (Ok response)
 
   let write_one_packet flow request =
+    debug "-> %s" (Request.to_string request);
     let sizeof = Request.sizeof request in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Request.write request buffer)
@@ -123,7 +127,6 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt_mutex.with_lock t.transmit_m
           (fun () ->
             let request = { Request.tag; payload = request } in
-            debug "-> %s" (Request.to_string request);
             write_one_packet t.flow request
           )
         >>*= fun () ->
@@ -138,10 +141,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   let rec dispatcher_t t =
     read_one_packet t
     >>*= fun response ->
-    let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
-    debug "<- %s" pretty_printed;
     let tag = response.Response.tag in
     if not(TagMap.mem tag t.wakeners) then begin
+      let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
       error "Received response with unexpected tag: %s" pretty_printed;
       dispatcher_t t
     end else begin
@@ -168,6 +170,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     | Response.Open x -> Lwt.return (Ok x)
     | response -> return_error response
 
+  let stat t fid =
+    rpc t Request.(Stat { Stat.fid })
+    >>*= function
+    | Response.Stat x -> Lwt.return (Ok x)
+    | response -> return_error response
+
   let read t fid offset count =
     rpc t Request.(Read { Read.fid; offset; count })
     >>*= function
@@ -182,11 +190,16 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun _ -> (* I don't need to know the qids *)
     openfid t newfid Types.Mode.Read
     >>*= fun _ ->
-    read t newfid 0L 1024l
+    read t t.root 0L t.maximum_payload
     >>*= fun { Response.Read.data } ->
-    Lwt.return (Ok [])
+    (* Data should be an integral number of marshalled Stat.ts *)
+    let module StatArray = Types.Arr(Types.Stat) in
+    (Lwt.return (StatArray.read data))
+    >>*= fun (stats, rest) ->
+    assert (Cstruct.len rest = 0); 
+    Lwt.return (Ok stats)
 
-  let connect flow ?(msize = 1024l) ?(username = "nobody") ?(aname = "/") () =
+  let connect flow ?(msize = 16384l) ?(username = "nobody") ?(aname = "/") () =
     write_one_packet flow {
       Request.tag = Types.Tag.notag;
       payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
@@ -206,7 +219,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
           let tag = match Types.Tag.of_int next with Ok x -> x | _ -> assert false in
           loop (TagSet.add tag acc) (next - 1) in
       loop TagSet.empty 100 in
-    let t = { flow; root; msize; transmit_m; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
+    let maximum_payload = 0l in (* recomputed when the server responds *)
+    let t = { flow; root; msize; maximum_payload; transmit_m; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->
@@ -227,7 +241,17 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | { Response.payload = Response.Attach { Response.Attach.qid } } ->
         info "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
         (* Negotiation complete: start the dispatcher thread *)
-        let t = { t with msize } in
+        let smallest_read_response = { Response.tag = Types.Tag.notag; payload = Response.Read { Response.Read.data = Cstruct.create 0 } } in
+        let maximum_read_payload = Int32.(sub msize (of_int (Response.sizeof smallest_read_response))) in
+        let smallest_write_request = { Request.tag = Types.Tag.notag; payload = Request.Write { Request.Write.data = Cstruct.create 0; fid = Types.Fid.nofid; offset = 0L } } in
+        let maximum_write_payload = Int32.(sub msize (of_int (Request.sizeof smallest_write_request))) in
+        debug "Negotiated maximum message size: %ld bytes" msize;
+        debug "Maximum read payload would be: %ld bytes" maximum_read_payload;
+        debug "Maximum write payload would be: %ld bytes" maximum_write_payload;
+        (* For compatibility, use the smallest of the two possible maximums *)
+        let maximum_payload = min maximum_read_payload maximum_write_payload in
+        debug "We will use a global maximum payload of: %ld bytes" maximum_payload;
+        let t = { t with msize; maximum_payload } in
         Lwt.async (fun () -> dispatcher_t t);
         Lwt.return (Ok t)
       | { Response.payload = Response.Err { Response.Err.ename } } ->

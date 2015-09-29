@@ -36,7 +36,7 @@ let with_connection address f =
       String.sub address 0 colon, String.sub address (colon + 1) (String.length address - colon - 1)
     with Not_found ->
       address, "5640" in
-  Log.debug "Connecting to %s port %s\n%!" hostname port;
+  Log.debug "Connecting to %s port %s" hostname port;
   let port = int_of_string port in
   Lwt_unix.gethostbyname hostname
   >>= fun h ->
@@ -60,7 +60,7 @@ let ls address path username =
         >>= function
         | Error (`Msg x) -> failwith x
         | Ok t ->
-          Log.debug "Successfully negotiated a connection.\n%!";
+          Log.debug "Successfully negotiated a connection.";
           begin Client.readdir t [ path ] >>= function
           | Error (`Msg x) -> failwith x
           | Ok stats ->

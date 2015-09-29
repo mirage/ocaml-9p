@@ -148,6 +148,17 @@ module Qid = struct
    id: int64;
   } with sexp
 
+  let file ?(id=(-1L)) ?(version=(-1l)) ?(append_only=false) ?(exclusive=false) ?(temporary=false) () =
+    let flags =
+        (if append_only then [ AppendOnly ] else [])
+      @ (if exclusive then [ Exclusive ] else [])
+      @ (if temporary then [ Temporary ] else []) in
+    { flags; version; id }
+
+  let dir ?(id=(-1L)) ?(version=(-1l)) () =
+    let flags = [ Directory ] in
+    { flags; version; id }
+
   let flags = [
     Directory,  0x80;
     AppendOnly, 0x40;
@@ -156,6 +167,12 @@ module Qid = struct
   ]
   let flags' = List.map (fun (x, y) -> y, x) flags
 
+  let to_int fs =
+    List.fold_left (lor) 0 (List.map (fun x -> List.assoc x flags) fs)
+
+  let of_int x =
+    List.map snd (List.filter (fun (bit, flag) -> x land bit <> 0) flags')
+
   let needed = 13
 
   let sizeof _ = needed
@@ -163,8 +180,7 @@ module Qid = struct
   let write t rest =
     big_enough_for "Qid.write" rest needed
     >>= fun () ->
-    let ty = List.fold_left (lor) 0 (List.map (fun x -> List.assoc x flags) t.flags) in
-    Int8.write ty rest
+    Int8.write (to_int t.flags) rest
     >>= fun rest ->
     Int32.write t.version rest
     >>= fun rest ->
@@ -175,7 +191,7 @@ module Qid = struct
     >>= fun () ->
     Int8.read rest
     >>= fun (ty, rest) ->
-    let flags = List.map snd (List.filter (fun (bit, flag) -> ty land bit <> 0) flags') in
+    let flags = of_int ty in
     Int32.read rest
     >>= fun (version, rest) ->
     Int64.read rest
@@ -323,6 +339,12 @@ module Stat = struct
     muid: string;
   } with sexp
 
+  let make ~name ~qid ?mode ?(length=0L) ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none") () =
+    let ty = 0 and dev = 0l in
+    (* XXX: need permissino bits too *)
+    let mode = Int32.of_int (Qid.(to_int qid.flags) lsl 24) in
+    { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }
+
   let sizeof t = 2 + 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
     + 2 + (String.length t.name) + 2 + (String.length t.uid)
     + 2 + (String.length t.gid) + 2 + (String.length t.muid)
@@ -388,4 +410,31 @@ module Stat = struct
     >>= fun rest ->
     Data.write muid rest
 
+end
+
+module Arr(T: S.SERIALISABLE) = struct
+  type t = T.t list
+
+  let rec sizeof = function
+    | [] -> 0
+    | t :: ts -> T.sizeof t + (sizeof ts)
+
+  let read rest =
+    let rec loop acc rest =
+      if Cstruct.len rest = 0
+      then return (List.rev acc, rest)
+      else
+        T.read rest
+        >>= fun (t, rest) ->
+        loop (t :: acc) rest in
+    loop [] rest
+
+  let write ts rest =
+    let rec loop rest = function
+      | [] -> return rest
+      | t :: ts ->
+        T.write t rest
+        >>= fun rest ->
+        loop rest ts in
+    loop rest ts
 end

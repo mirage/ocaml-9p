@@ -94,6 +94,12 @@ module Qid : sig
   (** The server's unique id for the file. Two files are the same
       if and only if the Qids are the same. *)
 
+  val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool -> ?temporary:bool -> unit -> t
+  (** Construct a [t] representing a file *)
+
+  val dir: ?id:int64 -> ?version:int32 -> unit -> t
+  (** Construct a [t] representing a directory *)
+
   include S.SERIALISABLE with type t := t
 end
 
@@ -137,5 +143,13 @@ module Stat : sig
     muid: string;  (** name of last user who modified the file *)
   } with sexp
 
+  val make: name:string -> qid:Qid.t -> ?mode:int32 -> ?length:int64 -> ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string -> unit -> t
+
   include S.SERIALISABLE with type t := t
+end
+
+module Arr(T: S.SERIALISABLE) : sig
+  (** A sequence of [T.t]s written contiguously to a buffer *)
+
+  include S.SERIALISABLE with type t = T.t list
 end
