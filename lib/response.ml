@@ -182,7 +182,6 @@ module Read = struct
     Int32.read rest
     >>= fun (len, rest) ->
     let len = Int32.to_int len in
-Printf.fprintf stderr "len = %d\n%!" len;
     big_enough_for "Read.data" rest len
     >>= fun () ->
     let data = Cstruct.sub rest 0 len in (* by reference, no copy *)

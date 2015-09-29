@@ -367,7 +367,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun response ->
       begin match response with
       | { Response.payload = Response.Attach { Response.Attach.qid } } ->
-        info "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
+        debug "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
         (* Negotiation complete: start the dispatcher thread *)
         let smallest_read_response = { Response.tag = Types.Tag.notag; payload = Response.Read { Response.Read.data = Cstruct.create 0 } } in
         let maximum_read_payload = Int32.(sub msize (of_int (Response.sizeof smallest_read_response))) in

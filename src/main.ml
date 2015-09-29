@@ -21,7 +21,9 @@ let project_url = "http://github.com/djs55/ocaml-9p"
 let version = "0.0"
 
 module Log = struct
-  let debug fmt = Printf.ksprintf (fun s -> print_endline s) fmt
+  let print_debug = ref false
+
+  let debug fmt = Printf.ksprintf (fun s -> if !print_debug then print_endline s) fmt
   let info  fmt = Printf.ksprintf (fun s -> print_endline s) fmt
   let warn fmt = Printf.ksprintf (fun s -> print_endline s) fmt
   let error fmt = Printf.ksprintf (fun s -> print_endline s) fmt
@@ -53,7 +55,8 @@ let with_connection address f =
 
 let parse_path x = Stringext.split x ~on:'/'
 
-let ls address path username =
+let ls debug address path username =
+  Log.print_debug := debug;
   let path = parse_path path in
   let t =
     with_connection address
@@ -113,6 +116,11 @@ let help = [
  `P "Use `$(mname) $(i,COMMAND) --help' for help on a single command."; `Noblank;
  `S "BUGS"; `P (Printf.sprintf "Check bug reports at %s" project_url);
 ]
+
+let debug =
+  let doc = "Enable verbose debugging" in
+  Arg.(value & flag & info [ "debug" ] ~doc)
+
 let address =
   let doc = "Address of the 9P fileserver" in
   Arg.(value & opt string "localhost:5640" & info [ "address"; "a" ] ~doc)
@@ -131,7 +139,7 @@ let ls_cmd =
     `S "DESCRIPTION";
     `P "List the contents of a directory on the fileserver."
   ] @ help in
-  Term.(ret(pure ls $ address $ path $ username)),
+  Term.(ret(pure ls $ debug $ address $ path $ username)),
   Term.info "ls" ~doc ~man
 
 let default_cmd =
