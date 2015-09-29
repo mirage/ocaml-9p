@@ -22,17 +22,15 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   type fid = Types.Fid.t
 
-  module TagSet = Set.Make(Types.Tag)
-  module TagMap = Map.Make(Types.Tag)
-
   type t = {
     flow: FLOW.flow;
     root: fid;
     msize: int32;
     maximum_payload: int32;
     transmit_m: Lwt_mutex.t;
-    mutable wakeners: Response.payload Lwt.u TagMap.t;
-    mutable free_tags: TagSet.t;
+    mutable wakeners: Response.payload Lwt.u Types.Tag.Map.t;
+    mutable free_tags: Types.Tag.Set.t;
+    mutable free_fids: Types.Fid.Set.t;
     mutable input_buffer: Cstruct.t;
   }
 
@@ -104,17 +102,17 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     let c = Lwt_condition.create () in
     let rec allocate_tag () =
       let open Lwt in
-      if t.free_tags = TagSet.empty
+      if t.free_tags = Types.Tag.Set.empty
       then Lwt_condition.wait c >>= fun () -> allocate_tag ()
       else
-        let tag = TagSet.min_elt t.free_tags in
-        t.free_tags <- TagSet.remove tag t.free_tags;
+        let tag = Types.Tag.Set.min_elt t.free_tags in
+        t.free_tags <- Types.Tag.Set.remove tag t.free_tags;
         let th, wakener = Lwt.task () in
-        t.wakeners <- TagMap.add tag wakener t.wakeners;
+        t.wakeners <- Types.Tag.Map.add tag wakener t.wakeners;
         return (tag, th) in
     let deallocate_tag tag =
-      t.free_tags <- TagSet.add tag t.free_tags;
-      t.wakeners <- TagMap.remove tag t.wakeners;
+      t.free_tags <- Types.Tag.Set.add tag t.free_tags;
+      t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
       Lwt_condition.signal c () in
     let with_tag f =
       let open Lwt in
@@ -144,12 +142,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     read_one_packet t
     >>*= fun response ->
     let tag = response.Response.tag in
-    if not(TagMap.mem tag t.wakeners) then begin
+    if not(Types.Tag.Map.mem tag t.wakeners) then begin
       let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
       error "Received response with unexpected tag: %s" pretty_printed;
       dispatcher_t t
     end else begin
-      let wakener = TagMap.find tag t.wakeners in
+      let wakener = Types.Tag.Map.find tag t.wakeners in
       Lwt.wakeup_later wakener response.Response.payload;
       dispatcher_t t
     end
@@ -305,18 +303,11 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
        this one so we can always re-explore the filesystem from the root. *)
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
     let transmit_m = Lwt_mutex.create () in
-    let wakeners = TagMap.empty in
-    (* We will use up to 100 tags, to avoid overloading the server. We only
-       need 1 tag per outstanding RPC *)
-    let free_tags =
-      let rec loop acc = function
-        | 0 -> acc
-        | next ->
-          let tag = match Types.Tag.of_int next with Ok x -> x | _ -> assert false in
-          loop (TagSet.add tag acc) (next - 1) in
-      loop TagSet.empty 100 in
+    let wakeners = Types.Tag.Map.empty in
+    let free_tags = Types.Tag.recommended in
+    let free_fids = Types.Fid.recommended in
     let maximum_payload = 0l in (* recomputed when the server responds *)
-    let t = { flow; root; msize; maximum_payload; transmit_m; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
+    let t = { flow; root; msize; maximum_payload; transmit_m; wakeners; free_tags; free_fids; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->

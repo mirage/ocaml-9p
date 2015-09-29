@@ -60,9 +60,16 @@ end
 module Fid : sig
   type t with sexp
 
+  module Set : Set.S with type elt = t
+
   val nofid: t
 
   val of_int32: int32 -> t Error.t
+
+  val recommended: Set.t
+  (** A list of recommended fids. The client can allocate (on the server) up to
+      2^32 distinct fids (in theory) but this is obviously a bad thing to do.
+      Instead clients are recommended to use fids from this (much smaller) list. *)
 
   include S.SERIALISABLE with type t := t
 end
@@ -106,12 +113,18 @@ end
 module Tag : sig
   type t with sexp
 
+  module Set : Set.S with type elt = t
+  module Map : Map.S with type key = t
+
   val notag: t
   (** The special tag value used during authentication *)
 
-  val of_int: int -> t Error.t
+  val recommended: Set.t
+  (** A list of recommended tags. The client can generate up to 2^16 distinct tags
+      but this represents a large number of concurrent transactions. Instead clients
+      are recommended to use fids drawn from this much (much smaller) list. *)
 
-  val compare: t -> t -> int
+  val of_int: int -> t Error.t
 
   include S.SERIALISABLE with type t := t
 end

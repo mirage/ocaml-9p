@@ -98,6 +98,17 @@ end
 module Fid = struct
   type t = int32 with sexp
 
+  let compare (a: t) (b: t) = compare a b
+
+  module Set = Set.Make(struct type t = int32 let compare = compare end)
+
+  let recommended =
+    let rec loop acc = function
+      | 0 -> acc
+      | tag ->
+        loop (Set.add (Int32.of_int tag) acc) (tag - 1) in
+    loop Set.empty 100
+
   let nofid = 0xffffffffl
 
   let of_int32 x =
@@ -204,6 +215,22 @@ end
 module Tag = struct
   type t = int option with sexp
 
+  let compare (a: t) (b: t) = match a, b with
+    | None, None -> 0
+    | Some _, None -> -1
+    | None, Some _ -> 1
+    | Some x, Some y -> compare x y
+
+  module Set = Set.Make(struct type t = int option let compare = compare end)
+  module Map = Map.Make(struct type t = int option let compare = compare end)
+
+  let recommended =
+    let rec loop acc = function
+      | 0 -> acc
+      | tag ->
+        loop (Set.add (Some tag) acc) (tag - 1) in
+    loop Set.empty 100
+
   let of_int x =
     if x >= 0xffff || x < 0
     then error_msg "Valid tags must be between 0 <= tag < 0xffff (not %d)" x
@@ -232,11 +259,6 @@ module Tag = struct
       | x -> Some x in
     return (x, Cstruct.shift buf needed)
 
-  let compare (a: t) (b: t) = match a, b with
-    | None, None -> 0
-    | Some _, None -> -1
-    | None, Some _ -> 1
-    | Some x, Some y -> compare x y
 end
 
 module Data = struct
