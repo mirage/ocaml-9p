@@ -63,7 +63,7 @@ let make_fid =
     | Ok x -> x
     | Error _ -> failwith "Test program ran out of fids!"
 
-let mode = Types.Mode.Read
+let openmode = Types.OpenMode.Read
 
 let requests =
   let open Request in [
@@ -72,8 +72,8 @@ let requests =
     { tag = make_tag (); payload = Flush Flush.({ oldtag = make_tag () }) };
     { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?" })};
     { tag = make_tag (); payload = Walk Walk.( { fid = make_fid (); newfid = make_fid (); wnames = [ "one"; "two"; "three" ]})};
-    { tag = make_tag (); payload = Open Open.( { fid = make_fid (); mode })};
-    { tag = make_tag (); payload = Create Create.( { fid = make_fid (); name = "woohoo"; perm = 44l; mode })};
+    { tag = make_tag (); payload = Open Open.( { fid = make_fid (); mode = openmode })};
+    { tag = make_tag (); payload = Create Create.( { fid = make_fid (); name = "woohoo"; perm = 44l; mode = openmode})};
     { tag = make_tag (); payload = Read Read.( { fid = make_fid (); offset = 123456L; count = 123l })};
     { tag = make_tag (); payload = Write Write.( { fid = make_fid (); offset = 98765L; data = example_data })};
     { tag = make_tag (); payload = Clunk Clunk.( { fid = make_fid () })};

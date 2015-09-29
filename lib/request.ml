@@ -170,7 +170,7 @@ end
 module Open = struct
   type t = {
     fid: Fid.t;
-    mode: Mode.t;
+    mode: OpenMode.t;
   } with sexp
 
   let sizeof _ = 5
@@ -178,12 +178,12 @@ module Open = struct
   let write t rest =
     Fid.write t.fid rest
     >>= fun rest ->
-    Mode.write t.mode rest
+    OpenMode.write t.mode rest
 
   let read rest =
     Fid.read rest
     >>= fun (fid, rest) ->
-    Mode.read rest
+    OpenMode.read rest
     >>= fun (mode, rest) ->
     return ({ fid; mode }, rest)
 end
@@ -193,7 +193,7 @@ module Create = struct
     fid: Fid.t;
     name: string;
     perm: int32;
-    mode: Mode.t
+    mode: OpenMode.t
   } with sexp
 
   let sizeof t = (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
@@ -206,7 +206,7 @@ module Create = struct
     >>= fun rest ->
     Int32.write t.perm rest
     >>= fun rest ->
-    Mode.write t.mode rest
+    OpenMode.write t.mode rest
 
   let read rest =
     Fid.read rest
@@ -215,7 +215,7 @@ module Create = struct
     >>= fun (name, rest) ->
     Int32.read rest
     >>= fun (perm, rest) ->
-    Mode.read rest
+    OpenMode.read rest
     >>= fun (mode, rest) ->
     let name = Data.to_string name in
     return ({ fid; name; perm; mode}, rest)

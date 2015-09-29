@@ -50,7 +50,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
     (** [walk t fid newfid wnames] binds [newfid] to the result of Walking
         from [fid] along the path given by [wnames] *)
 
-    val openfid: t -> Types.Fid.t -> Types.Mode.t -> Response.Open.t Error.t Lwt.t
+    val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
     (** [open t fid mode] confirms that [fid] can be accessed according to
         [mode] *)
 

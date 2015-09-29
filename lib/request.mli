@@ -78,7 +78,7 @@ end
 module Open : sig
   type t = {
     fid: Types.Fid.t;
-    mode: Types.Mode.t;
+    mode: Types.OpenMode.t;
   } with sexp
   (** The payload of an Open message *)
 
@@ -90,7 +90,7 @@ module Create : sig
     fid: Types.Fid.t;
     name: string;
     perm: int32;
-    mode: Types.Mode.t; 
+    mode: Types.OpenMode.t; 
   } with sexp
   (** The payload of a Create message *)
 

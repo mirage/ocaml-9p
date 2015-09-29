@@ -122,7 +122,7 @@ module Fid = struct
   let write = Int32.write
 end
 
-module Mode = struct
+module OpenMode = struct
   type t = Read | Write | ReadWrite | Exec with sexp
 
   let to_int = function

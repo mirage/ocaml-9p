@@ -74,13 +74,14 @@ module Fid : sig
   include S.SERIALISABLE with type t := t
 end
 
-module Mode : sig
+module OpenMode : sig
   type t =
   | Read       (** read access *)
   | Write      (** write access *)
   | ReadWrite  (** read and write access *)
   | Exec       (** execute access *)
   with sexp
+  (** A 'mode' passed as an argument to "Open" and "Create" *)
 
   include S.SERIALISABLE with type t := t
 end
