@@ -14,10 +14,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
+(** Common error reporting functions *)
+
 open Result
 
 type error = [
-  | `Msg of string
+  | `Msg of string (** A fatal error condition; the string should be logged *)
 ]
 
 type 'a t = ('a, error) result

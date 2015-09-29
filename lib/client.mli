@@ -15,6 +15,8 @@
  *
  *)
 
+(** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
+
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t

@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
+(** Parsers and printers for types used in 9P messages *)
+
 open Sexplib
 
 val big_enough_for: string -> Cstruct.t -> int -> unit Error.t

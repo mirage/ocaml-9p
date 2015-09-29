@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
+(** Parsers and printers for 9P response messages *)
+
 open Sexplib
 open Types
 open Result
@@ -158,11 +161,13 @@ type payload =
   | Stat of Stat.t
   | Wstat of Wstat.t
 with sexp
+(** A variant including all possible 9P response payloads *)
 
 type t = {
-  tag: Types.Tag.t;
+  tag: Types.Tag.t; (** The tag used to match this response with the original request *)
   payload: payload;
 } with sexp
+(** A 9P protocol response *)
 
 include S.SERIALISABLE with type t := t
 

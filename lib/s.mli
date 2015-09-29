@@ -14,15 +14,22 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
+(** Common signatures used by the library *)
+
 open Result
 
 module type LOG = sig
+  (** Common logging functions *)
+
   val debug : ('a, unit, string, unit) format4 -> 'a
   val info  : ('a, unit, string, unit) format4 -> 'a
   val error : ('a, unit, string, unit) format4 -> 'a
 end
 
 module type SERIALISABLE = sig
+  (** Values which can be read and written *)
+
   type t
   (** Instances of this type can be read and written *)
 
