@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="Up" href="Client.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="S" rel="Chapter" href="S.html">
+<link title="Request" rel="Chapter" href="Request.html">
+<link title="Error" rel="Chapter" href="Error.html">
+<link title="Response" rel="Chapter" href="Response.html">
+<link title="Types" rel="Chapter" href="Types.html">
+<link title="Client" rel="Chapter" href="Client.html"><title>Client.Make</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Client.html" title="Client">Up</a>
+&nbsp;</div>
+<h1>Functor <a href="type_Client.Make.html">Client.Make</a></h1>
+
+<pre><span class="keyword">module</span> Make: <div class="sig_block"><code class="code">functor (</code><code class="code">Log</code><code class="code"> : </code><code class="type"><a href="S.LOG.html">S.LOG</a></code><code class="code">) -&gt; </code><div class="sig_block"><code class="code">functor (</code><code class="code">FLOW</code><code class="code"> : </code><code class="type">V1_LWT.FLOW</code><code class="code">) -&gt; </code><code class="code">sig</code> <a href="Client.Make.html">..</a> <code class="code">end</code></div></div></pre><table border="0" cellpadding="3" width="100%">
+<tr>
+<td align="left" valign="top" width="1%%"><b>Parameters: </b></td>
+<td>
+<table class="paramstable">
+<tr>
+<td align="center" valign="top" width="15%">
+<code>Log</code></td>
+<td align="center" valign="top">:</td>
+<td><code class="type"><a href="S.LOG.html">S.LOG</a></code>
+<tr>
+<td align="center" valign="top" width="15%">
+<code>FLOW</code></td>
+<td align="center" valign="top">:</td>
+<td><code class="type">V1_LWT.FLOW</code>
+</table>
+</td>
+</tr>
+</table>
+<hr width="100%">
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
+<div class="info ">
+An established connection to a 9P server<br>
+</div>
+
+
+<pre><span id="VALconnect"><span class="keyword">val</span> connect</span> : <code class="type">FLOW.flow -><br>       ?msize:int32 -><br>       ?username:string -> ?aname:string -> unit -> <a href="Client.Make.html#TYPEt">t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+Establish a fresh connection to a 9P server. <code class="code">msize</code> gives the maximum
+      message size we support: the server may choose a lower value. <code class="code">username</code>
+      is the username to present to the remote server. <code class="code">aname</code> is the name of
+      the exported filesystem.<br>
+</div>
+
+<pre><span id="VALdisconnect"><span class="keyword">val</span> disconnect</span> : <code class="type"><a href="Client.Make.html#TYPEt">t</a> -> unit Lwt.t</code></pre><div class="info ">
+Disconnect from the 9P server, but leave the underlying FLOW connected.<br>
+</div>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type"><a href="Client.Make.html#TYPEt">t</a> -><br>       string list -> int64 -> int32 -> Cstruct.t list <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">read t path offset count</code> returns a list of buffers containing <code class="code">count</code>
+      bytes from offset <code class="code">offset</code> in the file given by <code class="code">path</code><br>
+</div>
+
+<pre><span id="VALreaddir"><span class="keyword">val</span> readdir</span> : <code class="type"><a href="Client.Make.html#TYPEt">t</a> -> string list -> <a href="Types.Stat.html#TYPEt">Types.Stat.t</a> list <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+Return the contents of a named directory.<br>
+</div>
+
+<pre><span id="VALstat"><span class="keyword">val</span> stat</span> : <code class="type"><a href="Client.Make.html#TYPEt">t</a> -> string list -> <a href="Types.Stat.html#TYPEt">Types.Stat.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+Return information about a named directory or named file.<br>
+</div>
+
+<pre><span class="keyword">module</span> <a href="Client.Make.KV_RO.html">KV_RO</a>: <code class="type">V1_LWT.KV_RO</code><code class="type"> </code></pre>
+<pre><span class="keyword">module</span> <a href="Client.Make.LowLevel.html">LowLevel</a>: <code class="code">sig</code> <a href="Client.Make.LowLevel.html">..</a> <code class="code">end</code></pre></body></html>

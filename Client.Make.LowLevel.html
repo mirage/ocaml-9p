@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Client.Make.KV_RO.html">
+<link rel="Up" href="Client.Make.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="S" rel="Chapter" href="S.html">
+<link title="Request" rel="Chapter" href="Request.html">
+<link title="Error" rel="Chapter" href="Error.html">
+<link title="Response" rel="Chapter" href="Response.html">
+<link title="Types" rel="Chapter" href="Types.html">
+<link title="Client" rel="Chapter" href="Client.html"><title>Client.Make.LowLevel</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Client.Make.KV_RO.html" title="Client.Make.KV_RO">Previous</a>
+&nbsp;<a class="up" href="Client.Make.html" title="Client.Make">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Client.Make.LowLevel.html">Client.Make.LowLevel</a></h1>
+
+<pre><span class="keyword">module</span> LowLevel: <code class="code">sig</code> <a href="Client.Make.LowLevel.html">..</a> <code class="code">end</code></pre><hr width="100%">
+<br>
+The functions in this module are mapped directly onto individual 9P
+        RPCs. The client must carefully respect the rules on managing fids
+        and stay within the message size limits.<br>
+
+<pre><span id="VALwalk"><span class="keyword">val</span> walk</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -><br>       <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> string list -> <a href="Response.Walk.html#TYPEt">Response.Walk.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">walk t fid newfid wnames</code> binds <code class="code">newfid</code> to the result of Walking
+        from <code class="code">fid</code> along the path given by <code class="code">wnames</code><br>
+</div>
+
+<pre><span id="VALopenfid"><span class="keyword">val</span> openfid</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -><br>       <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> <a href="Types.OpenMode.html#TYPEt">Types.OpenMode.t</a> -> <a href="Response.Open.html#TYPEt">Response.Open.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">open t fid mode</code> confirms that <code class="code">fid</code> can be accessed according to
+        <code class="code">mode</code><br>
+</div>
+
+<pre><span id="VALstat"><span class="keyword">val</span> stat</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -> <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> <a href="Response.Stat.html#TYPEt">Response.Stat.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">stat t fid</code> returns a description of the file associated with <code class="code">fid</code><br>
+</div>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -><br>       <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> int64 -> int32 -> <a href="Response.Read.html#TYPEt">Response.Read.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">read t fid offset count</code> returns <code class="code">count</code> bytes of data at <code class="code">offset</code> in
+        the file referenced by <code class="code">pid</code>. Note that <code class="code">count</code> must be less than the
+        server's negotiated maximum message size.<br>
+</div>
+
+<pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -><br>       <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> int64 -> Cstruct.t -> <a href="Response.Write.html#TYPEt">Response.Write.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">write t fid offset data</code> writes <code class="code">data</code> to the file given by <code class="code">fid</code> at
+        offset <code class="code">offset</code>.<br>
+</div>
+
+<pre><span id="VALclunk"><span class="keyword">val</span> clunk</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -> <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> <a href="Response.Clunk.html#TYPEt">Response.Clunk.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">clunk t fid</code> informs the server that the reference <code class="code">fid</code> should be
+        forgotten about. When this call returns, it is safe for the client to
+        re-use the fid.<br>
+</div>
+
+<pre><span id="VALremove"><span class="keyword">val</span> remove</span> : <code class="type"><a href="Client.Make.html#TYPEt">Client.Make.t</a> -> <a href="Types.Fid.html#TYPEt">Types.Fid.t</a> -> <a href="Response.Remove.html#TYPEt">Response.Remove.t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<code class="code">remove t fid</code> removes the file associated with <code class="code">fid</code> from the file
+        server. The server will "clunk" the fid whether the call succeeds or
+        fails.<br>
+</div>
+</body></html>

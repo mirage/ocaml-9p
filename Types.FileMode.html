@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Types.OpenMode.html">
+<link rel="next" href="Types.Qid.html">
+<link rel="Up" href="Types.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="S" rel="Chapter" href="S.html">
+<link title="Request" rel="Chapter" href="Request.html">
+<link title="Error" rel="Chapter" href="Error.html">
+<link title="Response" rel="Chapter" href="Response.html">
+<link title="Types" rel="Chapter" href="Types.html">
+<link title="Client" rel="Chapter" href="Client.html"><title>Types.FileMode</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Types.OpenMode.html" title="Types.OpenMode">Previous</a>
+&nbsp;<a class="up" href="Types.html" title="Types">Up</a>
+&nbsp;<a class="post" href="Types.Qid.html" title="Types.Qid">Next</a>
+</div>
+<h1>Module <a href="type_Types.FileMode.html">Types.FileMode</a></h1>
+
+<pre><span class="keyword">module</span> FileMode: <code class="code">sig</code> <a href="Types.FileMode.html">..</a> <code class="code">end</code></pre><hr width="100%">
+
+<pre><span id="TYPEpermission"><span class="keyword">type</span> <code class="type"></code>permission</span> = <code class="type">[ `Execute | `Read | `Write ]</code> </pre>
+
+
+<pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.owner">owner</span>&nbsp;: <code class="type"><a href="Types.FileMode.html#TYPEpermission">permission</a> list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >file owner has these permissions</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.group">group</span>&nbsp;: <code class="type"><a href="Types.FileMode.html#TYPEpermission">permission</a> list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >anyone in the same group has these permissions</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.other">other</span>&nbsp;: <code class="type"><a href="Types.FileMode.html#TYPEpermission">permission</a> list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >all other users have these permissions</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_directory">is_directory</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is a directory</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.append_only">append_only</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is append-only (and therefore offsets in writes are ignored)</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.exclusive">exclusive</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if only one client may have it open at a time</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_auth">is_auth</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is a special authentication file</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.temporary">temporary</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is temporary and should be skipped from nightly backups</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info ">
+A 'mode' returned from a call to "Stat"<br>
+</div>
+
+
+<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">?owner:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?group:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?other:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?is_directory:bool -><br>       ?append_only:bool -><br>       ?exclusive:bool -><br>       ?is_auth:bool -> ?temporary:bool -> unit -> <a href="Types.FileMode.html#TYPEt">t</a></code></pre>
+<pre><span class="keyword">include</span> <a href="S.SERIALISABLE.html">S.SERIALISABLE</a></pre>
+
+<pre><span id="VALpermission_of_sexp"><span class="keyword">val</span> permission_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.FileMode.html#TYPEpermission">permission</a></code></pre>
+<pre><span id="VAL__permission_of_sexp__"><span class="keyword">val</span> __permission_of_sexp__</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.FileMode.html#TYPEpermission">permission</a></code></pre>
+<pre><span id="VALsexp_of_permission"><span class="keyword">val</span> sexp_of_permission</span> : <code class="type"><a href="Types.FileMode.html#TYPEpermission">permission</a> -> Sexplib.Sexp.t</code></pre>
+<pre><span id="VALt_of_sexp"><span class="keyword">val</span> t_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.FileMode.html#TYPEt">t</a></code></pre>
+<pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Types.FileMode.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
+A 'mode' returned from a call to "Stat"<br>
+</div>
+</body></html>
