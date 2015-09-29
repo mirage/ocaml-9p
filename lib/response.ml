@@ -38,19 +38,30 @@ end
 module Err = struct
   type t = {
     ename: string;
+    errno: int32 option;
   } with sexp
 
-  let sizeof t = 2 + (String.length t.ename)
+  let sizeof t = 2 + (String.length t.ename) + (match t.errno with Some _ -> 4 | None -> 0)
 
   let write t buf =
     let ename = Data.of_string t.ename in
     Data.write ename buf
+    >>= fun rest ->
+    match t.errno with
+    | None -> return rest
+    | Some x ->
+      Int32.write x rest
 
   let read buf =
     Data.read buf
     >>= fun (ename, rest) ->
     let ename = Data.to_string ename in
-    return ({ ename }, rest)
+    if Cstruct.len rest = 0
+    then return ({ ename; errno = None }, rest)
+    else
+      Int32.read rest
+      >>= fun (x, rest) ->
+      return ({ ename; errno = Some x }, rest)
 end
 
 module Flush = struct
