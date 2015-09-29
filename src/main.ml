@@ -71,7 +71,7 @@ let ls debug address path username =
           | Error (`Msg x) -> failwith x
           | Ok stats ->
             let row_of_stat x =
-              let perms = Printf.sprintf "%c---------" (if List.mem Types.Qid.Directory x.Types.Stat.qid.Types.Qid.flags then 'd' else 'f') in
+              let perms = Printf.sprintf "%c---------" (if List.mem Types.Qid.Directory x.Types.Stat.qid.Types.Qid.flags then 'd' else '-') in
               let links = "?" in
               let uid = x.Types.Stat.uid in
               let gid = x.Types.Stat.gid in
