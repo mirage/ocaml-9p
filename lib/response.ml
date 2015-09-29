@@ -218,11 +218,16 @@ module Stat = struct
     stat: Stat.t;
   } with sexp
 
-  let sizeof t = Types.Stat.sizeof t.stat
+  let sizeof t = 2 + (Types.Stat.sizeof t.stat)
 
-  let write t rest = Types.Stat.write t.stat rest
+  let write t rest =
+    Int16.write (Types.Stat.sizeof t.stat) rest
+    >>= fun rest ->
+    Types.Stat.write t.stat rest
 
   let read rest =
+    Int16.read rest
+    >>= fun (_len, rest) ->
     Types.Stat.read rest
     >>= fun (stat, rest) ->
     return ( {stat}, rest )
