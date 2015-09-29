@@ -104,28 +104,13 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       (fun () ->
         f ()
         >>= fun ok_or_error ->
-        g ();
+        g ()
+        >>= fun _ignore_error ->
         return ok_or_error
       ) (fun e ->
-        g ();
+        g ()
+        >>= fun _ignore_error ->
         fail e)
-
-  let rec allocate_fid t =
-    let open Lwt in
-    if t.free_fids = Types.Fid.Set.empty
-    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
-    else
-      let fid = Types.Fid.Set.min_elt t.free_fids in
-      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
-      return fid
-  let deallocate_fid t fid =
-    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
-    Lwt_condition.signal t.free_fids_c ()
-  let with_fid t f =
-    let open Lwt in
-    allocate_fid t
-    >>= fun fid ->
-    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
 
   let rpc t request =
     (* Allocate a fresh tag, or wait if none are available yet *)
@@ -143,7 +128,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     let deallocate_tag tag =
       t.free_tags <- Types.Tag.Set.add tag t.free_tags;
       t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
-      Lwt_condition.signal c () in
+      Lwt_condition.signal c ();
+      Lwt.return () in
     let with_tag f =
       let open Lwt in
       allocate_tag ()
@@ -163,6 +149,24 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         th >>= fun response ->
         return (Ok response)
       )
+
+  let rec allocate_fid t =
+    let open Lwt in
+    if t.free_fids = Types.Fid.Set.empty
+    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+    else
+      let fid = Types.Fid.Set.min_elt t.free_fids in
+      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
+      return fid
+  let deallocate_fid t fid =
+    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+    Lwt_condition.signal t.free_fids_c ();
+    Lwt.return ()
+  let with_fid t f =
+    let open Lwt in
+    allocate_fid t
+    >>= fun fid ->
+    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
 
   (* The dispatcher thread reads responses from the FLOW and wakes up
      the thread blocked in the rpc function. *)
