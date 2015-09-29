@@ -70,7 +70,7 @@ let requests =
     { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.default}) };
     { tag = make_tag (); payload = Auth Auth.({ afid = make_fid (); uname = "hello"; aname = "there" }) };
     { tag = make_tag (); payload = Flush Flush.({ oldtag = make_tag () }) };
-    { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?" })};
+    { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?"; n_uname = None })};
     { tag = make_tag (); payload = Walk Walk.( { fid = make_fid (); newfid = make_fid (); wnames = [ "one"; "two"; "three" ]})};
     { tag = make_tag (); payload = Open Open.( { fid = make_fid (); mode = openmode })};
     { tag = make_tag (); payload = Create Create.( { fid = make_fid (); name = "woohoo"; perm = 44l; mode = openmode})};
@@ -86,7 +86,7 @@ let responses =
   let open Response in [
     { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.unknown}) };
     { tag = make_tag (); payload = Auth Auth.({ aqid = qid }) };
-    { tag = make_tag (); payload = Err Err.({ ename = "it went wrong!" })};
+    { tag = make_tag (); payload = Err Err.({ ename = "it went wrong!"; errno = None })};
     { tag = make_tag (); payload = Flush Flush.( () ) };
     { tag = make_tag (); payload = Attach Attach.({ qid })};
     { tag = make_tag (); payload = Walk Walk.( { wqids = [ qid; qid ] })};
