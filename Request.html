@@ -26,7 +26,7 @@
 <h1>Module <a href="type_Request.html">Request</a></h1>
 
 <pre><span class="keyword">module</span> Request: <code class="code">sig</code> <a href="Request.html">..</a> <code class="code">end</code></pre><div class="info module top">
-client's maximum message size<br>
+Parsers and printers for all 9P request messages.<br>
 </div>
 <hr width="100%">
 
@@ -133,7 +133,7 @@ client's maximum message size<br>
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTpayload.Wstat"><span class="constructor">Wstat</span></span> <span class="keyword">of</span> <code class="type"><a href="Request.Wstat.html#TYPEt">Wstat.t</a></code></code></td>
-
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >A variant type containing all possible request payloads</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
 
 
@@ -144,7 +144,7 @@ client's maximum message size<br>
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTt.tag">tag</span>&nbsp;: <code class="type"><a href="Types.Tag.html#TYPEt">Types.Tag.t</a></code>;</code></td>
-
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The tag used to match the response with the original request</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
 <tr>
 <td align="left" valign="top" >
@@ -155,12 +155,21 @@ client's maximum message size<br>
 </tr></table>
 }
 
+<div class="info ">
+A 9P protocol request<br>
+</div>
 
 
 <pre><span class="keyword">include</span> <a href="S.SERIALISABLE.html">S.SERIALISABLE</a></pre>
 
 <pre><span id="VALto_string"><span class="keyword">val</span> to_string</span> : <code class="type"><a href="Request.html#TYPEt">t</a> -> string</code></pre>
 <pre><span id="VALpayload_of_sexp"><span class="keyword">val</span> payload_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Request.html#TYPEpayload">payload</a></code></pre>
-<pre><span id="VALsexp_of_payload"><span class="keyword">val</span> sexp_of_payload</span> : <code class="type"><a href="Request.html#TYPEpayload">payload</a> -> Sexplib.Sexp.t</code></pre>
+<pre><span id="VALsexp_of_payload"><span class="keyword">val</span> sexp_of_payload</span> : <code class="type"><a href="Request.html#TYPEpayload">payload</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
+A variant type containing all possible request payloads<br>
+</div>
+
 <pre><span id="VALt_of_sexp"><span class="keyword">val</span> t_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Request.html#TYPEt">t</a></code></pre>
-<pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Request.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre></body></html>
+<pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Request.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
+A 9P protocol request<br>
+</div>
+</body></html>

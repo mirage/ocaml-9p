@@ -33,7 +33,7 @@
 <tr><td align="left"><br>C</td></tr>
 <tr><td><a href="Client.html">Client</a> </td>
 <td><div class="info">
-An established connection to a 9P server
+Given a transport (a Mirage FLOW), construct a 9P client on top.
 </div>
 </td></tr>
 <tr><td><a href="Response.Clunk.html">Clunk</a> [<a href="Response.html">Response</a>]</td>
@@ -51,7 +51,10 @@ An established connection to a 9P server
 <tr><td><a href="Response.Err.html">Err</a> [<a href="Response.html">Response</a>]</td>
 <td></td></tr>
 <tr><td><a href="Error.html">Error</a> </td>
-<td></td></tr>
+<td><div class="info">
+Common error reporting functions
+</div>
+</td></tr>
 <tr><td align="left"><br>F</td></tr>
 <tr><td><a href="Types.Fid.html">Fid</a> [<a href="Types.html">Types</a>]</td>
 <td></td></tr>
@@ -102,18 +105,18 @@ An established connection to a 9P server
 <td></td></tr>
 <tr><td><a href="Request.html">Request</a> </td>
 <td><div class="info">
-client's maximum message size
+Parsers and printers for all 9P request messages.
 </div>
 </td></tr>
 <tr><td><a href="Response.html">Response</a> </td>
 <td><div class="info">
-the server's maximum message size, must be less than the client's
+Parsers and printers for 9P response messages
 </div>
 </td></tr>
 <tr><td align="left"><br>S</td></tr>
 <tr><td><a href="S.html">S</a> </td>
 <td><div class="info">
-Instances of this type can be read and written
+Common signatures used by the library
 </div>
 </td></tr>
 <tr><td><a href="Types.Tag.Set.html">Set</a> [<a href="Types.Tag.html">Types.Tag</a>]</td>
@@ -131,8 +134,7 @@ Instances of this type can be read and written
 <td></td></tr>
 <tr><td><a href="Types.html">Types</a> </td>
 <td><div class="info">
-<code class="code">big_enough_for name buf length</code> returns an error with a log message
-    if buffer <code class="code">buf</code> is smaller than <code class="code">length</code>.
+Parsers and printers for types used in 9P messages
 </div>
 </td></tr>
 <tr><td align="left"><br>V</td></tr>
