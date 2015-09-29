@@ -184,6 +184,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Response.Read x -> Lwt.return (Ok x)
       | response -> return_error response
 
+    let write t fid offset data =
+      rpc t Request.(Write { Write.fid; offset; data })
+      >>*= function
+      | Response.Write x -> Lwt.return (Ok x)
+      | response -> return_error response
+
     let clunk t fid =
       rpc t Request.(Clunk { Clunk.fid })
       >>*= function

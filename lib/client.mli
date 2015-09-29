@@ -50,6 +50,10 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
         the file referenced by [pid]. Note that [count] must be less than the
         server's negotiated maximum message size. *)
 
+    val write: t -> Types.Fid.t -> int64 -> Cstruct.t -> Response.Write.t Error.t Lwt.t
+    (** [write t fid offset data] writes [data] to the file given by [fid] at
+        offset [offset]. *)
+
     val clunk: t -> Types.Fid.t -> Response.Clunk.t Error.t Lwt.t
     (** [clunk t fid] informs the server that the reference [fid] should be
         forgotten about. When this call returns, it is safe for the client to
