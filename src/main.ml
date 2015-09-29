@@ -51,7 +51,10 @@ let with_connection address f =
     (fun () -> f s >>= fun r -> Lwt_unix.close s >>= fun () -> return r)
     (fun e -> Lwt_unix.close s >>= fun () -> fail e)
 
+let parse_path x = Stringext.split x ~on:'/'
+
 let ls address path username =
+  let path = parse_path path in
   let t =
     with_connection address
       (fun s ->
@@ -61,7 +64,7 @@ let ls address path username =
         | Error (`Msg x) -> failwith x
         | Ok t ->
           Log.debug "Successfully negotiated a connection.";
-          begin Client.readdir t [ path ] >>= function
+          begin Client.readdir t path >>= function
           | Error (`Msg x) -> failwith x
           | Ok stats ->
             let row_of_stat x =
