@@ -29,6 +29,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     flow: FLOW.flow;
     root: fid;
     msize: int32;
+    transmit_m: Lwt_mutex.t;
     mutable wakeners: Response.t Lwt.u TagMap.t;
     mutable free_tags: TagSet.t;
     mutable input_buffer: Cstruct.t;
@@ -83,7 +84,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun (response, _) ->
     Lwt.return (Ok response)
 
-  let send_one_packet flow request =
+  let write_one_packet flow request =
     let sizeof = Request.sizeof request in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Request.write request buffer)
@@ -119,8 +120,15 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     with_tag
       (fun (tag, th) ->
         (* Lock the flow for output and transmit the packet *)
+        Lwt_mutex.with_lock t.transmit_m
+          (fun () ->
+            write_one_packet t.flow request
+          )
+        >>*= fun () ->
         (* Wait for the response to be read *)
-        th
+        let open Lwt in
+        th >>= fun response ->
+        return (Ok response)
       )
 
   (* The dispatcher thread reads responses from the FLOW and wakes up
@@ -139,7 +147,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     end
 
   let connect flow ?(msize = 1024l) ?(username = "nobody") ?(aname = "/") () =
-    send_one_packet flow {
+    write_one_packet flow {
       Request.tag = Types.Tag.notag;
       payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
     } >>*= fun () ->
@@ -147,9 +155,10 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     (* We use the convention that fid 0l is the root fid. We'll never clunk
        this one so we can always re-explore the filesystem from the root. *)
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
+    let transmit_m = Lwt_mutex.create () in
     let wakeners = TagMap.empty in
     let free_tags = TagSet.empty in
-    let t = { flow; root; msize; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
+    let t = { flow; root; msize; transmit_m; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->
@@ -160,7 +169,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
 
       let tag = match Types.Tag.of_int 0 with Ok x -> x | _ -> assert false in
       let afid = Types.Fid.nofid in
-      send_one_packet flow {
+      write_one_packet flow {
         Request.tag;
         payload = Request.Attach Request.Attach.({ fid = root; afid; uname = username; aname })
       } >>*= fun () ->
