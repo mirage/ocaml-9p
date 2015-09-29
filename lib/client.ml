@@ -183,6 +183,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= function
       | Response.Read x -> Lwt.return (Ok x)
       | response -> return_error response
+
+    let clunk t fid =
+      rpc t Request.(Clunk { Clunk.fid })
+      >>*= function
+      | Response.Clunk x -> Lwt.return (Ok x)
+      | response -> return_error response
   end
 
   let readdir t path =
