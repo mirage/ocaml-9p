@@ -31,6 +31,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     mutable wakeners: Response.payload Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
     mutable free_fids: Types.Fid.Set.t;
+    free_fids_c: unit Lwt_condition.t;
     mutable input_buffer: Cstruct.t;
   }
 
@@ -97,6 +98,35 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>|= fun () ->
     Lwt.return (Ok ())
 
+  let finally f g =
+    let open Lwt in
+    Lwt.catch
+      (fun () ->
+        f ()
+        >>= fun ok_or_error ->
+        g ();
+        return ok_or_error
+      ) (fun e ->
+        g ();
+        fail e)
+
+  let rec allocate_fid t =
+    let open Lwt in
+    if t.free_fids = Types.Fid.Set.empty
+    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+    else
+      let fid = Types.Fid.Set.min_elt t.free_fids in
+      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
+      return fid
+  let deallocate_fid t fid =
+    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+    Lwt_condition.signal t.free_fids_c ()
+  let with_fid t f =
+    let open Lwt in
+    allocate_fid t
+    >>= fun fid ->
+    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
+
   let rpc t request =
     (* Allocate a fresh tag, or wait if none are available yet *)
     let c = Lwt_condition.create () in
@@ -118,9 +148,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       let open Lwt in
       allocate_tag ()
       >>= fun (tag, th) ->
-      Lwt.catch
-        (fun () -> f (tag, th))
-        (fun e -> deallocate_tag tag; fail e) in
+      finally (fun () -> f (tag, th)) (fun () -> deallocate_tag tag) in
     with_tag
       (fun (tag, th) ->
         (* Lock the flow for output and transmit the packet *)
@@ -206,33 +234,37 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   let read t path offset count =
     let open LowLevel in
     let fid = t.root in
-    let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
-    let wnames = path in
-    walk t fid newfid wnames
-    >>*= fun _ -> (* I don't need to know the qids *)
-    openfid t newfid Types.Mode.Read
-    >>*= fun _ ->
-    let rec loop acc offset remaining =
-      let to_request = min remaining t.maximum_payload in
-      read t t.root offset to_request
-      >>*= fun { Response.Read.data } ->
-      let n = Cstruct.len data in
-      if n = 0
-      then Lwt.return (Ok (List.rev acc))
-      else
-        loop (data :: acc) Int64.(add offset (of_int n)) Int32.(sub remaining (of_int n)) in
-    loop [] offset count
+    with_fid t
+      (fun newfid ->
+        let wnames = path in
+        walk t fid newfid wnames
+        >>*= fun _ -> (* I don't need to know the qids *)
+        openfid t newfid Types.Mode.Read
+        >>*= fun _ ->
+        let rec loop acc offset remaining =
+          let to_request = min remaining t.maximum_payload in
+          read t t.root offset to_request
+          >>*= fun { Response.Read.data } ->
+          let n = Cstruct.len data in
+          if n = 0
+          then Lwt.return (Ok (List.rev acc))
+          else
+            loop (data :: acc) Int64.(add offset (of_int n)) Int32.(sub remaining (of_int n)) in
+         loop [] offset count
+      )
 
   let stat t path =
     let open LowLevel in
     let fid = t.root in
-    let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
-    let wnames = path in
-    walk t fid newfid wnames
-    >>*= fun _ -> (* I don't need to know the qids *)
-    stat t newfid
-    >>*= fun { Response.Stat.stat } ->
-    Lwt.return (Ok stat)
+    with_fid t
+      (fun newfid ->
+        let wnames = path in
+        walk t fid newfid wnames
+        >>*= fun _ -> (* I don't need to know the qids *)
+        stat t newfid
+        >>*= fun { Response.Stat.stat } ->
+        Lwt.return (Ok stat)
+      )
 
   module KV_RO = struct
     open Lwt
@@ -272,26 +304,27 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   let readdir t path =
     let open LowLevel in
     let fid = t.root in
-    let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
-    let wnames = path in
-    walk t fid newfid wnames
-    >>*= fun _ -> (* I don't need to know the qids *)
-    openfid t newfid Types.Mode.Read
-    >>*= fun _ ->
-    let rec loop acc offset =
-      read t t.root offset t.maximum_payload
-      >>*= fun { Response.Read.data } ->
-      if Cstruct.len data = 0
-      then Lwt.return (Ok acc)
-      else
-        (* Data should be an integral number of marshalled Stat.ts *)
-        let module StatArray = Types.Arr(Types.Stat) in
-        (Lwt.return (StatArray.read data))
-        >>*= fun (stats, rest) ->
-        assert (Cstruct.len rest = 0);
-        loop (acc @ stats) Int64.(add offset (of_int (Cstruct.len data))) in
-    loop [] 0L
-
+    with_fid t
+      (fun newfid ->
+        let wnames = path in
+        walk t fid newfid wnames
+        >>*= fun _ -> (* I don't need to know the qids *)
+        openfid t newfid Types.Mode.Read
+        >>*= fun _ ->
+        let rec loop acc offset =
+          read t t.root offset t.maximum_payload
+          >>*= fun { Response.Read.data } ->
+          if Cstruct.len data = 0
+          then Lwt.return (Ok acc)
+          else
+            (* Data should be an integral number of marshalled Stat.ts *)
+            let module StatArray = Types.Arr(Types.Stat) in
+            (Lwt.return (StatArray.read data))
+            >>*= fun (stats, rest) ->
+            assert (Cstruct.len rest = 0);
+            loop (acc @ stats) Int64.(add offset (of_int (Cstruct.len data))) in
+        loop [] 0L
+    )
   (* 8215 = 8192 + 23 (maximum overhead in a write packet) *)
   let connect flow ?(msize = 8215l) ?(username = "nobody") ?(aname = "/") () =
     write_one_packet flow {
@@ -306,8 +339,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     let wakeners = Types.Tag.Map.empty in
     let free_tags = Types.Tag.recommended in
     let free_fids = Types.Fid.recommended in
+    let free_fids_c = Lwt_condition.create () in
     let maximum_payload = 0l in (* recomputed when the server responds *)
-    let t = { flow; root; msize; maximum_payload; transmit_m; wakeners; free_tags; free_fids; input_buffer = Cstruct.create 0 } in
+    let t = { flow; root; msize; maximum_payload; transmit_m; wakeners; free_tags; free_fids; free_fids_c; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->
