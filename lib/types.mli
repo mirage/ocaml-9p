@@ -67,6 +67,17 @@ module Fid : sig
   include S.SERIALISABLE with type t := t
 end
 
+module Mode : sig
+  type t =
+  | Read       (** read access *)
+  | Write      (** write access *)
+  | ReadWrite  (** read and write access *)
+  | Exec       (** execute access *)
+  with sexp
+
+  include S.SERIALISABLE with type t := t
+end
+
 module Qid : sig
   type flag =
     | Directory  (** file is a directory *)

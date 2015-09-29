@@ -25,4 +25,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
       message size we support: the server may choose a lower value. [username]
       is the username to present to the remote server. [aname] is the name of
       the exported filesystem. *)
+
+  val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
+  (** Return the contents of a named directory. *)
 end

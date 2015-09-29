@@ -111,6 +111,34 @@ module Fid = struct
   let write = Int32.write
 end
 
+module Mode = struct
+  type t = Read | Write | ReadWrite | Exec with sexp
+
+  let to_int = function
+    | Read      -> 0
+    | Write     -> 1
+    | ReadWrite -> 2
+    | Exec      -> 3
+
+  let of_int = function
+    | 0 -> Result.Ok Read
+    | 1 -> Result.Ok Write
+    | 2 -> Result.Ok ReadWrite
+    | 3 -> Result.Ok Exec
+    | n -> error_msg "Unknown mode number: %d" n
+
+  let sizeof _ = 1
+
+  let read rest =
+    Int8.read rest
+    >>= fun (x, rest) ->
+    of_int x
+    >>= fun mode ->
+    return (mode, rest)
+
+  let write t rest = Int8.write (to_int t) rest
+end
+
 module Qid = struct
   type flag = Directory | AppendOnly | Exclusive | Temporary with sexp
 

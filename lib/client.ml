@@ -30,7 +30,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     root: fid;
     msize: int32;
     transmit_m: Lwt_mutex.t;
-    mutable wakeners: Response.t Lwt.u TagMap.t;
+    mutable wakeners: Response.payload Lwt.u TagMap.t;
     mutable free_tags: TagSet.t;
     mutable input_buffer: Cstruct.t;
   }
@@ -122,7 +122,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         (* Lock the flow for output and transmit the packet *)
         Lwt_mutex.with_lock t.transmit_m
           (fun () ->
-            write_one_packet t.flow request
+            write_one_packet t.flow { Request.tag; payload = request }
           )
         >>*= fun () ->
         (* Wait for the response to be read *)
@@ -142,9 +142,45 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       dispatcher_t t
     end else begin
       let wakener = TagMap.find tag t.wakeners in
-      Lwt.wakeup_later wakener response;
+      Lwt.wakeup_later wakener response.Response.payload;
       dispatcher_t t
     end
+
+  let return_error = function
+    | Response.Err { Response.Err.ename } ->
+      Lwt.return (Error (`Msg ename))
+    | payload ->
+      Lwt.return (error_msg "Server sent unexpected reply: %s" (Sexplib.Sexp.to_string (Response.sexp_of_payload  payload)))
+
+  let walk t fid newfid wnames =
+    rpc t Request.(Walk { Walk.fid; newfid; wnames })
+    >>*= function
+    | Response.Walk x -> Lwt.return (Ok x)
+    | response -> return_error response
+
+  let openfid t fid mode =
+    rpc t Request.(Open { Open.fid; mode })
+    >>*= function
+    | Response.Open x -> Lwt.return (Ok x)
+    | response -> return_error response
+
+  let read t fid offset count =
+    rpc t Request.(Read { Read.fid; offset; count })
+    >>*= function
+    | Response.Read x -> Lwt.return (Ok x)
+    | response -> return_error response
+ 
+  let readdir t path =
+    let fid = t.root in
+    let newfid = match Types.Fid.of_int32 4l with Ok x -> x | _ -> assert false in
+    let wnames = path in
+    walk t fid newfid wnames
+    >>*= fun _ -> (* I don't need to know the qids *)
+    openfid t newfid Types.Mode.Read
+    >>*= fun _ ->
+    read t newfid 0L 1024l
+    >>*= fun { Response.Read.data } ->
+    Lwt.return (Ok [])
 
   let connect flow ?(msize = 1024l) ?(username = "nobody") ?(aname = "/") () =
     write_one_packet flow {
