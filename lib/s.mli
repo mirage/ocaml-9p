@@ -16,6 +16,12 @@
  *)
 open Result
 
+module type LOG = sig
+  val debug : ('a, unit, string, unit) format4 -> 'a
+  val info  : ('a, unit, string, unit) format4 -> 'a
+  val error : ('a, unit, string, unit) format4 -> 'a
+end
+
 module type SERIALISABLE = sig
   type t
   (** Instances of this type can be read and written *)

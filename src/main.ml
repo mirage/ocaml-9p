@@ -20,7 +20,14 @@ open Lwt
 let project_url = "http://github.com/djs55/ocaml-9p"
 let version = "0.0"
 
-module Client = Client.Make(Flow_lwt_unix)
+module Log = struct
+  let debug fmt = Printf.ksprintf (fun s -> print_endline s) fmt
+  let info  fmt = Printf.ksprintf (fun s -> print_endline s) fmt
+  let warn fmt = Printf.ksprintf (fun s -> print_endline s) fmt
+  let error fmt = Printf.ksprintf (fun s -> print_endline s) fmt
+end
+
+module Client = Client.Make(Log)(Flow_lwt_unix)
 
 let with_connection address f =
   let hostname, port =

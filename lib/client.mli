@@ -15,7 +15,7 @@
  *
  *)
 
-module Make(FLOW: V1_LWT.FLOW) : sig
+module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t
   (** An established connection to a 9P server *)

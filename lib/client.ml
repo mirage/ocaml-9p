@@ -17,7 +17,8 @@
 open Result
 open Error
 
-module Make(FLOW: V1_LWT.FLOW) = struct
+module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
+  open Log
 
   type fid = Types.Fid.t
 
@@ -122,6 +123,21 @@ module Make(FLOW: V1_LWT.FLOW) = struct
         th
       )
 
+  (* The dispatcher thread reads responses from the FLOW and wakes up
+     the thread blocked in the rpc function. *)
+  let rec dispatcher_t t =
+    read_one_packet t
+    >>*= fun response ->
+    let tag = response.Response.tag in
+    if not(TagMap.mem tag t.wakeners) then begin
+      error "Received response with unexpected tag: %s" (Sexplib.Sexp.to_string (Response.sexp_of_t response));
+      dispatcher_t t
+    end else begin
+      let wakener = TagMap.find tag t.wakeners in
+      Lwt.wakeup_later wakener response;
+      dispatcher_t t
+    end
+
   let connect flow ?(msize = 1024l) ?(username = "nobody") ?(aname = "/") () =
     send_one_packet flow {
       Request.tag = Types.Tag.notag;
@@ -152,7 +168,9 @@ module Make(FLOW: V1_LWT.FLOW) = struct
       >>*= fun response ->
       begin match response with
       | { Response.payload = Response.Attach { Response.Attach.qid } } ->
-        Printf.fprintf stderr "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
+        info "Successfully received a root qid: %s\n%!" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
+        (* Negotiation complete: start the dispatcher thread *)
+        Lwt.async (fun () -> dispatcher_t t);
         Lwt.return (Ok { t with msize })
       | { Response.payload = Response.Err { Response.Err.ename } } ->
         Lwt.return (Error (`Msg ename))
