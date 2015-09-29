@@ -68,7 +68,7 @@ let openmode = Types.OpenMode.Read
 let requests =
   let open Request in [
     { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.default}) };
-    { tag = make_tag (); payload = Auth Auth.({ afid = make_fid (); uname = "hello"; aname = "there" }) };
+    { tag = make_tag (); payload = Auth Auth.({ afid = make_fid (); uname = "hello"; aname = "there"; n_uname = Some 4l }) };
     { tag = make_tag (); payload = Flush Flush.({ oldtag = make_tag () }) };
     { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?"; n_uname = None })};
     { tag = make_tag (); payload = Walk Walk.( { fid = make_fid (); newfid = make_fid (); wnames = [ "one"; "two"; "three" ]})};

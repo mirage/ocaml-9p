@@ -46,9 +46,12 @@ module Auth = struct
     afid: Fid.t;
     uname: string;
     aname: string;
+    n_uname: int32 option;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+  let sizeof t =
+    (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+    + (match t.n_uname with Some x -> 4 | None -> 0)
 
   let write t rest =
     Fid.write t.afid rest
@@ -58,6 +61,10 @@ module Auth = struct
     >>= fun rest ->
     let aname = Data.of_string t.aname in
     Data.write aname rest
+    >>= fun rest ->
+    match t.n_uname with
+    | None -> return rest
+    | Some x -> Int32.write x rest
 
   let read rest =
     Fid.read rest
@@ -68,7 +75,13 @@ module Auth = struct
     >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    return ({ afid; uname; aname }, rest)
+    if Cstruct.len rest = 0
+    then return ({ afid; uname; aname; n_uname = None }, rest)
+    else
+      Int32.read rest
+      >>= fun (x, rest) ->
+      return ({ afid; uname; aname; n_uname = Some x }, rest)
+
 end
 
 module Flush = struct

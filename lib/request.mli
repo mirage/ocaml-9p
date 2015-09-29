@@ -37,6 +37,7 @@ module Auth : sig
     afid: Types.Fid.t;
     uname: string;
     aname: string;
+    n_uname: int32 option; (** Numeric userid supported by 9P2000.u *)
   } with sexp
   (** The payload of a version message *)
 
@@ -60,7 +61,7 @@ module Attach : sig
     afid: Types.Fid.t;
     uname: string;
     aname: string;
-    n_uname: int32 option;
+    n_uname: int32 option; (** Numeric userid supported by 9P2000.u *)
   } with sexp
   (** The payload of an attach message *)
 
