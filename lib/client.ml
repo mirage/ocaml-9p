@@ -21,10 +21,15 @@ module Make(FLOW: V1_LWT.FLOW) = struct
 
   type fid = Types.Fid.t
 
+  module TagSet = Set.Make(Types.Tag)
+  module TagMap = Map.Make(Types.Tag)
+
   type t = {
     flow: FLOW.flow;
     root: fid;
     msize: int32;
+    mutable wakeners: Response.t Lwt.u TagMap.t;
+    mutable free_tags: TagSet.t;
     mutable input_buffer: Cstruct.t;
   }
 
@@ -86,14 +91,49 @@ module Make(FLOW: V1_LWT.FLOW) = struct
     >>|= fun () ->
     Lwt.return (Ok ())
 
+  let rpc t request =
+    (* Allocate a fresh tag, or wait if none are available yet *)
+    let c = Lwt_condition.create () in
+    let rec allocate_tag () =
+      let open Lwt in
+      if t.free_tags = TagSet.empty
+      then Lwt_condition.wait c >>= fun () -> allocate_tag ()
+      else
+        let tag = TagSet.min_elt t.free_tags in
+        t.free_tags <- TagSet.remove tag t.free_tags;
+        let th, wakener = Lwt.task () in
+        t.wakeners <- TagMap.add tag wakener t.wakeners;
+        return (tag, th) in
+    let deallocate_tag tag =
+      t.free_tags <- TagSet.add tag t.free_tags;
+      t.wakeners <- TagMap.remove tag t.wakeners;
+      Lwt_condition.signal c () in
+    let with_tag f =
+      let open Lwt in
+      allocate_tag ()
+      >>= fun (tag, th) ->
+      Lwt.catch
+        (fun () -> f (tag, th))
+        (fun e -> deallocate_tag tag; fail e) in
+    with_tag
+      (fun (tag, th) ->
+        (* Lock the flow for output and transmit the packet *)
+        (* Wait for the response to be read *)
+        th
+      )
+
   let connect flow ?(msize = 1024l) ?(username = "nobody") ?(aname = "/") () =
     send_one_packet flow {
       Request.tag = Types.Tag.notag;
       payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
     } >>*= fun () ->
 
+    (* We use the convention that fid 0l is the root fid. We'll never clunk
+       this one so we can always re-explore the filesystem from the root. *)
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
-    let t = { flow; root; msize; input_buffer = Cstruct.create 0 } in
+    let wakeners = TagMap.empty in
+    let free_tags = TagSet.empty in
+    let t = { flow; root; msize; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->

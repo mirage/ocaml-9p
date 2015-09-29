@@ -94,6 +94,8 @@ module Tag : sig
 
   val of_int: int -> t Error.t
 
+  val compare: t -> t -> int
+
   include S.SERIALISABLE with type t := t
 end
 

@@ -188,6 +188,11 @@ module Tag = struct
       | x -> Some x in
     return (x, Cstruct.shift buf needed)
 
+  let compare (a: t) (b: t) = match a, b with
+    | None, None -> 0
+    | Some _, None -> -1
+    | None, Some _ -> 1
+    | Some x, Some y -> compare x y
 end
 
 module Data = struct
