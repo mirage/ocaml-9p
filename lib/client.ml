@@ -19,9 +19,12 @@ open Error
 
 module Make(FLOW: V1_LWT.FLOW) = struct
 
+  type fid = Types.Fid.t
+
   type t = {
-    msize: int32;
     flow: FLOW.flow;
+    root: fid;
+    msize: int32;
     mutable input_buffer: Cstruct.t;
   }
 
@@ -89,7 +92,8 @@ module Make(FLOW: V1_LWT.FLOW) = struct
       payload = Request.Version Request.Version.({ msize; version = Types.Version.default });
     } >>*= fun () ->
 
-    let t = { flow; msize; input_buffer = Cstruct.create 0 } in
+    let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
+    let t = { flow; root; msize; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
     >>*= fun response ->
@@ -99,11 +103,10 @@ module Make(FLOW: V1_LWT.FLOW) = struct
       let t = { t with msize } in
 
       let tag = match Types.Tag.of_int 0 with Ok x -> x | _ -> assert false in
-      let fid = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
       let afid = Types.Fid.nofid in
       send_one_packet flow {
         Request.tag;
-        payload = Request.Attach Request.Attach.({ fid; afid; uname = username; aname })
+        payload = Request.Attach Request.Attach.({ fid = root; afid; uname = username; aname })
       } >>*= fun () ->
       read_one_packet t
       >>*= fun response ->
