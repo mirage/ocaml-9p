@@ -226,8 +226,11 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
       return fid
   let deallocate_fid t fid =
+    let open Lwt in
     t.free_fids <- Types.Fid.Set.add fid t.free_fids;
     Lwt_condition.signal t.free_fids_c ();
+    LowLevel.clunk t fid
+    >>= fun _ -> (* the spec says to assume the fid is clunked now *)
     Lwt.return ()
   let with_fid t f =
     let open Lwt in
