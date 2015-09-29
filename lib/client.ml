@@ -157,7 +157,15 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
     let transmit_m = Lwt_mutex.create () in
     let wakeners = TagMap.empty in
-    let free_tags = TagSet.empty in
+    (* We will use up to 100 tags, to avoid overloading the server. We only
+       need 1 tag per outstanding RPC *)
+    let free_tags =
+      let rec loop acc = function
+        | 0 -> acc
+        | next ->
+          let tag = match Types.Tag.of_int next with Ok x -> x | _ -> assert false in
+          loop (TagSet.add tag acc) (next - 1) in
+      loop TagSet.empty 100 in
     let t = { flow; root; msize; transmit_m; wakeners; free_tags; input_buffer = Cstruct.create 0 } in
 
     read_one_packet t
