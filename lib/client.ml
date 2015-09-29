@@ -243,7 +243,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         >>*= fun _ ->
         let rec loop acc offset remaining =
           let to_request = min remaining t.maximum_payload in
-          read t t.root offset to_request
+          read t newfid offset to_request
           >>*= fun { Response.Read.data } ->
           let n = Cstruct.len data in
           if n = 0
@@ -312,7 +312,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         openfid t newfid Types.Mode.Read
         >>*= fun _ ->
         let rec loop acc offset =
-          read t t.root offset t.maximum_payload
+          read t newfid offset t.maximum_payload
           >>*= fun { Response.Read.data } ->
           if Cstruct.len data = 0
           then Lwt.return (Ok acc)
