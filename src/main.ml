@@ -75,10 +75,17 @@ let ls debug address path username =
                   (if List.mem `Read p then "r" else "-")
                 ^ (if List.mem `Write p then "w" else "-")
                 ^ (if List.mem `Execute p then "x" else "-") in
-              let owner = permissions x.Types.Stat.mode.Types.FileMode.owner in
-              let group = permissions x.Types.Stat.mode.Types.FileMode.group in
-              let other = permissions x.Types.Stat.mode.Types.FileMode.other in
-              let kind = if List.mem Types.Qid.Directory x.Types.Stat.qid.Types.Qid.flags then "d" else "-" in
+              let filemode = x.Types.Stat.mode in
+              let owner = permissions filemode.Types.FileMode.owner in
+              let group = permissions filemode.Types.FileMode.group in
+              let other = permissions filemode.Types.FileMode.other in
+              let kind =
+                let open Types.FileMode in
+                if filemode.is_directory then "d"
+                else if filemode.is_symlink then "l"
+                else if filemode.is_device then "c"
+                else if filemode.is_socket then "s"
+                else "-" in
               let perms = kind ^ owner ^ group ^ other in
               let links = "?" in
               let uid = x.Types.Stat.uid in
