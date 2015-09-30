@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="Up" href="Buffered9PReader.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="S" rel="Chapter" href="S.html">
+<link title="Request" rel="Chapter" href="Request.html">
+<link title="Error" rel="Chapter" href="Error.html">
+<link title="Response" rel="Chapter" href="Response.html">
+<link title="Types" rel="Chapter" href="Types.html">
+<link title="Client" rel="Chapter" href="Client.html">
+<link title="Server" rel="Chapter" href="Server.html">
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Buffered9PReader.Make</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Buffered9PReader.html" title="Buffered9PReader">Up</a>
+&nbsp;</div>
+<h1>Functor <a href="type_Buffered9PReader.Make.html">Buffered9PReader.Make</a></h1>
+
+<pre><span class="keyword">module</span> Make: <div class="sig_block"><code class="code">functor (</code><code class="code">Log</code><code class="code"> : </code><code class="type"><a href="S.LOG.html">S.LOG</a></code><code class="code">) -&gt; </code><div class="sig_block"><code class="code">functor (</code><code class="code">FLOW</code><code class="code"> : </code><code class="type">V1_LWT.FLOW</code><code class="code">) -&gt; </code><code class="code">sig</code> <a href="Buffered9PReader.Make.html">..</a> <code class="code">end</code></div></div></pre><table border="0" cellpadding="3" width="100%">
+<tr>
+<td align="left" valign="top" width="1%%"><b>Parameters: </b></td>
+<td>
+<table class="paramstable">
+<tr>
+<td align="center" valign="top" width="15%">
+<code>Log</code></td>
+<td align="center" valign="top">:</td>
+<td><code class="type"><a href="S.LOG.html">S.LOG</a></code>
+<tr>
+<td align="center" valign="top" width="15%">
+<code>FLOW</code></td>
+<td align="center" valign="top">:</td>
+<td><code class="type">V1_LWT.FLOW</code>
+</table>
+</td>
+</tr>
+</table>
+<hr width="100%">
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
+<div class="info ">
+A buffered 9P message reader over a FLOW<br>
+</div>
+
+
+<pre><span id="VALcreate"><span class="keyword">val</span> create</span> : <code class="type">FLOW.flow -> <a href="Buffered9PReader.Make.html#TYPEt">t</a></code></pre><div class="info ">
+Construct a buffered 9P message reader over a FLOW<br>
+</div>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type"><a href="Buffered9PReader.Make.html#TYPEt">t</a> -> Cstruct.t <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+Return the unmarshalled body of the next message read
+      from the flow.<br>
+</div>
+</body></html>
