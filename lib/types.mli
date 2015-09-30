@@ -55,6 +55,7 @@ module Version : sig
   type t with sexp
 
   val default: t
+  val unix: t    (** The extension known as 9P2000.u *)
   val unknown: t
 
   include S.SERIALISABLE with type t := t
@@ -103,13 +104,22 @@ module FileMode : sig
     is_directory: bool;     (** true if the file is a directory *)
     append_only: bool;      (** true if the file is append-only (and therefore offsets in writes are ignored) *)
     exclusive: bool;        (** true if only one client may have it open at a time *)
+    is_mount: bool;         (** true if the file is a mountpoint *)
     is_auth: bool;          (** true if the file is a special authentication file *)
     temporary: bool;        (** true if the file is temporary and should be skipped from nightly backups *)
+    is_device: bool;        (** 9P2000.u: true if file is a char/block device *)
+    is_symlink: bool;       (** 9P2000.u: true if file is a symlink *)
+    is_namedpipe: bool;     (** 9P2000.u: true if file is a nomed pipe *)
+    is_socket: bool;        (** 9P2000.u: true if file is a socket *)
+    is_setuid: bool;        (** 9P2000.u: true if file is setuid *)
+    is_setgid: bool;        (** 9P2000.u: true if file is setgid *)
   } with sexp
   (** A 'mode' returned from a call to "Stat" *)
 
   val make: ?owner:permission list -> ?group:permission list -> ?other:permission list ->
-    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_auth:bool -> ?temporary:bool -> unit -> t
+    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_mount:bool -> ?is_auth:bool -> ?temporary:bool ->
+    ?is_device:bool -> ?is_symlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
+    ?is_setgid:bool -> unit -> t
 
   include S.SERIALISABLE with type t := t
 end
@@ -119,7 +129,11 @@ module Qid : sig
     | Directory  (** file is a directory *)
     | AppendOnly (** writes always hit the end of the file *)
     | Exclusive  (** file is opened for exclusive use *)
+    | Mount      (** file is a mountpoint *)
+    | Auth       (** file is an authentication file *)
     | Temporary  (** file is temporary and won't be backed up *)
+    | Link       (** 9P2000.u: file is a symlink *)
+
   with sexp
 
   type t = {
@@ -130,7 +144,8 @@ module Qid : sig
   (** The server's unique id for the file. Two files are the same
       if and only if the Qids are the same. *)
 
-  val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool -> ?temporary:bool -> unit -> t
+  val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool ->
+    ?mount:bool -> ?auth:bool -> ?temporary:bool -> ?link:bool -> unit -> t
   (** Construct a [t] representing a file *)
 
   val dir: ?id:int64 -> ?version:int32 -> unit -> t
@@ -171,6 +186,15 @@ module Data : sig
 end
 
 module Stat : sig
+  type extension = {
+    extension: string; (** 9P2000.u: extra information about links, pipes *)
+    n_uid: int32;      (** 9P2000.u: numeric id of the user who owns the file *)
+    n_gid: int32;      (** 9P2000.u: numeric id of the group of the file *)
+    n_muid: int32;     (** 9P2000.u: numeric id of the user who last modified the file *)
+  } with sexp
+
+  val make_extension: ?extension:string -> ?n_uid:int32 -> ?n_gid:int32 -> ?n_muid:int32 -> unit -> extension
+
   type t = {
     ty: int;          (** for kernel use *)
     dev: int32;       (** for kernel use *)
@@ -183,9 +207,12 @@ module Stat : sig
     uid: string;      (** owner name *)
     gid: string;      (** group name *)
     muid: string;     (** name of last user who modified the file *)
+    u: extension option; (** 9P2000.u extensions *)
   } with sexp
 
-  val make: name:string -> qid:Qid.t -> ?mode:FileMode.t -> ?length:int64 -> ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string -> unit -> t
+  val make: name:string -> qid:Qid.t -> ?mode:FileMode.t -> ?length:int64 ->
+    ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string ->
+    ?u:extension -> unit -> t
 
   include S.SERIALISABLE with type t := t
 end

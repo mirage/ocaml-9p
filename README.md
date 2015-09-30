@@ -23,3 +23,5 @@ drwxr-xr-x ? root root 4096 Apr 16 2014 opt
 drwxrwxr-x ? root 50   4096 Apr 10 2014 local
 -rwxrwxrwx ? root root 4    May 10 2014 run
 ```
+
+This library supports the [9P2000.u extension](http://ericvh.github.io/9p-rfc/rfc9p2000.u.html)

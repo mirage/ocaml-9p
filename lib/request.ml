@@ -46,9 +46,12 @@ module Auth = struct
     afid: Fid.t;
     uname: string;
     aname: string;
+    n_uname: int32 option;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+  let sizeof t =
+    (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+    + (match t.n_uname with Some x -> 4 | None -> 0)
 
   let write t rest =
     Fid.write t.afid rest
@@ -58,6 +61,10 @@ module Auth = struct
     >>= fun rest ->
     let aname = Data.of_string t.aname in
     Data.write aname rest
+    >>= fun rest ->
+    match t.n_uname with
+    | None -> return rest
+    | Some x -> Int32.write x rest
 
   let read rest =
     Fid.read rest
@@ -68,7 +75,13 @@ module Auth = struct
     >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    return ({ afid; uname; aname }, rest)
+    if Cstruct.len rest = 0
+    then return ({ afid; uname; aname; n_uname = None }, rest)
+    else
+      Int32.read rest
+      >>= fun (x, rest) ->
+      return ({ afid; uname; aname; n_uname = Some x }, rest)
+
 end
 
 module Flush = struct
@@ -93,9 +106,12 @@ module Attach = struct
     afid: Fid.t;
     uname: string;
     aname: string;
+    n_uname: int32 option;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.fid) + (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+  let sizeof t =
+    (Fid.sizeof t.fid) + (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+    + (match t.n_uname with Some _ -> 4 | None -> 0)
 
   let write t rest =
     Fid.write t.fid rest
@@ -107,6 +123,10 @@ module Attach = struct
     >>= fun rest ->
     let aname = Data.of_string t.aname in
     Data.write aname rest
+    >>= fun rest ->
+    match t.n_uname with
+    | None -> return rest
+    | Some x -> Int32.write x rest
 
   let read rest =
     Fid.read rest
@@ -119,7 +139,13 @@ module Attach = struct
     >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    return ({ fid; afid; uname; aname }, rest)
+    if Cstruct.len rest = 0
+    then return ({ fid; afid; uname; aname; n_uname = None }, rest)
+    else
+      Int32.read rest
+      >>= fun (x, rest) ->
+      return ({ fid; afid; uname; aname; n_uname = Some x }, rest)
+
 end
 
 module Walk = struct
@@ -193,10 +219,13 @@ module Create = struct
     fid: Fid.t;
     name: string;
     perm: int32;
-    mode: OpenMode.t
+    mode: OpenMode.t;
+    extension: string option;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
+  let sizeof t =
+    (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
+    + (match t.extension with Some x -> 2 + (String.length x) | None -> 0)
 
   let write t rest =
     Fid.write t.fid rest
@@ -207,6 +236,10 @@ module Create = struct
     Int32.write t.perm rest
     >>= fun rest ->
     OpenMode.write t.mode rest
+    >>= fun rest ->
+    match t.extension with
+    | None -> return rest
+    | Some x -> Data.(write (of_string x) rest)
 
   let read rest =
     Fid.read rest
@@ -218,7 +251,12 @@ module Create = struct
     OpenMode.read rest
     >>= fun (mode, rest) ->
     let name = Data.to_string name in
-    return ({ fid; name; perm; mode}, rest)
+    if Cstruct.len rest = 0
+    then return ({ fid; name; perm; mode; extension = None}, rest)
+    else
+      Data.read rest
+      >>= fun (x, rest) ->
+      return ({ fid; name; perm; mode; extension = Some (Data.to_string x)}, rest)
 end
 
 module Read = struct

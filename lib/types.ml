@@ -160,14 +160,24 @@ module FileMode = struct
     is_directory: bool;
     append_only: bool;
     exclusive: bool;
+    is_mount: bool;
     is_auth: bool;
     temporary: bool;
+    is_device: bool;
+    is_symlink: bool;
+    is_namedpipe: bool;
+    is_socket: bool;
+    is_setuid: bool;
+    is_setgid: bool;
   } with sexp
 
   let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
-    ?(append_only=false) ?(exclusive=false) ?(is_auth=false) ?(temporary=false) () = {
-    owner; group; other; is_directory; append_only; exclusive;
-    is_auth; temporary;
+    ?(append_only=false) ?(exclusive=false) ?(is_mount=false) ?(is_auth=false) ?(temporary=false)
+    ?(is_device=false) ?(is_symlink=false) ?(is_namedpipe=false) ?(is_socket=false)
+    ?(is_setuid=false) ?(is_setgid=false) () = {
+    owner; group; other; is_directory; append_only; exclusive; is_mount;
+    is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+    is_setuid; is_setgid;
   }
 
   let sizeof _ = 4
@@ -194,12 +204,22 @@ module FileMode = struct
     let is_directory = is_set x 31 in
     let append_only  = is_set x 30 in
     let exclusive    = is_set x 29 in
+    let is_mount     = is_set x 28 in
     let is_auth      = is_set x 27 in
     let temporary    = is_set x 26 in
+    let is_symlink   = is_set x 25 in
+    let is_device    = is_set x 23 in
+    let is_namedpipe = is_set x 21 in
+    let is_socket    = is_set x 20 in
+    let is_setuid    = is_set x 19 in
+    let is_setgid    = is_set x 18 in
     let owner = permissions_of_nibble (Int32.shift_right x 6) in
     let group = permissions_of_nibble (Int32.shift_right x 3) in
     let other = permissions_of_nibble (Int32.shift_right x 0) in
-    let t = { owner; group; other; is_directory; append_only; exclusive; is_auth; temporary } in
+    let t = {
+      owner; group; other; is_directory; append_only; exclusive; is_mount;
+      is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+      is_setuid; is_setgid } in
     return (t, rest)
 
   let write t rest =
@@ -207,8 +227,15 @@ module FileMode = struct
       if t.is_directory then bit 31 else 0l;
       if t.append_only  then bit 30 else 0l;
       if t.exclusive    then bit 29 else 0l;
+      if t.is_mount     then bit 28 else 0l;
       if t.is_auth      then bit 27 else 0l;
       if t.temporary    then bit 26 else 0l;
+      if t.is_symlink   then bit 25 else 0l;
+      if t.is_device    then bit 23 else 0l;
+      if t.is_namedpipe then bit 21 else 0l;
+      if t.is_socket    then bit 20 else 0l;
+      if t.is_setuid    then bit 19 else 0l;
+      if t.is_setgid    then bit 18 else 0l;
       Int32.shift_left (nibble_of_permissions t.owner) 6;
       Int32.shift_left (nibble_of_permissions t.group) 3;
       Int32.shift_left (nibble_of_permissions t.other) 0;
@@ -218,7 +245,7 @@ end
 
 
 module Qid = struct
-  type flag = Directory | AppendOnly | Exclusive | Temporary with sexp
+  type flag = Directory | AppendOnly | Exclusive | Mount | Auth | Temporary | Link with sexp
 
   type t = {
    flags: flag list;
@@ -226,11 +253,15 @@ module Qid = struct
    id: int64;
   } with sexp
 
-  let file ?(id=(-1L)) ?(version=(-1l)) ?(append_only=false) ?(exclusive=false) ?(temporary=false) () =
+  let file ?(id=(-1L)) ?(version=(-1l)) ?(append_only=false) ?(exclusive=false)
+    ?(mount=false) ?(auth=false) ?(temporary=false) ?(link=false) () =
     let flags =
         (if append_only then [ AppendOnly ] else [])
       @ (if exclusive then [ Exclusive ] else [])
-      @ (if temporary then [ Temporary ] else []) in
+      @ (if mount then [ Mount ] else [])
+      @ (if auth then [ Auth ] else [])
+      @ (if temporary then [ Temporary ] else [])
+      @ (if link then [ Link ] else []) in
     { flags; version; id }
 
   let dir ?(id=(-1L)) ?(version=(-1l)) () =
@@ -241,7 +272,10 @@ module Qid = struct
     Directory,  0x80;
     AppendOnly, 0x40;
     Exclusive,  0x20;
-    Temporary,  0x04
+    Mount,      0x10;
+    Auth,       0x08;
+    Temporary,  0x04;
+    Link,       0x02;
   ]
   let flags' = List.map (fun (x, y) -> y, x) flags
 
@@ -383,13 +417,16 @@ module Version = struct
   type t =
     | Unknown
     | TwoThousand
+    | TwoThousandU
   with sexp
 
   let to_string = function
-    | Unknown     -> "unknown"
-    | TwoThousand -> "9P2000"
+    | Unknown      -> "unknown"
+    | TwoThousand  -> "9P2000"
+    | TwoThousandU -> "9P2000.u"
 
   let default = TwoThousand
+  let unix    = TwoThousandU
   let unknown = Unknown
 
   let of_string x =
@@ -398,9 +435,11 @@ module Version = struct
         let dot = String.index x '.' in
         String.sub x 0 (dot - 1)
       with Not_found -> x in
-    if String.length prefix >= 2 && (String.sub prefix 0 2 = "9P")
-    then TwoThousand (* there may be future versions, but we don't know them *)
-    else Unknown
+    if String.length prefix >= 2 && (String.sub prefix 0 2 = "9P") then begin
+      if x = to_string TwoThousandU
+      then TwoThousandU
+      else TwoThousand (* there may be future versions, but we don't know them *)
+    end else Unknown
 
   let sizeof x = 2 + (String.length (to_string x))
 
@@ -414,6 +453,16 @@ module Version = struct
 end
 
 module Stat = struct
+  type extension = {
+    extension: string;
+    n_uid: int32;
+    n_gid: int32;
+    n_muid: int32;
+  } with sexp
+
+  let make_extension ?(extension="") ?(n_uid=(-1l)) ?(n_gid=(-1l)) ?(n_muid=(-1l)) () =
+    { extension; n_uid; n_gid; n_muid }
+
   type t = {
     ty: int;
     dev: int32;
@@ -426,18 +475,22 @@ module Stat = struct
     uid: string;
     gid: string;
     muid: string;
+    u: extension option;
   } with sexp
 
-  let make ~name ~qid ?(mode=FileMode.make ()) ?(length=0L) ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none") () =
+  let make ~name ~qid ?(mode=FileMode.make ()) ?(length=0L)
+    ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none")
+    ?u () =
     let ty = 0 and dev = 0l in
-    { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }
+    { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u }
 
   let sizeof t = 2 + 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
     + 2 + (String.length t.name) + 2 + (String.length t.uid)
     + 2 + (String.length t.gid) + 2 + (String.length t.muid)
+    + (match t.u with None -> 0 | Some x -> 2 + (String.length x.extension) + 4 + 4 + 4)
 
-  let read rest =
-    Int16.read rest
+  let read buf =
+    Int16.read buf
     >>= fun (_len, rest) ->
     Int16.read rest
     >>= fun (ty, rest) ->
@@ -465,11 +518,32 @@ module Stat = struct
     Data.read rest
     >>= fun (muid, rest) ->
     let muid = Data.to_string muid in
-    return ( { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }, rest)
+    let t = { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u = None } in
+    (* We are often decoding contiguous arrays of Stat structures,
+       so we must use the _len field to discover where the data ends. *)
+    let consumed = Cstruct.len buf - (Cstruct.len rest) in
+    if consumed = _len + 2 (* Size of the _len field itself *)
+    then return (t, rest)
+    else
+      Data.read rest
+      >>= fun (x, rest) ->
+      let extension = Data.to_string x in
+      Int32.read rest
+      >>= fun (n_uid, rest) ->
+      Int32.read rest
+      >>= fun (n_gid, rest) ->
+      Int32.read rest
+      >>= fun (n_muid, rest) ->
+      let u = Some { extension; n_uid; n_gid; n_muid } in
+      (* In case of future extensions, remove trailing garbage *)
+      let consumed = Cstruct.len buf - (Cstruct.len rest) in
+      let trailing_garbage = consumed - _len - 2 in
+      let rest = Cstruct.shift rest trailing_garbage in
+      return ({ t with u }, rest)
 
   let write t rest =
     let len = sizeof t in
-    Int16.write len rest
+    Int16.write (len - 2) rest
     >>= fun rest ->
     Int16.write t.ty rest
     >>= fun rest ->
@@ -496,6 +570,17 @@ module Stat = struct
     Data.write gid rest
     >>= fun rest ->
     Data.write muid rest
+    >>= fun rest ->
+    match t.u with
+    | None -> return rest
+    | Some x ->
+      Data.(write (of_string x.extension) rest)
+      >>= fun rest ->
+      Int32.write x.n_uid rest
+      >>= fun rest ->
+      Int32.write x.n_gid rest
+      >>= fun rest ->
+      Int32.write x.n_muid rest
 
 end
 

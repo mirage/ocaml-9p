@@ -46,6 +46,7 @@ module Err : sig
 
   type t = {
     ename: string;
+    errno: int32 option; (** The extended 9P2000.u protocol allows the server to return an errno *)
   } with sexp
   (** The pauload of an error response *)
 

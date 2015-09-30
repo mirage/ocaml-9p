@@ -43,6 +43,7 @@ let stat = Types.Stat.({
   uid = "uid";
   gid = "gid";
   muid = "muid";
+  u = Some { extension = "hello"; n_uid = 1l; n_gid = 2l; n_muid = 3l };
   })
 
 let make_tag =
@@ -68,12 +69,12 @@ let openmode = Types.OpenMode.Read
 let requests =
   let open Request in [
     { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.default}) };
-    { tag = make_tag (); payload = Auth Auth.({ afid = make_fid (); uname = "hello"; aname = "there" }) };
+    { tag = make_tag (); payload = Auth Auth.({ afid = make_fid (); uname = "hello"; aname = "there"; n_uname = Some 4l }) };
     { tag = make_tag (); payload = Flush Flush.({ oldtag = make_tag () }) };
-    { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?" })};
+    { tag = make_tag (); payload = Attach Attach.({ fid = make_fid (); afid = make_fid (); uname = "who"; aname = "areyou?"; n_uname = None })};
     { tag = make_tag (); payload = Walk Walk.( { fid = make_fid (); newfid = make_fid (); wnames = [ "one"; "two"; "three" ]})};
     { tag = make_tag (); payload = Open Open.( { fid = make_fid (); mode = openmode })};
-    { tag = make_tag (); payload = Create Create.( { fid = make_fid (); name = "woohoo"; perm = 44l; mode = openmode})};
+    { tag = make_tag (); payload = Create Create.( { fid = make_fid (); name = "woohoo"; perm = 44l; mode = openmode; extension = Some "b 1 2"})};
     { tag = make_tag (); payload = Read Read.( { fid = make_fid (); offset = 123456L; count = 123l })};
     { tag = make_tag (); payload = Write Write.( { fid = make_fid (); offset = 98765L; data = example_data })};
     { tag = make_tag (); payload = Clunk Clunk.( { fid = make_fid () })};
@@ -86,7 +87,7 @@ let responses =
   let open Response in [
     { tag = make_tag (); payload = Version Version.({ msize = 55l; version = Types.Version.unknown}) };
     { tag = make_tag (); payload = Auth Auth.({ aqid = qid }) };
-    { tag = make_tag (); payload = Err Err.({ ename = "it went wrong!" })};
+    { tag = make_tag (); payload = Err Err.({ ename = "it went wrong!"; errno = None })};
     { tag = make_tag (); payload = Flush Flush.( () ) };
     { tag = make_tag (); payload = Attach Attach.({ qid })};
     { tag = make_tag (); payload = Walk Walk.( { wqids = [ qid; qid ] })};
