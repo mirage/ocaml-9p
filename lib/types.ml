@@ -101,6 +101,7 @@ module Fid = struct
   let compare (a: t) (b: t) = compare a b
 
   module Set = Set.Make(struct type t = int32 let compare = compare end)
+  module Map = Map.Make(struct type t = int32 let compare = compare end)
 
   let recommended =
     let rec loop acc = function

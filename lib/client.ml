@@ -18,17 +18,15 @@ open Result
 open Error
 
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
+  module Reader = Buffered9PReader.Make(Log)(FLOW)
+
   open Log
 
   type fid = Types.Fid.t
 
-  type buffered_flow = {
-    flow: FLOW.flow;
-    mutable input_buffer: Cstruct.t;
-  }
-
   type t = {
-    bf: buffered_flow;
+    reader: Reader.t;
+    writer: FLOW.flow;
     root: fid;
     msize: int32;
     upgraded: bool; (* 9P2000.u *)
@@ -59,35 +57,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
    | Ok x -> f x
    | Error x -> Lwt.return (Error x)
 
-  let read_exactly bf n =
-    let output = Cstruct.create n in
-    let rec fill tofill = match Cstruct.len tofill with
-      | 0 -> Lwt.return (Ok ())
-      | n ->
-        ( if Cstruct.len bf.input_buffer = 0
-          then (FLOW.read bf.flow >>|= fun b -> Lwt.return (Ok b))
-          else Lwt.return (Ok bf.input_buffer)
-        ) >>*= fun input ->
-        let avail = min n (Cstruct.len input) in
-        Cstruct.blit input 0 tofill 0 avail;
-        bf.input_buffer <- Cstruct.shift input avail;
-        fill (Cstruct.shift tofill avail) in
-    fill output
-    >>*= fun () ->
-    Lwt.return (Ok output)
-
-  let read_one_packet bf =
-    let length_buffer = Cstruct.create 4 in
-    read_exactly bf 4
-    >>*= fun length_buffer ->
-    let length = Cstruct.LE.get_uint32 length_buffer 0 in
-    read_exactly bf (Int32.to_int length - 4)
-    >>*= fun packet_buffer ->
-    (* XXX: remove this data copy *)
-    let buffer = Cstruct.create (Cstruct.len length_buffer + (Cstruct.len packet_buffer)) in
-    Cstruct.blit length_buffer 0 buffer 0 (Cstruct.len length_buffer);
-    Cstruct.blit packet_buffer 0 buffer (Cstruct.len length_buffer) (Cstruct.len packet_buffer);
-    Lwt.return (Ok buffer)
+  let read_one_packet reader =
+    Reader.read reader
     >>*= fun buffer ->
     Lwt.return (Response.read buffer)
     >>*= fun (response, _) ->
@@ -148,7 +119,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt_mutex.with_lock t.transmit_m
           (fun () ->
             let request = { Request.tag; payload = request } in
-            write_one_packet t.bf.flow request
+            write_one_packet t.writer request
           )
         >>*= fun () ->
         (* Wait for the response to be read *)
@@ -163,7 +134,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     if t.please_shutdown then begin
       Lwt.wakeup shutdown_complete_wakener ();
       Lwt.return (Ok ())
-    end else read_one_packet t.bf
+    end else read_one_packet t.reader
     >>*= fun response ->
     let tag = response.Response.tag in
     if not(Types.Tag.Map.mem tag t.wakeners) then begin
@@ -232,25 +203,25 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Response.Remove x -> Lwt.return (Ok x)
       | response -> return_error response
 
-    let version bf msize version =
-      write_one_packet bf.flow {
+    let version reader writer msize version =
+      write_one_packet writer {
         Request.tag = Types.Tag.notag;
         payload = Request.Version Request.Version.({ msize; version });
       } >>*= fun () ->
-      read_one_packet bf
+      read_one_packet reader
       >>*= fun response ->
       match response with
       | { Response.payload = Response.Version v } ->
         Lwt.return (Ok v)
       | { Response.payload = p } -> return_error p
 
-    let attach bf fid afid uname aname n_uname =
+    let attach reader writer fid afid uname aname n_uname =
       let tag = Types.Tag.Set.min_elt Types.Tag.recommended in
-      write_one_packet bf.flow {
+      write_one_packet writer {
         Request.tag;
         payload = Request.Attach Request.Attach.({ fid; afid; uname; aname; n_uname })
       } >>*= fun () ->
-      read_one_packet bf
+      read_one_packet reader
       >>*= fun response ->
       match response with
       | { Response.payload = Response.Attach x } ->
@@ -386,8 +357,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   (* 8215 = 8192 + 23 (maximum overhead in a write packet) *)
   let connect flow ?(msize = 8215l) ?(username = "nobody") ?(aname = "/") () =
-    let bf = { flow; input_buffer = Cstruct.create 0 } in
-    LowLevel.version bf msize Types.Version.unix
+    let reader = Reader.create flow in
+    let writer = flow in
+    LowLevel.version reader writer msize Types.Version.unix
     >>*= fun version ->
     let msize = min msize version.Response.Version.msize in
     let upgraded = version.Response.Version.version = Types.Version.unix in
@@ -407,7 +379,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
     let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
     let t = {
-      bf; root; msize; upgraded; maximum_payload;
+      reader; writer; root; msize; upgraded; maximum_payload;
       transmit_m = Lwt_mutex.create ();
       please_shutdown = false;
       shutdown_complete_t;
@@ -416,7 +388,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       free_fids = Types.Fid.recommended;
       free_fids_c = Lwt_condition.create ();
     } in
-    LowLevel.attach bf root Types.Fid.nofid username aname None
+    LowLevel.attach reader writer root Types.Fid.nofid username aname None
     >>*= function { Response.Attach.qid } ->
     debug "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
     Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener t);
