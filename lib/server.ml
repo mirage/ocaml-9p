@@ -24,6 +24,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   type t = {
     reader: Reader.t;
     writer: FLOW.flow;
+    root: Types.Fid.t;
+    root_qid: Types.Qid.t;
   }
 
   (* For converting flow errors *)
@@ -41,18 +43,27 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
    | Ok x -> f x
    | Error x -> Lwt.return (Error x)
 
-  let write_one_packet writer request =
-    debug "-> %s" (Response.to_string request);
-    let sizeof = Response.sizeof request in
+  let write_one_packet writer response =
+    debug "-> %s" (Response.to_string response);
+    let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
-    Lwt.return (Response.write request buffer)
+    Lwt.return (Response.write response buffer)
     >>*= fun _ ->
     FLOW.write writer buffer
     >>|= fun () ->
     Lwt.return (Ok ())
 
+  let read_one_packet reader =
+    Reader.read reader
+    >>*= fun buffer ->
+    Lwt.return (Request.read buffer)
+    >>*= fun (request, _) ->
+    debug "-> %s" (Request.to_string request);
+    Lwt.return (Ok request)
+
   let connect flow ?(msize=16384l) () =
     let reader = Reader.create flow in
+    let writer = flow in
     Reader.read reader
     >>*= fun buffer ->
     Lwt.return (Request.read buffer)
@@ -66,8 +77,19 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Response.tag;
         payload = Response.Version Response.Version.({ msize; version = v.Request.Version.version });
       } >>*= fun () ->
+      info "Using protocol version %s" (Sexplib.Sexp.to_string (Types.Version.sexp_of_t v.Request.Version.version));
+      Reader.read reader
+      >>*= fun buffer ->
+      Lwt.return (Request.read buffer)
+      >>*= function ( { Request.payload = Request.Attach a; tag }, _) ->
+      let root = a.Request.Attach.fid in
+      let root_qid = Types.Qid.file ~version:0l ~id:0L () in
+      write_one_packet flow {
+        Response.tag;
+        payload = Response.Attach Response.Attach.({qid = root_qid })
+      } >>*= fun () ->
       Printf.fprintf stderr "OK\n%!";
-      Lwt.return (Error (`Msg "Server unimplemented"))
+      Lwt.return (Ok { reader; writer; root; root_qid })
     end
 
   let rec serve_forever t = failwith "unimplemented"
