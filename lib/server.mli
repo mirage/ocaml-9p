@@ -22,9 +22,11 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   type t
   (** An established connection to a 9P server *)
 
-  val connect: FLOW.flow -> ?msize:int32 -> unit -> t Error.t Lwt.t
+  val connect: FLOW.flow -> ?msize:int32 ->
+    callback_fn:(Request.payload -> Response.payload Error.t Lwt.t) -> unit -> t Error.t Lwt.t
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
-      message size we support: the client may request a lower value. *)
+      message size we support: the client may request a lower value.
+      [callback_fn] will be called with every 9P request. *)
 
-  val serve_forever: t -> 'a Lwt.t
+  val disconnect: t -> unit Lwt.t
 end

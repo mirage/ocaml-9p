@@ -156,6 +156,9 @@ let ls debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
+let error_callback_fn _ =
+  Lwt.return (Result.Ok (Response.Err { Response.Err.ename = "whateverrr"; errno = None }))
+
 let serve debug address path =
   Log.print_debug := debug;
   let path = parse_path path in
@@ -163,12 +166,16 @@ let serve debug address path =
     accept_forever address
       (fun fd ->
         let flow = Flow_lwt_unix.connect fd in
-        Server.connect flow ()
+        Server.connect flow ~callback_fn:error_callback_fn ()
         >>= function
         | Error (`Msg x) -> failwith x
         | Ok t ->
           Log.debug "Successfully negotiated a connection.";
-          Server.serve_forever t
+          let rec loop_forever () =
+            Lwt_unix.sleep 60.
+            >>= fun () ->
+            loop_forever () in
+          loop_forever ()
       ) in
   try
     Lwt_main.run t;
