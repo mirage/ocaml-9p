@@ -537,13 +537,13 @@ module Stat = struct
       let u = Some { extension; n_uid; n_gid; n_muid } in
       (* In case of future extensions, remove trailing garbage *)
       let consumed = Cstruct.len buf - (Cstruct.len rest) in
-      let trailing_garbage = consumed - _len in
+      let trailing_garbage = consumed - _len - 2 in
       let rest = Cstruct.shift rest trailing_garbage in
       return ({ t with u }, rest)
 
   let write t rest =
     let len = sizeof t in
-    Int16.write len rest
+    Int16.write (len - 2) rest
     >>= fun rest ->
     Int16.write t.ty rest
     >>= fun rest ->
