@@ -489,8 +489,8 @@ module Stat = struct
     + 2 + (String.length t.gid) + 2 + (String.length t.muid)
     + (match t.u with None -> 0 | Some x -> 2 + (String.length x.extension) + 4 + 4 + 4)
 
-  let read rest =
-    Int16.read rest
+  let read buf =
+    Int16.read buf
     >>= fun (_len, rest) ->
     Int16.read rest
     >>= fun (ty, rest) ->
@@ -519,7 +519,10 @@ module Stat = struct
     >>= fun (muid, rest) ->
     let muid = Data.to_string muid in
     let t = { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u = None } in
-    if Cstruct.len rest = 0
+    (* We are often decoding contiguous arrays of Stat structures,
+       so we must use the _len field to discover where the data ends. *)
+    let consumed = Cstruct.len buf - (Cstruct.len rest) in
+    if consumed = _len + 2 (* Size of the _len field itself *)
     then return (t, rest)
     else
       Data.read rest
@@ -532,6 +535,10 @@ module Stat = struct
       Int32.read rest
       >>= fun (n_muid, rest) ->
       let u = Some { extension; n_uid; n_gid; n_muid } in
+      (* In case of future extensions, remove trailing garbage *)
+      let consumed = Cstruct.len buf - (Cstruct.len rest) in
+      let trailing_garbage = consumed - _len in
+      let rest = Cstruct.shift rest trailing_garbage in
       return ({ t with u }, rest)
 
   let write t rest =
