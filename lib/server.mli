@@ -22,11 +22,23 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   type t
   (** An established connection to a 9P server *)
 
-  val connect: FLOW.flow -> ?msize:int32 ->
-    callback_fn:(Request.payload -> Response.payload Error.t Lwt.t) -> unit -> t Error.t Lwt.t
+  type info = {
+    root: Types.Fid.t;        (** The initial fid provided by the client *)
+    version: Types.Version.t; (** The protocol version we negotiated *)
+  }
+  (** Information about the active connection, passed to the receive callback. *)
+
+  type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
+  (** Every time a request is received, this is the type of the callback which
+      is called. *)
+
+  val connect: FLOW.flow -> ?msize:int32 -> receive_cb:receive_cb -> unit -> t Error.t Lwt.t
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
       message size we support: the client may request a lower value.
-      [callback_fn] will be called with every 9P request. *)
+      [receive_cb] will be called with every 9P request. *)
+
+  val get_info: t -> info
+  (** Return information about the current connection *)
 
   val disconnect: t -> unit Lwt.t
 end

@@ -65,6 +65,7 @@ module Fid : sig
   type t with sexp
 
   module Set : Set.S with type elt = t
+  module Map : Map.S with type key = t
 
   val nofid: t
 
