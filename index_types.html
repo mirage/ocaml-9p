@@ -12,7 +12,9 @@
 <link title="Error" rel="Chapter" href="Error.html">
 <link title="Response" rel="Chapter" href="Response.html">
 <link title="Types" rel="Chapter" href="Types.html">
-<link title="Client" rel="Chapter" href="Client.html"><title>Index of types</title>
+<link title="Client" rel="Chapter" href="Client.html">
+<link title="Server" rel="Chapter" href="Server.html">
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Index of types</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
@@ -22,9 +24,17 @@
 <tr><td align="left"><br>E</td></tr>
 <tr><td><a href="Error.html#TYPEerror">error</a> [<a href="Error.html">Error</a>]</td>
 <td></td></tr>
+<tr><td><a href="Types.Stat.html#TYPEextension">extension</a> [<a href="Types.Stat.html">Types.Stat</a>]</td>
+<td></td></tr>
 <tr><td align="left"><br>F</td></tr>
 <tr><td><a href="Types.Qid.html#TYPEflag">flag</a> [<a href="Types.Qid.html">Types.Qid</a>]</td>
 <td></td></tr>
+<tr><td align="left"><br>I</td></tr>
+<tr><td><a href="Server.Make.html#TYPEinfo">info</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<td><div class="info">
+Information about the active connection, passed to the receive callback.
+</div>
+</td></tr>
 <tr><td align="left"><br>P</td></tr>
 <tr><td><a href="Response.html#TYPEpayload">payload</a> [<a href="Response.html">Response</a>]</td>
 <td></td></tr>
@@ -32,7 +42,24 @@
 <td></td></tr>
 <tr><td><a href="Types.FileMode.html#TYPEpermission">permission</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
 <td></td></tr>
+<tr><td align="left"><br>R</td></tr>
+<tr><td><a href="Server.Make.html#TYPEreceive_cb">receive_cb</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<td><div class="info">
+Every time a request is received, this is the type of the callback which
+      is called.
+</div>
+</td></tr>
 <tr><td align="left"><br>T</td></tr>
+<tr><td><a href="Buffered9PReader.Make.html#TYPEt">t</a> [<a href="Buffered9PReader.Make.html">Buffered9PReader.Make</a>]</td>
+<td><div class="info">
+A buffered 9P message reader over a FLOW
+</div>
+</td></tr>
+<tr><td><a href="Server.Make.html#TYPEt">t</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<td><div class="info">
+An established connection to a 9P server
+</div>
+</td></tr>
 <tr><td><a href="Client.Make.html#TYPEt">t</a> [<a href="Client.Make.html">Client.Make</a>]</td>
 <td><div class="info">
 An established connection to a 9P server

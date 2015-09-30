@@ -16,7 +16,9 @@
 <link title="Error" rel="Chapter" href="Error.html">
 <link title="Response" rel="Chapter" href="Response.html">
 <link title="Types" rel="Chapter" href="Types.html">
-<link title="Client" rel="Chapter" href="Client.html"><title>Types.Stat</title>
+<link title="Client" rel="Chapter" href="Client.html">
+<link title="Server" rel="Chapter" href="Server.html">
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Types.Stat</title>
 </head>
 <body>
 <div class="navbar"><a class="pre" href="Types.Data.html" title="Types.Data">Previous</a>
@@ -27,6 +29,40 @@
 
 <pre><span class="keyword">module</span> Stat: <code class="code">sig</code> <a href="Types.Stat.html">..</a> <code class="code">end</code></pre><hr width="100%">
 
+<pre><code><span id="TYPEextension"><span class="keyword">type</span> <code class="type"></code>extension</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTextension.extension">extension</span>&nbsp;: <code class="type">string</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: extra information about links, pipes</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTextension.n_uid">n_uid</span>&nbsp;: <code class="type">int32</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: numeric id of the user who owns the file</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTextension.n_gid">n_gid</span>&nbsp;: <code class="type">int32</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: numeric id of the group of the file</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTextension.n_muid">n_muid</span>&nbsp;: <code class="type">int32</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: numeric id of the user who last modified the file</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+
+
+<pre><span id="VALmake_extension"><span class="keyword">val</span> make_extension</span> : <code class="type">?extension:string -><br>       ?n_uid:int32 -> ?n_gid:int32 -> ?n_muid:int32 -> unit -> <a href="Types.Stat.html#TYPEextension">extension</a></code></pre>
 <pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = {</code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -104,13 +140,22 @@
 <td align="left" valign="top" >
 <code><span id="TYPEELTt.muid">muid</span>&nbsp;: <code class="type">string</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >name of last user who modified the file</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.u">u</span>&nbsp;: <code class="type"><a href="Types.Stat.html#TYPEextension">extension</a> option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u extensions</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
 }
 
 
 
-<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">name:string -><br>       qid:<a href="Types.Qid.html#TYPEt">Types.Qid.t</a> -><br>       ?mode:<a href="Types.FileMode.html#TYPEt">Types.FileMode.t</a> -><br>       ?length:int64 -><br>       ?atime:int32 -><br>       ?mtime:int32 -><br>       ?uid:string -> ?gid:string -> ?muid:string -> unit -> <a href="Types.Stat.html#TYPEt">t</a></code></pre>
+<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">name:string -><br>       qid:<a href="Types.Qid.html#TYPEt">Types.Qid.t</a> -><br>       ?mode:<a href="Types.FileMode.html#TYPEt">Types.FileMode.t</a> -><br>       ?length:int64 -><br>       ?atime:int32 -><br>       ?mtime:int32 -><br>       ?uid:string -><br>       ?gid:string -><br>       ?muid:string -> ?u:<a href="Types.Stat.html#TYPEextension">extension</a> -> unit -> <a href="Types.Stat.html#TYPEt">t</a></code></pre>
 <pre><span class="keyword">include</span> <a href="S.SERIALISABLE.html">S.SERIALISABLE</a></pre>
 
+<pre><span id="VALextension_of_sexp"><span class="keyword">val</span> extension_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.Stat.html#TYPEextension">extension</a></code></pre>
+<pre><span id="VALsexp_of_extension"><span class="keyword">val</span> sexp_of_extension</span> : <code class="type"><a href="Types.Stat.html#TYPEextension">extension</a> -> Sexplib.Sexp.t</code></pre>
 <pre><span id="VALt_of_sexp"><span class="keyword">val</span> t_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.Stat.html#TYPEt">t</a></code></pre>
 <pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Types.Stat.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre></body></html>

@@ -11,17 +11,28 @@
 <link title="Error" rel="Chapter" href="Error.html">
 <link title="Response" rel="Chapter" href="Response.html">
 <link title="Types" rel="Chapter" href="Types.html">
-<link title="Client" rel="Chapter" href="Client.html"><title>Types.Qid</title>
+<link title="Client" rel="Chapter" href="Client.html">
+<link title="Server" rel="Chapter" href="Server.html">
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Types.Qid</title>
 </head>
 <body>
 <code class="code"><span class="keyword">sig</span><br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;flag&nbsp;=&nbsp;<span class="constructor">Directory</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">AppendOnly</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Exclusive</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Temporary</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;flag&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Directory</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">AppendOnly</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Exclusive</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Mount</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Auth</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Temporary</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Link</span><br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;flags&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">Qid</span>.flag&nbsp;list;&nbsp;version&nbsp;:&nbsp;int32;&nbsp;id&nbsp;:&nbsp;int64;&nbsp;}<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;file&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;?id:int64&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;?version:int32&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;?append_only:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;?exclusive:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;?temporary:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Types</span>.<span class="constructor">Qid</span>.t<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?exclusive:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;?mount:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;?auth:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;?temporary:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;?link:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Types</span>.<span class="constructor">Qid</span>.t<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dir&nbsp;:&nbsp;?id:int64&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;?version:int32&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Types</span>.<span class="constructor">Qid</span>.t<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;sizeof&nbsp;:&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;read&nbsp;:&nbsp;<span class="constructor">Cstruct</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(t&nbsp;*&nbsp;<span class="constructor">Cstruct</span>.t,&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Msg</span>&nbsp;<span class="keyword">of</span>&nbsp;string&nbsp;])&nbsp;<span class="constructor">Result</span>.result<br>

@@ -16,7 +16,9 @@
 <link title="Error" rel="Chapter" href="Error.html">
 <link title="Response" rel="Chapter" href="Response.html">
 <link title="Types" rel="Chapter" href="Types.html">
-<link title="Client" rel="Chapter" href="Client.html"><title>Types.FileMode</title>
+<link title="Client" rel="Chapter" href="Client.html">
+<link title="Server" rel="Chapter" href="Server.html">
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Types.FileMode</title>
 </head>
 <body>
 <div class="navbar"><a class="pre" href="Types.OpenMode.html" title="Types.OpenMode">Previous</a>
@@ -77,6 +79,13 @@
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
+<code><span id="TYPEELTt.is_mount">is_mount</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is a mountpoint</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
 <code><span id="TYPEELTt.is_auth">is_auth</span>&nbsp;: <code class="type">bool</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is a special authentication file</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -86,6 +95,48 @@
 <td align="left" valign="top" >
 <code><span id="TYPEELTt.temporary">temporary</span>&nbsp;: <code class="type">bool</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >true if the file is temporary and should be skipped from nightly backups</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_device">is_device</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: true if file is a char/block device</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_symlink">is_symlink</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: true if file is a symlink</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_namedpipe">is_namedpipe</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: true if file is a nomed pipe</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_socket">is_socket</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: true if file is a socket</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_setuid">is_setuid</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: true if file is setuid</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.is_setgid">is_setgid</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >9P2000.u: true if file is setgid</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
 }
 
@@ -94,7 +145,7 @@ A 'mode' returned from a call to "Stat"<br>
 </div>
 
 
-<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">?owner:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?group:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?other:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?is_directory:bool -><br>       ?append_only:bool -><br>       ?exclusive:bool -><br>       ?is_auth:bool -> ?temporary:bool -> unit -> <a href="Types.FileMode.html#TYPEt">t</a></code></pre>
+<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">?owner:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?group:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?other:<a href="Types.FileMode.html#TYPEpermission">permission</a> list -><br>       ?is_directory:bool -><br>       ?append_only:bool -><br>       ?exclusive:bool -><br>       ?is_mount:bool -><br>       ?is_auth:bool -><br>       ?temporary:bool -><br>       ?is_device:bool -><br>       ?is_symlink:bool -><br>       ?is_namedpipe:bool -><br>       ?is_socket:bool -><br>       ?is_setuid:bool -> ?is_setgid:bool -> unit -> <a href="Types.FileMode.html#TYPEt">t</a></code></pre>
 <pre><span class="keyword">include</span> <a href="S.SERIALISABLE.html">S.SERIALISABLE</a></pre>
 
 <pre><span id="VALpermission_of_sexp"><span class="keyword">val</span> permission_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.FileMode.html#TYPEpermission">permission</a></code></pre>
