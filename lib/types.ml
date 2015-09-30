@@ -417,13 +417,16 @@ module Version = struct
   type t =
     | Unknown
     | TwoThousand
+    | TwoThousandU
   with sexp
 
   let to_string = function
-    | Unknown     -> "unknown"
-    | TwoThousand -> "9P2000"
+    | Unknown      -> "unknown"
+    | TwoThousand  -> "9P2000"
+    | TwoThousandU -> "9P2000.u"
 
   let default = TwoThousand
+  let unix    = TwoThousandU
   let unknown = Unknown
 
   let of_string x =
@@ -432,9 +435,11 @@ module Version = struct
         let dot = String.index x '.' in
         String.sub x 0 (dot - 1)
       with Not_found -> x in
-    if String.length prefix >= 2 && (String.sub prefix 0 2 = "9P")
-    then TwoThousand (* there may be future versions, but we don't know them *)
-    else Unknown
+    if String.length prefix >= 2 && (String.sub prefix 0 2 = "9P") then begin
+      if x = to_string TwoThousandU
+      then TwoThousandU
+      else TwoThousand (* there may be future versions, but we don't know them *)
+    end else Unknown
 
   let sizeof x = 2 + (String.length (to_string x))
 

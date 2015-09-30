@@ -55,6 +55,7 @@ module Version : sig
   type t with sexp
 
   val default: t
+  val unix: t    (** The extension known as 9P2000.u *)
   val unknown: t
 
   include S.SERIALISABLE with type t := t
