@@ -128,7 +128,10 @@ module Qid : sig
     | Directory  (** file is a directory *)
     | AppendOnly (** writes always hit the end of the file *)
     | Exclusive  (** file is opened for exclusive use *)
+    | Mount      (** file is a mountpoint *)
+    | Auth       (** file is an authentication file *)
     | Temporary  (** file is temporary and won't be backed up *)
+    | Link       (** 9P2000.u: file is a symlink *)
 
   with sexp
 
@@ -140,7 +143,8 @@ module Qid : sig
   (** The server's unique id for the file. Two files are the same
       if and only if the Qids are the same. *)
 
-  val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool -> ?temporary:bool -> unit -> t
+  val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool ->
+    ?mount:bool -> ?auth:bool -> ?temporary:bool -> ?link:bool -> unit -> t
   (** Construct a [t] representing a file *)
 
   val dir: ?id:int64 -> ?version:int32 -> unit -> t

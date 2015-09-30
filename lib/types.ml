@@ -245,7 +245,7 @@ end
 
 
 module Qid = struct
-  type flag = Directory | AppendOnly | Exclusive | Temporary with sexp
+  type flag = Directory | AppendOnly | Exclusive | Mount | Auth | Temporary | Link with sexp
 
   type t = {
    flags: flag list;
@@ -253,11 +253,15 @@ module Qid = struct
    id: int64;
   } with sexp
 
-  let file ?(id=(-1L)) ?(version=(-1l)) ?(append_only=false) ?(exclusive=false) ?(temporary=false) () =
+  let file ?(id=(-1L)) ?(version=(-1l)) ?(append_only=false) ?(exclusive=false)
+    ?(mount=false) ?(auth=false) ?(temporary=false) ?(link=false) () =
     let flags =
         (if append_only then [ AppendOnly ] else [])
       @ (if exclusive then [ Exclusive ] else [])
-      @ (if temporary then [ Temporary ] else []) in
+      @ (if mount then [ Mount ] else [])
+      @ (if auth then [ Auth ] else [])
+      @ (if temporary then [ Temporary ] else [])
+      @ (if link then [ Link ] else []) in
     { flags; version; id }
 
   let dir ?(id=(-1L)) ?(version=(-1l)) () =
@@ -268,7 +272,10 @@ module Qid = struct
     Directory,  0x80;
     AppendOnly, 0x40;
     Exclusive,  0x20;
-    Temporary,  0x04
+    Mount,      0x10;
+    Auth,       0x08;
+    Temporary,  0x04;
+    Link,       0x02;
   ]
   let flags' = List.map (fun (x, y) -> y, x) flags
 
