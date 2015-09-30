@@ -26,4 +26,5 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
       message size we support: the client may request a lower value. *)
 
+  val serve_forever: t -> 'a Lwt.t
 end

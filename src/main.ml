@@ -30,6 +30,7 @@ module Log = struct
 end
 
 module Client = Client.Make(Log)(Flow_lwt_unix)
+module Server = Server.Make(Log)(Flow_lwt_unix)
 
 let parse_address address =
   try
@@ -161,7 +162,13 @@ let serve debug address path =
   let t =
     accept_forever address
       (fun fd ->
-        failwith "unimplemented"
+        let flow = Flow_lwt_unix.connect fd in
+        Server.connect flow ()
+        >>= function
+        | Error (`Msg x) -> failwith x
+        | Ok t ->
+          Log.debug "Successfully negotiated a connection.";
+          Server.serve_forever t
       ) in
   try
     Lwt_main.run t;
