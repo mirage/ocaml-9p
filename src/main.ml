@@ -54,10 +54,33 @@ let with_connection address f =
     (fun () -> f s >>= fun r -> Lwt_unix.close s >>= fun () -> return r)
     (fun e -> Lwt_unix.close s >>= fun () -> fail e)
 
+let finally f g =
+  Lwt.catch
+    (fun () ->
+      f () >>= fun result ->
+      g () >>= fun _ignored ->
+      Lwt.return result
+    ) (fun e ->
+      g () >>= fun _ignored ->
+      Lwt.fail e)
+
 let accept_forever address f =
   let ip, port = parse_address address in
   Log.debug "Listening on %s port %d" ip port;
-  failwith "unimplemented"
+  let s = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+  Lwt_unix.setsockopt s Lwt_unix.SO_REUSEADDR true;
+  let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string ip, port) in
+  Lwt_unix.bind s sockaddr;
+  Lwt_unix.listen s 5;
+  let rec loop_forever () =
+    Lwt_unix.accept s
+    >>= fun (client, _client_addr) ->
+    Lwt.async
+      (fun () ->
+        finally (fun () -> f client) (fun () -> Lwt_unix.close client)
+      );
+    loop_forever () in
+  loop_forever ()
 
 let parse_path x = Stringext.split x ~on:'/'
 
@@ -162,7 +185,7 @@ let debug =
 
 let address =
   let doc = "Address of the 9P fileserver" in
-  Arg.(value & opt string "localhost:5640" & info [ "address"; "a" ] ~doc)
+  Arg.(value & opt string "127.0.0.1:5640" & info [ "address"; "a" ] ~doc)
 
 let path =
   let doc = "Path on the 9P fileserver" in
