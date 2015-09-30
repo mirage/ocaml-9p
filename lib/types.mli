@@ -103,6 +103,7 @@ module FileMode : sig
     is_directory: bool;     (** true if the file is a directory *)
     append_only: bool;      (** true if the file is append-only (and therefore offsets in writes are ignored) *)
     exclusive: bool;        (** true if only one client may have it open at a time *)
+    is_mount: bool;         (** true if the file is a mountpoint *)
     is_auth: bool;          (** true if the file is a special authentication file *)
     temporary: bool;        (** true if the file is temporary and should be skipped from nightly backups *)
     is_device: bool;        (** 9P2000.u: true if file is a char/block device *)
@@ -115,7 +116,7 @@ module FileMode : sig
   (** A 'mode' returned from a call to "Stat" *)
 
   val make: ?owner:permission list -> ?group:permission list -> ?other:permission list ->
-    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_auth:bool -> ?temporary:bool ->
+    ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_mount:bool -> ?is_auth:bool -> ?temporary:bool ->
     ?is_device:bool -> ?is_symlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
     ?is_setgid:bool -> unit -> t
 

@@ -160,6 +160,7 @@ module FileMode = struct
     is_directory: bool;
     append_only: bool;
     exclusive: bool;
+    is_mount: bool;
     is_auth: bool;
     temporary: bool;
     is_device: bool;
@@ -171,10 +172,10 @@ module FileMode = struct
   } with sexp
 
   let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
-    ?(append_only=false) ?(exclusive=false) ?(is_auth=false) ?(temporary=false)
+    ?(append_only=false) ?(exclusive=false) ?(is_mount=false) ?(is_auth=false) ?(temporary=false)
     ?(is_device=false) ?(is_symlink=false) ?(is_namedpipe=false) ?(is_socket=false)
     ?(is_setuid=false) ?(is_setgid=false) () = {
-    owner; group; other; is_directory; append_only; exclusive;
+    owner; group; other; is_directory; append_only; exclusive; is_mount;
     is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
     is_setuid; is_setgid;
   }
@@ -203,10 +204,11 @@ module FileMode = struct
     let is_directory = is_set x 31 in
     let append_only  = is_set x 30 in
     let exclusive    = is_set x 29 in
+    let is_mount     = is_set x 28 in
     let is_auth      = is_set x 27 in
     let temporary    = is_set x 26 in
+    let is_symlink   = is_set x 25 in
     let is_device    = is_set x 23 in
-    let is_symlink   = is_set x 22 in
     let is_namedpipe = is_set x 21 in
     let is_socket    = is_set x 20 in
     let is_setuid    = is_set x 19 in
@@ -214,8 +216,10 @@ module FileMode = struct
     let owner = permissions_of_nibble (Int32.shift_right x 6) in
     let group = permissions_of_nibble (Int32.shift_right x 3) in
     let other = permissions_of_nibble (Int32.shift_right x 0) in
-    let t = { owner; group; other; is_directory; append_only; exclusive; is_auth; temporary;
-      is_device; is_symlink; is_namedpipe; is_socket; is_setuid; is_setgid } in
+    let t = {
+      owner; group; other; is_directory; append_only; exclusive; is_mount;
+      is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+      is_setuid; is_setgid } in
     return (t, rest)
 
   let write t rest =
@@ -223,10 +227,11 @@ module FileMode = struct
       if t.is_directory then bit 31 else 0l;
       if t.append_only  then bit 30 else 0l;
       if t.exclusive    then bit 29 else 0l;
+      if t.is_mount     then bit 28 else 0l;
       if t.is_auth      then bit 27 else 0l;
       if t.temporary    then bit 26 else 0l;
+      if t.is_symlink   then bit 25 else 0l;
       if t.is_device    then bit 23 else 0l;
-      if t.is_symlink   then bit 22 else 0l;
       if t.is_namedpipe then bit 21 else 0l;
       if t.is_socket    then bit 20 else 0l;
       if t.is_setuid    then bit 19 else 0l;
