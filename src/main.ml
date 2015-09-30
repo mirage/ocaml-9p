@@ -31,15 +31,16 @@ end
 
 module Client = Client.Make(Log)(Flow_lwt_unix)
 
+let parse_address address =
+  try
+    let colon = String.index address ':' in
+    String.sub address 0 colon, int_of_string (String.sub address (colon + 1) (String.length address - colon - 1))
+  with Not_found ->
+    address, 5640
+
 let with_connection address f =
-  let hostname, port =
-    try
-      let colon = String.index address ':' in
-      String.sub address 0 colon, String.sub address (colon + 1) (String.length address - colon - 1)
-    with Not_found ->
-      address, "5640" in
-  Log.debug "Connecting to %s port %s" hostname port;
-  let port = int_of_string port in
+  let hostname, port = parse_address address in
+  Log.debug "Connecting to %s port %d" hostname port;
   Lwt_unix.gethostbyname hostname
   >>= fun h ->
   ( if Array.length h.Lwt_unix.h_addr_list = 0
@@ -52,6 +53,11 @@ let with_connection address f =
   Lwt.catch
     (fun () -> f s >>= fun r -> Lwt_unix.close s >>= fun () -> return r)
     (fun e -> Lwt_unix.close s >>= fun () -> fail e)
+
+let accept_forever address f =
+  let ip, port = parse_address address in
+  Log.debug "Listening on %s port %d" ip port;
+  failwith "unimplemented"
 
 let parse_path x = Stringext.split x ~on:'/'
 
@@ -126,6 +132,22 @@ let ls debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
+let serve debug address path =
+  Log.print_debug := debug;
+  let path = parse_path path in
+  let t =
+    accept_forever address
+      (fun fd ->
+        failwith "unimplemented"
+      ) in
+  try
+    Lwt_main.run t;
+    `Ok ()
+  with Failure e ->
+    `Error(false, e)
+  | e ->
+    `Error(false, Printexc.to_string e)
+
 open Cmdliner
 
 let help = [
@@ -159,13 +181,22 @@ let ls_cmd =
   Term.(ret(pure ls $ debug $ address $ path $ username)),
   Term.info "ls" ~doc ~man
 
+let serve_cmd =
+  let doc = "Serve a directory over 9P" in
+  let man = [
+    `S "DESCRIPTION";
+    `P "Listen for 9P connections and serve the named filesystem.";
+  ] @ help in
+  Term.(ret(pure serve $ debug $ address $ path)),
+  Term.info "serve" ~doc ~man
+
 let default_cmd =
-  let doc = "interact with a remote fileserver over 9P" in
+  let doc = "interact with a remote machine over 9P" in
   let man = help in
   Term.(ret (pure (`Help (`Pager, None)))),
   Term.info (Sys.argv.(0)) ~version ~doc ~man
 
 let _ =
-  match Term.eval_choice default_cmd [ ls_cmd ] with
+  match Term.eval_choice default_cmd [ ls_cmd; serve_cmd ] with
   | `Error _ -> exit 1
   | _ -> exit 0
