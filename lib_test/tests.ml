@@ -43,6 +43,7 @@ let stat = Types.Stat.({
   uid = "uid";
   gid = "gid";
   muid = "muid";
+  u = Some { extension = "hello"; n_uid = 1l; n_gid = 2l; n_muid = 3l };
   })
 
 let make_tag =

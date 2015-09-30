@@ -436,6 +436,16 @@ module Version = struct
 end
 
 module Stat = struct
+  type extension = {
+    extension: string;
+    n_uid: int32;
+    n_gid: int32;
+    n_muid: int32;
+  } with sexp
+
+  let make_extension ?(extension="") ?(n_uid=(-1l)) ?(n_gid=(-1l)) ?(n_muid=(-1l)) () =
+    { extension; n_uid; n_gid; n_muid }
+
   type t = {
     ty: int;
     dev: int32;
@@ -448,15 +458,19 @@ module Stat = struct
     uid: string;
     gid: string;
     muid: string;
+    u: extension option;
   } with sexp
 
-  let make ~name ~qid ?(mode=FileMode.make ()) ?(length=0L) ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none") () =
+  let make ~name ~qid ?(mode=FileMode.make ()) ?(length=0L)
+    ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none")
+    ?u () =
     let ty = 0 and dev = 0l in
-    { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }
+    { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u }
 
   let sizeof t = 2 + 2 + 4 + (Qid.sizeof t.qid) + 4 + 4 + 4 + 8
     + 2 + (String.length t.name) + 2 + (String.length t.uid)
     + 2 + (String.length t.gid) + 2 + (String.length t.muid)
+    + (match t.u with None -> 0 | Some x -> 2 + (String.length x.extension) + 4 + 4 + 4)
 
   let read rest =
     Int16.read rest
@@ -487,7 +501,21 @@ module Stat = struct
     Data.read rest
     >>= fun (muid, rest) ->
     let muid = Data.to_string muid in
-    return ( { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid }, rest)
+    let t = { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u = None } in
+    if Cstruct.len rest = 0
+    then return (t, rest)
+    else
+      Data.read rest
+      >>= fun (x, rest) ->
+      let extension = Data.to_string x in
+      Int32.read rest
+      >>= fun (n_uid, rest) ->
+      Int32.read rest
+      >>= fun (n_gid, rest) ->
+      Int32.read rest
+      >>= fun (n_muid, rest) ->
+      let u = Some { extension; n_uid; n_gid; n_muid } in
+      return ({ t with u }, rest)
 
   let write t rest =
     let len = sizeof t in
@@ -518,6 +546,17 @@ module Stat = struct
     Data.write gid rest
     >>= fun rest ->
     Data.write muid rest
+    >>= fun rest ->
+    match t.u with
+    | None -> return rest
+    | Some x ->
+      Data.(write (of_string x.extension) rest)
+      >>= fun rest ->
+      Int32.write x.n_uid rest
+      >>= fun rest ->
+      Int32.write x.n_gid rest
+      >>= fun rest ->
+      Int32.write x.n_muid rest
 
 end
 

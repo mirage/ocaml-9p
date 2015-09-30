@@ -180,6 +180,15 @@ module Data : sig
 end
 
 module Stat : sig
+  type extension = {
+    extension: string; (** 9P2000.u: extra information about links, pipes *)
+    n_uid: int32;      (** 9P2000.u: numeric id of the user who owns the file *)
+    n_gid: int32;      (** 9P2000.u: numeric id of the group of the file *)
+    n_muid: int32;     (** 9P2000.u: numeric id of the user who last modified the file *)
+  } with sexp
+
+  val make_extension: ?extension:string -> ?n_uid:int32 -> ?n_gid:int32 -> ?n_muid:int32 -> unit -> extension
+
   type t = {
     ty: int;          (** for kernel use *)
     dev: int32;       (** for kernel use *)
@@ -192,9 +201,12 @@ module Stat : sig
     uid: string;      (** owner name *)
     gid: string;      (** group name *)
     muid: string;     (** name of last user who modified the file *)
+    u: extension option; (** 9P2000.u extensions *)
   } with sexp
 
-  val make: name:string -> qid:Qid.t -> ?mode:FileMode.t -> ?length:int64 -> ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string -> unit -> t
+  val make: name:string -> qid:Qid.t -> ?mode:FileMode.t -> ?length:int64 ->
+    ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string ->
+    ?u:extension -> unit -> t
 
   include S.SERIALISABLE with type t := t
 end
