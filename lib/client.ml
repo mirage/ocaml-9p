@@ -387,10 +387,10 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   (* 8215 = 8192 + 23 (maximum overhead in a write packet) *)
   let connect flow ?(msize = 8215l) ?(username = "nobody") ?(aname = "/") () =
     let bf = { flow; input_buffer = Cstruct.create 0 } in
-    LowLevel.version bf msize Types.Version.default
+    LowLevel.version bf msize Types.Version.unix
     >>*= fun version ->
     let msize = min msize version.Response.Version.msize in
-    let upgraded = false in
+    let upgraded = version.Response.Version.version = Types.Version.unix in
     (* Compute the maximum payload size *)
     let smallest_read_response = { Response.tag = Types.Tag.notag; payload = Response.Read { Response.Read.data = Cstruct.create 0 } } in
     let maximum_read_payload = Int32.(sub msize (of_int (Response.sizeof smallest_read_response))) in
