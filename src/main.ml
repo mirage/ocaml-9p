@@ -92,6 +92,44 @@ let accept_forever address f =
 
 let parse_path x = Stringext.split x ~on:'/'
 
+let with_client address f =
+  with_connection address
+    (fun s ->
+      let flow = Flow_lwt_unix.connect s in
+      Client.connect flow ?username ()
+      >>= function
+      | Error (`Msg x) -> failwith x
+      | Ok t ->
+        Log.debug "Successfully negotiated a connection.";
+        finally (fun () -> f t) (fun () -> Client.disconnect t)
+    )
+
+let read debug address path username =
+  Log.print_debug := debug;
+  let path = parse_path path in
+  let t =
+    with_client address
+      (fun t ->
+        let rec loop offset =
+          Client.read t path 1024l
+          >>*= fun data ->
+          if Cstruct.len data = 0
+          then return (Ok ())
+          else begin
+            print_string (Cstruct.to_string data);
+            loop Int64.(add offset (of_int (Cstruct.len data)))
+          end in
+        loop 0L
+      ) in
+  try
+    Lwt_main.run t;
+    `Ok ()
+  with Failure e ->
+    `Error(false, e)
+  | e ->
+    `Error(false, Printexc.to_string e)
+
+
 let ls debug address path username =
   Log.print_debug := debug;
   let path = parse_path path in
@@ -337,6 +375,15 @@ let ls_cmd =
   ] @ help in
   Term.(ret(pure ls $ debug $ address $ path $ username)),
   Term.info "ls" ~doc ~man
+
+let read_cmd =
+  let doc = "Read a file" in
+  let man = [
+    `S "DESCRIPTION";
+    `P "Write the contents of a file to stdout.";
+  ] @ help in
+  Term.(ret(pure read $ debug $ address $ path)),
+  Term.info "read" ~doc ~man
 
 let serve_cmd =
   let doc = "Serve a directory over 9P" in
