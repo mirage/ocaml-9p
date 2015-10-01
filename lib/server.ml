@@ -55,7 +55,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
    | Error x -> Lwt.return (Error x)
 
   let write_one_packet writer response =
-    debug "-> %s" (Response.to_string response);
+    debug "S %s" (Response.to_string response);
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
@@ -69,7 +69,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun buffer ->
     Lwt.return (Request.read buffer)
     >>*= fun (request, _) ->
-    debug "-> %s" (Request.to_string request);
+    debug "C %s" (Request.to_string request);
     Lwt.return (Ok request)
 
   let rec dispatcher_t shutdown_complete_wakener receive_cb t =
