@@ -299,6 +299,8 @@ let serve_local_fs_cb path =
         end else begin
           Lwt_unix.openfile path [ Lwt_unix.O_RDONLY ] 0
           >>= fun fd ->
+          Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
+          >>= fun _ ->
           Lwt_bytes.read fd buffer 0 (Lwt_bytes.length buffer)
           >>= fun n ->
           Lwt_unix.close fd
