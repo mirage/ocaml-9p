@@ -92,7 +92,7 @@ let accept_forever address f =
 
 let parse_path x = Stringext.split x ~on:'/'
 
-let with_client address f =
+let with_client address username f =
   with_connection address
     (fun s ->
       let flow = Flow_lwt_unix.connect s in
@@ -107,17 +107,20 @@ let with_client address f =
 let read debug address path username =
   Log.print_debug := debug;
   let path = parse_path path in
+  let mib = Int32.mul 1024l 1024l in
+  let two_mib = Int32.mul 2l mib in
   let t =
-    with_client address
+    with_client address username
       (fun t ->
         let rec loop offset =
-          Client.read t path 1024l
+          Client.read t path offset two_mib
           >>*= fun data ->
-          if Cstruct.len data = 0
-          then return (Ok ())
+          let len = List.fold_left (+) 0 (List.map (fun x -> Cstruct.len x) data) in
+          if len = 0
+          then return (Result.Ok ())
           else begin
-            print_string (Cstruct.to_string data);
-            loop Int64.(add offset (of_int (Cstruct.len data)))
+            List.iter (fun x -> print_string (Cstruct.to_string x)) data;
+            loop Int64.(add offset (of_int len))
           end in
         loop 0L
       ) in
@@ -382,7 +385,7 @@ let read_cmd =
     `S "DESCRIPTION";
     `P "Write the contents of a file to stdout.";
   ] @ help in
-  Term.(ret(pure read $ debug $ address $ path)),
+  Term.(ret(pure read $ debug $ address $ path $ username)),
   Term.info "read" ~doc ~man
 
 let serve_cmd =
@@ -401,6 +404,6 @@ let default_cmd =
   Term.info (Sys.argv.(0)) ~version ~doc ~man
 
 let _ =
-  match Term.eval_choice default_cmd [ ls_cmd; serve_cmd ] with
+  match Term.eval_choice default_cmd [ ls_cmd; read_cmd; serve_cmd ] with
   | `Error _ -> exit 1
   | _ -> exit 0
