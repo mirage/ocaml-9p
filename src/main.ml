@@ -98,8 +98,8 @@ let with_client address username f =
       let flow = Flow_lwt_unix.connect s in
       Client.connect flow ?username ()
       >>= function
-      | Error (`Msg x) -> failwith x
-      | Ok t ->
+      | Result.Error (`Msg x) -> failwith x
+      | Result.Ok t ->
         Log.debug "Successfully negotiated a connection.";
         finally (fun () -> f t) (fun () -> Client.disconnect t)
     )
@@ -125,7 +125,7 @@ let read debug address path username =
         loop 0L
       ) in
   try
-    Lwt_main.run t;
+    ignore (Lwt_main.run t);
     `Ok ()
   with Failure e ->
     `Error(false, e)
@@ -142,12 +142,12 @@ let ls debug address path username =
         let flow = Flow_lwt_unix.connect s in
         Client.connect flow ?username ()
         >>= function
-        | Error (`Msg x) -> failwith x
-        | Ok t ->
+        | Result.Error (`Msg x) -> failwith x
+        | Result.Ok t ->
           Log.debug "Successfully negotiated a connection.";
           begin Client.readdir t path >>= function
-          | Error (`Msg x) -> failwith x
-          | Ok stats ->
+          | Result.Error (`Msg x) -> failwith x
+          | Result.Ok stats ->
             let row_of_stat x =
               let permissions p =
                   (if List.mem `Read p then "r" else "-")
@@ -213,7 +213,7 @@ let serve_local_fs_cb path =
     let elements = List.filter (fun x -> x <> "" && (x <> ".")) (root @ path') in
     List.fold_left Filename.concat "/" elements in
   (* We need to remember the mapping of Fid to path *)
-  let root = canonicalise path [] in
+  (* let root = canonicalise path [] in*)
   let fids = ref Types.Fid.Map.empty in
   (* We need to associate files with Qids with unique ids and versions *)
   let qid_of_path realpath =
@@ -331,8 +331,8 @@ let serve debug address path =
         let flow = Flow_lwt_unix.connect fd in
         Server.connect flow ~receive_cb:(serve_local_fs_cb path) ()
         >>= function
-        | Error (`Msg x) -> fail (Failure x)
-        | Ok t ->
+        | Result.Error (`Msg x) -> fail (Failure x)
+        | Result.Ok t ->
           Log.debug "Successfully negotiated a connection.";
           let rec loop_forever () =
             Lwt_unix.sleep 60.
@@ -341,7 +341,7 @@ let serve debug address path =
           loop_forever ()
       ) in
   try
-    Lwt_main.run t;
+    ignore (Lwt_main.run t);
     `Ok ()
   with Failure e ->
     `Error(false, e)
