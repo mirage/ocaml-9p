@@ -24,9 +24,10 @@ module Make(Filesystem : Filesystem.S) = struct
     | Open open_ -> Filesystem.open_ info open_
     | Read read -> Filesystem.read info read
     | Clunk clunk -> Filesystem.clunk info clunk
+    | Stat stat -> Filesystem.stat info stat
     | Create _
     | Write _
-    | Version _ | Auth _ | Flush _ | Attach _ | Remove _ | Stat _ | Wstat _ ->
+    | Version _ | Auth _ | Flush _ | Attach _ | Remove _ | Wstat _ ->
       Lwt.return (Result.Ok (Response.Err {
         Response.Err.ename = "not implemented";
         errno = None;

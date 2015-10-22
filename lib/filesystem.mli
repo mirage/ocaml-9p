@@ -25,4 +25,6 @@ module type S = sig
   val open_: Server.info -> Request.Open.t -> Response.payload Error.t Lwt.t
 
   val read: Server.info -> Request.Read.t -> Response.payload Error.t Lwt.t
+
+  val stat: Server.info -> Request.Stat.t -> Response.payload Error.t Lwt.t
 end

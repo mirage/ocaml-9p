@@ -65,11 +65,15 @@ module New(Params : sig val root : string list end) = struct
   (* let root = canonicalise path [] in*)
   let fids = ref Types.Fid.Map.empty
 
+  let path_of_fid info fid =
+    if fid = info.Server.root
+    then "/"
+    else Types.Fid.Map.find fid !fids
+
   let read info { Request.Read.fid; offset; count } =
-    if not(Types.Fid.Map.mem fid !fids)
-    then bad_fid
-    else begin
-      let path = Types.Fid.Map.find fid !fids in
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
       qid_of_path path
       >>*= fun qid ->
       let buffer = Lwt_bytes.create (Int32.to_int count) in
@@ -110,17 +114,15 @@ module New(Params : sig val root : string list end) = struct
         let data = Cstruct.(sub (of_bigarray buffer) 0 n) in
         Lwt.return (Result.Ok (Response.Read { Response.Read.data }))
       end
-    end
 
   let open_ info { Request.Open.fid; mode } =
-    if not(Types.Fid.Map.mem fid !fids)
-    then bad_fid
-    else begin
-      qid_of_path (Types.Fid.Map.find fid !fids)
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      qid_of_path path
       >>*= fun qid ->
       (* Could do a permissions check here *)
       Lwt.return (Result.Ok (Response.Open { Response.Open.qid; iounit = 512l }))
-    end
 
   let clunk info { Request.Clunk.fid } =
     fids := Types.Fid.Map.remove fid !fids;
@@ -137,5 +139,19 @@ module New(Params : sig val root : string list end) = struct
         >>*= fun qid ->
         walk (x :: dir) (qid :: qids) xs in
     walk [] [] wnames
+
+  let stat info { Request.Stat.fid } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let name = path in
+      qid_of_path path
+      >>*= fun qid ->
+      Lwt.return
+        (Result.Ok (Response.Stat (
+           {
+             Response.Stat.stat = Types.Stat.make ~name ~qid ();
+           }
+         )))
 
 end
