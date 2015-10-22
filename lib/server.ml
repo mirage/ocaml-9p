@@ -17,16 +17,16 @@
 open Error
 open Result
 
+type info = {
+  root: Types.Fid.t;
+  version: Types.Version.t;
+}
+
+type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
+
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   module Reader = Buffered9PReader.Make(Log)(FLOW)
   open Log
-
-  type info = {
-    root: Types.Fid.t;
-    version: Types.Version.t;
-  }
-
-  type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
 
   type t = {
     reader: Reader.t;

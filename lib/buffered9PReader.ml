@@ -64,7 +64,6 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     Lwt.return (Ok output)
 
   let read_must_have_lock t =
-    let length_buffer = Cstruct.create 4 in
     read_exactly t 4
     >>*= fun length_buffer ->
     let length = Cstruct.LE.get_uint32 length_buffer 0 in

@@ -28,7 +28,7 @@ Library protocol_9p
   CompiledObject:     best
   Path:               lib
   Findlibname:        protocol-9p
-  Modules:            S, Request, Error, Response, Types, Client, Server, Buffered9PReader
+  Modules:            S, Request, Error, Response, Types, Client, Server, Buffered9PReader, Handler, Filesystem, Infix
   BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, stringext, bisect
 
 Document protocol_9p
@@ -45,8 +45,8 @@ Library protocol_9p_unix
   Path:               unix
   Findlibparent:      protocol_9p
   Findlibname:        unix
-  Modules:            Flow_lwt_unix
-  BuildDepends:       mirage-types.lwt, lwt, cstruct, cstruct.lwt, bisect
+  Modules:            Flow_lwt_unix, Lofs9p
+  BuildDepends:       protocol-9p, mirage-types.lwt, lwt, cstruct, cstruct.lwt, bisect
 
 Executable "9p"
   Path:               src

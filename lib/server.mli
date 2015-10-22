@@ -17,20 +17,20 @@
 
 (** Given a transport (a Mirage FLOW), construct a 9P server on top. *)
 
+type info = {
+  root: Types.Fid.t;        (** The initial fid provided by the client *)
+  version: Types.Version.t; (** The protocol version we negotiated *)
+}
+(** Information about the active connection, passed to the receive callback. *)
+
+type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
+(** Every time a request is received, this is the type of the callback which
+    is called. *)
+
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t
   (** An established connection to a 9P server *)
-
-  type info = {
-    root: Types.Fid.t;        (** The initial fid provided by the client *)
-    version: Types.Version.t; (** The protocol version we negotiated *)
-  }
-  (** Information about the active connection, passed to the receive callback. *)
-
-  type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
-  (** Every time a request is received, this is the type of the callback which
-      is called. *)
 
   val connect: FLOW.flow -> ?msize:int32 -> receive_cb:receive_cb -> unit -> t Error.t Lwt.t
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
