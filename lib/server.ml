@@ -137,7 +137,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun (tag, a) ->
       let root = a.Request.Attach.fid in
       let info = { root; version } in
-      let root_qid = Types.Qid.file ~version:0l ~id:0L () in
+      let root_qid = Types.Qid.dir ~version:0l ~id:0L () in
       write_one_packet flow {
         Response.tag;
         payload = Response.Attach Response.Attach.({qid = root_qid })
