@@ -7,3 +7,4 @@ sudo: required
 env:
   global:
     - PACKAGE="protocol-9p" OCAML_VERSION=4.02
+    - COV_CONF="export TESTS=--enable-tests"
