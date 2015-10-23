@@ -148,4 +148,4 @@ let tests =
 
 let _ =
   let suite = "parse and print" >::: tests in
-  run_test_tt_main suite
+  OUnit2.run_test_tt_main (ounit2_of_ounit1 suite)

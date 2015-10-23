@@ -29,7 +29,7 @@ install: setup.bin
 	./setup.bin -install
 
 test: setup.bin build
-	./setup.bin -test
+	./setup.bin -test -runner sequential
 
 reinstall: setup.bin
 	ocamlfind remove $(NAME) || true

@@ -67,5 +67,5 @@ Executable test_parse_print
 
 Test test_parse_print
   Run$:               flag(tests)
-  Command:            $test_parse_print
+  Command:            $test_parse_print -runner sequential
   WorkingDirectory:   lib_test
