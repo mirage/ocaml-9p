@@ -14,8 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
 open Error
 open Result
+open Infix
 
 type info = {
   root: Types.Fid.t;
@@ -46,13 +48,6 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     | `Ok x -> f x
     | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
     | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
-
-  (* For Result + Lwt *)
-  let (>>*=) m f =
-   let open Lwt in
-   m >>= function
-   | Ok x -> f x
-   | Error x -> Lwt.return (Error x)
 
   let write_one_packet writer response =
     debug "S %s" (Response.to_string response);

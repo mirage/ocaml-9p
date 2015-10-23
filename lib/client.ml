@@ -14,8 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
 open Result
 open Error
+open Infix
 
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   module Reader = Buffered9PReader.Make(Log)(FLOW)
@@ -49,13 +51,6 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     | `Ok x -> f x
     | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
     | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
-
-  (* For Result + Lwt *)
-  let (>>*=) m f =
-   let open Lwt in
-   m >>= function
-   | Ok x -> f x
-   | Error x -> Lwt.return (Error x)
 
   let read_one_packet reader =
     Reader.read reader
