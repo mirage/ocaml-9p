@@ -12,6 +12,7 @@ _build
 setup.bin
 setup.data
 setup.log
+.coverage/
 
 # REMOVE to release the package
 _tags
