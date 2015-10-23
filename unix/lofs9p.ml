@@ -19,6 +19,8 @@ open Protocol_9p
 open Infix
 open Lwt
 
+let (/) = Filename.concat
+
 (* We need to associate files with Qids with unique ids and versions *)
 let qid_of_path realpath =
   Lwt_unix.LargeFile.stat realpath
@@ -42,27 +44,66 @@ let bad_fid = Lwt.return (Result.Ok (Response.Err {
 
 module New(Params : sig val root : string list end) = struct
   module Path = struct
-    type t = string list
+    type t = {
+      segments : string list;
+    }
+
+    let mount_depth = List.length Params.root
+    let root = { segments = []; }
 
     (* Convert from a segmented path to real paths *)
-    let realpath path =
-      let root = Params.root in
-      let elements = List.filter (fun x -> x <> "" && x <> ".") (root @ path) in
-      List.fold_left Filename.concat "/" elements
+    let realpath =
+      let add_segment buf segment =
+        Buffer.add_char buf '/';
+        Buffer.add_string buf segment
+      in
+      fun { segments } ->
+        let buf = Buffer.create (8 * (mount_depth + List.length segments)) in
+        List.iter (add_segment buf) Params.root;
+        List.iter (add_segment buf) (List.rev segments);
+        Buffer.contents buf
 
-    let stat name realpath =
+    let append path node = { segments = node::path.segments }
+
+    let of_segments segments = { segments = List.rev segments }
+
+    let perms_of_code code =
+      match code land 7 with
+      | 1 -> [ `Execute ]
+      | 2 -> [ `Write ]
+      | 3 -> [ `Execute; `Write ]
+      | 4 -> [ `Read ]
+      | 5 -> [ `Execute; `Read ]
+      | 6 -> [ `Write; `Read ]
+      | 7 -> [ `Execute; `Write; `Read ]
+      | _ -> []
+
+    let stat path =
+      let realpath = realpath path in
       let open Lwt_unix in
-      LargeFile.stat realpath
+      LargeFile.lstat realpath
       >>= fun stats ->
       qid_of_path realpath
       >>*= fun qid ->
+      let { LargeFile.st_perm } = stats in
+      let owner = perms_of_code (st_perm lsr 6) in
+      let group = perms_of_code (st_perm lsr 3) in
+      let other = perms_of_code st_perm in
       let is_device = List.mem stats.LargeFile.st_kind [ S_BLK; S_CHR ] in
       let mode = Types.FileMode.make
+          ~owner ~group ~other
           ~is_directory:(stats.LargeFile.st_kind = S_DIR)
           ~is_device
           ~is_symlink:(stats.LargeFile.st_kind = S_LNK) () in
-      let name = if name = "" then "/" else name in
-      let stat = Types.Stat.make ~name ~qid ~mode () in
+      let name = match path.segments with [] -> "/" | node::_ -> node in
+      let length = stats.LargeFile.st_size in
+      let atime = Int32.of_float stats.LargeFile.st_atime in
+      let mtime = Int32.of_float stats.LargeFile.st_mtime in
+      let uid = string_of_int stats.LargeFile.st_uid in
+      let gid = string_of_int stats.LargeFile.st_gid in
+      let stat =
+        Types.Stat.make ~name ~qid ~mode ~length ~atime ~mtime ~uid ~gid ()
+      in
       Lwt.return (Result.Ok stat)
 
   end
@@ -72,7 +113,7 @@ module New(Params : sig val root : string list end) = struct
 
   let path_of_fid info fid =
     if fid = info.Server.root
-    then []
+    then Path.root
     else Types.Fid.Map.find fid !fids
 
   let read info { Request.Read.fid; offset; count } =
@@ -93,7 +134,7 @@ module New(Params : sig val root : string list end) = struct
         let rec write off rest = function
           | [] -> Lwt.return (Result.Ok off)
           | x :: xs ->
-            Path.stat x (Path.realpath path)
+            Path.(stat (append path x))
             >>*= fun stat ->
             let n = Types.Stat.sizeof stat in
             if off < offset
@@ -138,25 +179,22 @@ module New(Params : sig val root : string list end) = struct
   let walk info { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
-        fids := Types.Fid.Map.add newfid wnames !fids;
+        fids := Types.Fid.Map.add newfid (Path.of_segments wnames) !fids;
         Lwt.return (Result.Ok (Response.Walk { Response.Walk.wqids = List.rev qids }))
       | x :: xs ->
-        let realpath = Path.realpath (List.rev (x :: dir)) in
+        let here = Path.append dir x in
+        let realpath = Path.realpath here in
         qid_of_path realpath
         >>*= fun qid ->
-        walk (x :: dir) (qid :: qids) xs in
-    walk [] [] wnames
+        walk here (qid :: qids) xs
+    in
+    walk Path.root [] wnames
 
   let stat info { Request.Stat.fid } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
-    | [] ->
-      Path.stat "" (Path.realpath [])
-      >>*= fun stat ->
-      Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
     | path ->
-      let rpath = List.rev path in
-      Path.stat (List.hd rpath) (Path.realpath List.(rev (tl rpath)))
+      Path.stat path
       >>*= fun stat ->
       Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
 
