@@ -179,8 +179,10 @@ module New(Params : sig val root : string list end) = struct
   let walk info { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
-        fids := Types.Fid.Map.add newfid (Path.of_segments wnames) !fids;
-        Lwt.return (Result.Ok (Response.Walk { Response.Walk.wqids = List.rev qids }))
+        fids := Types.Fid.Map.add newfid dir !fids;
+        Lwt.return (Result.Ok (Response.Walk {
+          Response.Walk.wqids = List.rev qids;
+        }))
       | x :: xs ->
         let here = Path.append dir x in
         let realpath = Path.realpath here in
@@ -188,7 +190,10 @@ module New(Params : sig val root : string list end) = struct
         >>*= fun qid ->
         walk here (qid :: qids) xs
     in
-    walk Path.root [] wnames
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      walk path [] wnames
 
   let stat info { Request.Stat.fid } =
     match path_of_fid info fid with
