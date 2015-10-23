@@ -29,7 +29,7 @@ Library protocol_9p
   Path:               lib
   Findlibname:        protocol-9p
   Modules:            S, Request, Error, Response, Types, Client, Server, Buffered9PReader, Handler, Filesystem, Infix
-  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, stringext, bisect
+  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, stringext
 
 Document protocol_9p
   Title:                9P docs
@@ -46,7 +46,7 @@ Library protocol_9p_unix
   Findlibparent:      protocol_9p
   Findlibname:        unix
   Modules:            Flow_lwt_unix, Lofs9p
-  BuildDepends:       protocol-9p, mirage-types.lwt, lwt, cstruct, cstruct.lwt, bisect
+  BuildDepends:       protocol-9p, mirage-types.lwt, lwt, cstruct, cstruct.lwt
 
 Executable "9p"
   Path:               src
@@ -63,7 +63,7 @@ Executable test_parse_print
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       protocol-9p, oUnit (>= 1.0.2), bisect
+  BuildDepends:       protocol-9p, oUnit (>= 1.0.2)
 
 Test test_parse_print
   Run$:               flag(tests)
