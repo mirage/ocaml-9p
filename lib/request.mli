@@ -182,4 +182,8 @@ type t = {
 
 include S.SERIALISABLE with type t := t
 
+val read_header:
+  Cstruct.t -> (Int32.t * Types.Int8.t * Types.Tag.t * Cstruct.t,
+                [ `Msg of string]) result
+
 val to_string: t -> string

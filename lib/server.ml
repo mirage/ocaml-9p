@@ -60,26 +60,59 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     Lwt.return (Ok ())
 
   let read_one_packet reader =
+    let open Lwt in
     Reader.read reader
-    >>*= fun buffer ->
-    Lwt.return (Request.read buffer)
-    >>*= fun (request, _) ->
-    debug "C %s" (Request.to_string request);
-    Lwt.return (Ok request)
+    >>= function
+    | Error (`Msg _) as e -> Lwt.return e
+    | Ok buffer ->
+      Lwt.return begin
+        match Request.read buffer with
+        | Error (`Msg ename) ->
+          Error (`Parse (ename, buffer))
+        | Ok (request, _) ->
+          debug "C %s" (Request.to_string request);
+          Ok request
+      end
 
   let rec dispatcher_t shutdown_complete_wakener receive_cb t =
     if t.please_shutdown then begin
       Lwt.wakeup_later shutdown_complete_wakener ();
       Lwt.return (Ok ())
     end else begin
+      let open Lwt in
       read_one_packet t.reader
-      >>*= fun request ->
-      receive_cb t.info request.Request.payload
-      >>*= fun response_payload ->
-      let response = { Response.tag = request.Request.tag; payload = response_payload } in
-      write_one_packet t.writer response
-      >>*= fun () ->
-      dispatcher_t shutdown_complete_wakener receive_cb t
+      >>= function
+      | Error (`Msg message) ->
+        debug "C error reading: %s" message;
+        dispatcher_t shutdown_complete_wakener receive_cb t
+      | Error (`Parse (ename, buffer)) -> begin
+          match Request.read_header buffer with
+          | Error (`Msg _) ->
+            debug "C sent bad header: %s" ename;
+            dispatcher_t shutdown_complete_wakener receive_cb t
+          | Ok (_, _, tag, _) ->
+            debug "C error: %s" ename;
+            let response = {
+              Response.tag;
+              payload = Response.(Err {
+                Err.ename;
+                errno = None;
+              });
+            } in
+            write_one_packet t.writer response
+            >>*= fun () ->
+            dispatcher_t shutdown_complete_wakener receive_cb t
+        end
+      | Ok request ->
+        receive_cb t.info request.Request.payload
+        >>*= fun response_payload ->
+        let response = {
+          Response.tag = request.Request.tag;
+          payload = response_payload;
+        } in
+        write_one_packet t.writer response
+        >>*= fun () ->
+        dispatcher_t shutdown_complete_wakener receive_cb t
     end
 
   module LowLevel = struct

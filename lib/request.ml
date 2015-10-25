@@ -440,13 +440,18 @@ let write t rest =
     | Stat x -> Stat.write x rest
     | Wstat x -> Wstat.write x rest
 
-let read rest =
+let read_header rest =
   Int32.read rest
   >>= fun (len, rest) ->
   Int8.read rest
   >>= fun (ty, rest) ->
   Tag.read rest
   >>= fun (tag, rest) ->
+  return (len, ty, tag, rest)
+
+let read rest =
+  read_header rest
+  >>= fun (len, ty, tag, rest) ->
   ( match ty with
     | 100 -> Version.read rest >>= fun (x, rest) -> return ((Version x), rest)
     | 102 -> Auth.read rest    >>= fun (x, rest) -> return ((Auth x), rest)
@@ -461,7 +466,7 @@ let read rest =
     | 122 -> Remove.read rest  >>= fun (x, rest) -> return ((Remove x), rest)
     | 124 -> Stat.read rest    >>= fun (x, rest) -> return ((Stat x), rest)
     | 126 -> Wstat.read rest   >>= fun (x, rest) -> return ((Wstat x), rest)
-    | ty  -> error_msg "Request.read: unknown packet type %d" ty
+    | ty  -> error_msg "unknown packet type %d\n%!" ty
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 
