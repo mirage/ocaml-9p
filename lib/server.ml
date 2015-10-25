@@ -49,6 +49,10 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
     | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
 
+  let disconnect t =
+    t.please_shutdown <- true;
+    t.shutdown_complete_t
+
   let write_one_packet writer response =
     debug "S %s" (Response.to_string response);
     let sizeof = Response.sizeof response in
@@ -84,6 +88,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>= function
       | Error (`Msg message) ->
         debug "C error reading: %s" message;
+        debug "Disconnecting client";
+        disconnect t
+        >>= fun () ->
         dispatcher_t shutdown_complete_wakener receive_cb t
       | Error (`Parse (ename, buffer)) -> begin
           match Request.read_header buffer with
@@ -176,8 +183,4 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener receive_cb t);
       Lwt.return (Ok t)
     end
-
-  let disconnect t =
-    t.please_shutdown <- true;
-    t.shutdown_complete_t
 end
