@@ -492,7 +492,7 @@ module Stat = struct
 
   let read buf =
     Int16.read buf
-    >>= fun (_len, rest) ->
+    >>= fun (sz, rest) ->
     Int16.read rest
     >>= fun (ty, rest) ->
     Int32.read rest
@@ -521,9 +521,9 @@ module Stat = struct
     let muid = Data.to_string muid in
     let t = { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u = None } in
     (* We are often decoding contiguous arrays of Stat structures,
-       so we must use the _len field to discover where the data ends. *)
+       so we must use the sz field to discover where the data ends. *)
     let consumed = Cstruct.len buf - (Cstruct.len rest) in
-    if consumed = _len + 2 (* Size of the _len field itself *)
+    if consumed = sz + 2 (* Size of the sz field itself *)
     then return (t, rest)
     else
       Data.read rest
@@ -538,7 +538,7 @@ module Stat = struct
       let u = Some { extension; n_uid; n_gid; n_muid } in
       (* In case of future extensions, remove trailing garbage *)
       let consumed = Cstruct.len buf - (Cstruct.len rest) in
-      let trailing_garbage = consumed - _len - 2 in
+      let trailing_garbage = consumed - sz - 2 in
       let rest = Cstruct.shift rest trailing_garbage in
       return ({ t with u }, rest)
 
