@@ -27,4 +27,10 @@ module type S = sig
   val read: Server.info -> Request.Read.t -> Response.payload Error.t Lwt.t
 
   val stat: Server.info -> Request.Stat.t -> Response.payload Error.t Lwt.t
+
+  val create: Server.info -> Request.Create.t -> Response.payload Error.t Lwt.t
+
+  val write: Server.info -> Request.Write.t -> Response.payload Error.t Lwt.t
+
+  val remove: Server.info -> Request.Remove.t -> Response.payload Error.t Lwt.t
 end

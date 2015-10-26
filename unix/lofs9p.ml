@@ -203,4 +203,32 @@ module New(Params : sig val root : string list end) = struct
       >>*= fun stat ->
       Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
 
+  let create info { Request.Create.fid; name; perm; mode } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = (Path.realpath path) / name in
+      (* TODO: use mode *)
+      Lwt_unix.(openfile realpath [O_CREAT; O_EXCL] (Int32.to_int perm))
+      >>= fun fd ->
+      Lwt_unix.close fd
+      >>= fun () ->
+      qid_of_path realpath
+      >>*= fun qid ->
+      Lwt.return (Result.Ok (Response.Create {
+        Response.Create.qid;
+        iounit= 512l;
+      }))
+
+  let write info { Request.Write.fid; offset; data } =
+    bad_fid
+
+  let remove info { Request.Remove.fid } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = Path.realpath path in
+      Lwt_unix.unlink realpath
+      >>= fun () ->
+      Lwt.return (Result.Ok (Response.Remove ()))
 end
