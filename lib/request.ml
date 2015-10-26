@@ -349,16 +349,20 @@ module Wstat = struct
     stat: Types.Stat.t;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.fid) + (Types.Stat.sizeof t.stat)
+  let sizeof t = (Fid.sizeof t.fid) + 2 + (Types.Stat.sizeof t.stat)
 
   let write t rest =
     Fid.write t.fid rest
+    >>= fun rest ->
+    Int16.write (Types.Stat.sizeof t.stat) rest
     >>= fun rest ->
     Types.Stat.write t.stat rest
 
   let read rest =
     Fid.read rest
     >>= fun (fid, rest) ->
+    Int16.read rest
+    >>= fun (_len, rest) ->
     Types.Stat.read rest
     >>= fun (stat, rest) ->
     return ( { fid; stat }, rest )
