@@ -470,7 +470,7 @@ let read rest =
     | 122 -> Remove.read rest  >>= fun (x, rest) -> return ((Remove x), rest)
     | 124 -> Stat.read rest    >>= fun (x, rest) -> return ((Stat x), rest)
     | 126 -> Wstat.read rest   >>= fun (x, rest) -> return ((Wstat x), rest)
-    | ty  -> error_msg "unknown packet type %d\n%!" ty
+    | ty  -> error_msg "unknown packet type %d" ty
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 
