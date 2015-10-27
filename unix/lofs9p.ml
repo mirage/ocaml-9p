@@ -238,7 +238,15 @@ module New(Params : sig val root : string list end) = struct
       Lwt.return (Result.Ok (Response.Write { Response.Write.count }))
 
   let set_mode path mode = Lwt.return ()
-  let set_times path atime mtime = Lwt.return ()
+  let set_times path atime mtime =
+    (* TODO: this can block on Unix.utimes and we shouldn't but
+       Lwt_unix does not yet wrap Unix.utimes. *)
+    (* NOTE: The behavior of this is slightly wrong as 'any' means
+       "don't change" but 0 means "set to now". *)
+    let atime = if Types.Int32.is_any atime then 0.0 else Int32.to_float atime in
+    let mtime = if Types.Int32.is_any mtime then 0.0 else Int32.to_float mtime in
+    Unix.utimes path atime mtime;
+    Lwt.return ()
   let set_length path length =
     Lwt_unix.LargeFile.truncate path length
   let rename_local path name =
