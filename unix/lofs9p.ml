@@ -239,7 +239,8 @@ module New(Params : sig val root : string list end) = struct
 
   let set_mode path mode = Lwt.return ()
   let set_times path atime mtime = Lwt.return ()
-  let set_length path length = Lwt.return ()
+  let set_length path length =
+    Lwt_unix.LargeFile.truncate path length
   let rename_local path newpath = Lwt.return ()
   let set_owner path owner = Lwt.return ()
   let set_group path group = Lwt.return ()
