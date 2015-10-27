@@ -74,7 +74,7 @@ module Int32 = struct
 
   let sizeof _ = 4
 
-  let any = Int32.(neg one)
+  let any = 0xFFFFFFFF_l
 
   let is_any x = x = any
 
@@ -95,7 +95,7 @@ module Int64 = struct
 
   let sizeof _ = 8
 
-  let any = Int64.(neg one)
+  let any = 0xFFFFFFFFFFFFFFFF_L
 
   let is_any x = x = any
 
