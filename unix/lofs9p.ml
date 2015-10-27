@@ -221,7 +221,77 @@ module New(Params : sig val root : string list end) = struct
       }))
 
   let write info { Request.Write.fid; offset; data } =
-    bad_fid
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = Path.realpath path in
+      Lwt_unix.(openfile realpath [O_WRONLY] 0o600)
+      >>= fun fd ->
+      Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
+      >>= fun _cursor ->
+      let len = Cstruct.len data in
+      Lwt_unix.write fd (Bytes.of_string (Cstruct.to_string data)) 0 len
+      >>= fun written ->
+      Lwt_unix.close fd
+      >>= fun () ->
+      let count = Int32.of_int written in
+      Lwt.return (Result.Ok (Response.Write { Response.Write.count }))
+
+  let set_mode path mode = Lwt.return ()
+  let set_times path atime mtime = Lwt.return ()
+  let set_length path length = Lwt.return ()
+  let rename_local path newpath = Lwt.return ()
+  let set_owner path owner = Lwt.return ()
+  let set_group path group = Lwt.return ()
+
+  (* Does not guarantee atomicity of general wstat messages like plan
+     9 requires! Luckily, both sides are actually POSIX so we're
+     probably fine. *)
+  let wstat info { Request.Wstat.fid; stat } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = Path.realpath path in
+      let {
+        Types.Stat.ty; dev; qid; muid;
+        mode; atime; mtime; length; name; uid; gid;
+      } = stat in
+      if not (Types.Int16.is_any ty)
+      then Lwt.return (Result.Error (`Msg "wstat can't change type"))
+      else if not (Types.Int32.is_any dev)
+      then Lwt.return (Result.Error (`Msg "wstat can't change dev"))
+      else if not (Types.Qid.is_any qid)
+      then Lwt.return (Result.Error (`Msg "wstat can't change qid"))
+      else if muid <> ""
+      then Lwt.return (Result.Error (`Msg "wstat can't change muid"))
+      else begin
+        (* TODO: check permissions *)
+        (if not (Types.FileMode.is_any mode)
+         then set_mode realpath mode
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if not (Types.Int32.is_any atime && Types.Int32.is_any mtime)
+         then set_times realpath atime mtime
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if not (Types.Int64.is_any length)
+         then set_length realpath length
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if name <> ""
+         then rename_local realpath name
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if uid <> ""
+         then set_owner realpath uid
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if gid <> ""
+         then set_group realpath gid
+         else Lwt.return ()
+        ) >>= fun () ->
+        Lwt.return (Result.Ok (Response.Wstat ()))
+      end
 
   let remove info { Request.Remove.fid } =
     match path_of_fid info fid with

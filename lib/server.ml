@@ -78,6 +78,14 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
           Ok request
       end
 
+  let error_response tag ename = {
+    Response.tag;
+    payload = Response.(Err {
+      Err.ename;
+      errno = None;
+    });
+  }
+
   let rec dispatcher_t shutdown_complete_wakener receive_cb t =
     if t.please_shutdown then begin
       Lwt.wakeup_later shutdown_complete_wakener ();
@@ -87,7 +95,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       read_one_packet t.reader
       >>= function
       | Error (`Msg message) ->
-        debug "C error reading: %s" message;
+        debug "S error reading: %s" message;
         debug "Disconnecting client";
         disconnect t
         >>= fun () ->
@@ -99,26 +107,30 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
             dispatcher_t shutdown_complete_wakener receive_cb t
           | Ok (_, _, tag, _) ->
             debug "C error: %s" ename;
-            let response = {
-              Response.tag;
-              payload = Response.(Err {
-                Err.ename;
-                errno = None;
-              });
-            } in
+            let response = error_response tag ename in
             write_one_packet t.writer response
             >>*= fun () ->
             dispatcher_t shutdown_complete_wakener receive_cb t
         end
       | Ok request ->
         receive_cb t.info request.Request.payload
-        >>*= fun response_payload ->
-        let response = {
-          Response.tag = request.Request.tag;
-          payload = response_payload;
-        } in
+        >>= begin function
+          | Error (`Msg message) ->
+            Lwt.return (error_response request.Request.tag message)
+          | Ok response_payload ->
+            Lwt.return {
+              Response.tag = request.Request.tag;
+              payload = response_payload;
+            }
+        end >>= fun response ->
         write_one_packet t.writer response
-        >>*= fun () ->
+        >>= begin function
+          | Error (`Msg message) ->
+            debug "S error writing: %s" message;
+            debug "Disconnecting client";
+            disconnect t
+          | Ok () -> Lwt.return ()
+        end >>= fun () ->
         dispatcher_t shutdown_complete_wakener receive_cb t
     end
 

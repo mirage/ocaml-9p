@@ -28,7 +28,8 @@ module Make(Filesystem : Filesystem.S) = struct
     | Create create -> Filesystem.create info create
     | Write write -> Filesystem.write info write
     | Remove remove -> Filesystem.remove info remove
-    | Version _ | Auth _ | Flush _ | Attach _ | Wstat _ ->
+    | Wstat wstat -> Filesystem.wstat info wstat
+    | Version _ | Auth _ | Flush _ | Attach _ ->
       Lwt.return (Result.Ok (Response.Err {
         Response.Err.ename = "not implemented";
         errno = None;

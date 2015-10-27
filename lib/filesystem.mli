@@ -33,4 +33,6 @@ module type S = sig
   val write: Server.info -> Request.Write.t -> Response.payload Error.t Lwt.t
 
   val remove: Server.info -> Request.Remove.t -> Response.payload Error.t Lwt.t
+
+  val wstat: Server.info -> Request.Wstat.t -> Response.payload Error.t Lwt.t
 end
