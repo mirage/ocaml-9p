@@ -14,8 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
 open Error
 open Result
+open Infix
 
 type info = {
   root: Types.Fid.t;
@@ -47,12 +49,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
     | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
 
-  (* For Result + Lwt *)
-  let (>>*=) m f =
-   let open Lwt in
-   m >>= function
-   | Ok x -> f x
-   | Error x -> Lwt.return (Error x)
+  let disconnect t =
+    t.please_shutdown <- true;
+    t.shutdown_complete_t
 
   let write_one_packet writer response =
     debug "S %s" (Response.to_string response);
@@ -65,26 +64,74 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     Lwt.return (Ok ())
 
   let read_one_packet reader =
+    let open Lwt in
     Reader.read reader
-    >>*= fun buffer ->
-    Lwt.return (Request.read buffer)
-    >>*= fun (request, _) ->
-    debug "C %s" (Request.to_string request);
-    Lwt.return (Ok request)
+    >>= function
+    | Error (`Msg _) as e -> Lwt.return e
+    | Ok buffer ->
+      Lwt.return begin
+        match Request.read buffer with
+        | Error (`Msg ename) ->
+          Error (`Parse (ename, buffer))
+        | Ok (request, _) ->
+          debug "C %s" (Request.to_string request);
+          Ok request
+      end
+
+  let error_response tag ename = {
+    Response.tag;
+    payload = Response.(Err {
+      Err.ename;
+      errno = None;
+    });
+  }
 
   let rec dispatcher_t shutdown_complete_wakener receive_cb t =
     if t.please_shutdown then begin
       Lwt.wakeup_later shutdown_complete_wakener ();
       Lwt.return (Ok ())
     end else begin
+      let open Lwt in
       read_one_packet t.reader
-      >>*= fun request ->
-      receive_cb t.info request.Request.payload
-      >>*= fun response_payload ->
-      let response = { Response.tag = request.Request.tag; payload = response_payload } in
-      write_one_packet t.writer response
-      >>*= fun () ->
-      dispatcher_t shutdown_complete_wakener receive_cb t
+      >>= function
+      | Error (`Msg message) ->
+        debug "S error reading: %s" message;
+        debug "Disconnecting client";
+        disconnect t
+        >>= fun () ->
+        dispatcher_t shutdown_complete_wakener receive_cb t
+      | Error (`Parse (ename, buffer)) -> begin
+          match Request.read_header buffer with
+          | Error (`Msg _) ->
+            debug "C sent bad header: %s" ename;
+            dispatcher_t shutdown_complete_wakener receive_cb t
+          | Ok (_, _, tag, _) ->
+            debug "C error: %s" ename;
+            let response = error_response tag ename in
+            write_one_packet t.writer response
+            >>*= fun () ->
+            dispatcher_t shutdown_complete_wakener receive_cb t
+        end
+      | Ok request ->
+        receive_cb t.info request.Request.payload
+        >>= begin function
+          | Error (`Msg message) ->
+            Lwt.return (error_response request.Request.tag message)
+          | Ok response_payload ->
+            Lwt.return {
+              Response.tag = request.Request.tag;
+              payload = response_payload;
+            }
+        end >>= fun response ->
+        write_one_packet t.writer response
+        >>= begin function
+          | Error (`Msg message) ->
+            debug "S error writing: %s" message;
+            debug "Disconnecting client";
+            disconnect t
+          | Ok () -> Lwt.return ()
+        end >>= fun () ->
+        dispatcher_t shutdown_complete_wakener receive_cb t
     end
 
   module LowLevel = struct
@@ -148,8 +195,4 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener receive_cb t);
       Lwt.return (Ok t)
     end
-
-  let disconnect t =
-    t.please_shutdown <- true;
-    t.shutdown_complete_t
 end

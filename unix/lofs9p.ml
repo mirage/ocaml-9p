@@ -19,10 +19,7 @@ open Protocol_9p
 open Infix
 open Lwt
 
-(* Convert from the fid's path to real paths *)
-let canonicalise root path' =
-  let elements = List.filter (fun x -> x <> "" && (x <> ".")) (root @ path') in
-  List.fold_left Filename.concat "/" elements
+let (/) = Filename.concat
 
 (* We need to associate files with Qids with unique ids and versions *)
 let qid_of_path realpath =
@@ -40,45 +37,95 @@ let qid_of_path realpath =
   let version = 0l in
   Lwt.return (Result.Ok { flags; id; version })
 
-let stat_of_path realpath =
-  Lwt_unix.LargeFile.stat realpath
-  >>= fun stats ->
-  qid_of_path realpath
-  >>*= fun qid ->
-  let is_device =
-    List.mem stats.Lwt_unix.LargeFile.st_kind [ Lwt_unix.S_BLK; Lwt_unix.S_CHR ]
-  in
-  let mode = Types.FileMode.make
-      ~is_directory:(stats.Lwt_unix.LargeFile.st_kind = Lwt_unix.S_DIR)
-      ~is_device
-      ~is_symlink:(stats.Lwt_unix.LargeFile.st_kind = Lwt_unix.S_LNK) () in
-  let stat = Types.Stat.make ~name:realpath ~qid ~mode () in
-  Lwt.return (Result.Ok stat)
-
 let bad_fid = Lwt.return (Result.Ok (Response.Err {
   Response.Err.ename = "bad fid";
   errno = None;
 }))
 
 module New(Params : sig val root : string list end) = struct
+  module Path = struct
+    type t = {
+      segments : string list;
+    }
+
+    let mount_depth = List.length Params.root
+    let root = { segments = []; }
+
+    (* Convert from a segmented path to real paths *)
+    let realpath =
+      let add_segment buf segment =
+        Buffer.add_char buf '/';
+        Buffer.add_string buf segment
+      in
+      fun { segments } ->
+        let buf = Buffer.create (8 * (mount_depth + List.length segments)) in
+        List.iter (add_segment buf) Params.root;
+        List.iter (add_segment buf) (List.rev segments);
+        Buffer.contents buf
+
+    let append path node = { segments = node::path.segments }
+
+    let of_segments segments = { segments = List.rev segments }
+
+    let perms_of_code code =
+      match code land 7 with
+      | 1 -> [ `Execute ]
+      | 2 -> [ `Write ]
+      | 3 -> [ `Execute; `Write ]
+      | 4 -> [ `Read ]
+      | 5 -> [ `Execute; `Read ]
+      | 6 -> [ `Write; `Read ]
+      | 7 -> [ `Execute; `Write; `Read ]
+      | _ -> []
+
+    let stat path =
+      let realpath = realpath path in
+      let open Lwt_unix in
+      LargeFile.lstat realpath
+      >>= fun stats ->
+      qid_of_path realpath
+      >>*= fun qid ->
+      let { LargeFile.st_perm } = stats in
+      let owner = perms_of_code (st_perm lsr 6) in
+      let group = perms_of_code (st_perm lsr 3) in
+      let other = perms_of_code st_perm in
+      let is_device = List.mem stats.LargeFile.st_kind [ S_BLK; S_CHR ] in
+      let mode = Types.FileMode.make
+          ~owner ~group ~other
+          ~is_directory:(stats.LargeFile.st_kind = S_DIR)
+          ~is_device
+          ~is_symlink:(stats.LargeFile.st_kind = S_LNK) () in
+      let name = match path.segments with [] -> "/" | node::_ -> node in
+      let length = stats.LargeFile.st_size in
+      let atime = Int32.of_float stats.LargeFile.st_atime in
+      let mtime = Int32.of_float stats.LargeFile.st_mtime in
+      let uid = string_of_int stats.LargeFile.st_uid in
+      let gid = string_of_int stats.LargeFile.st_gid in
+      let stat =
+        Types.Stat.make ~name ~qid ~mode ~length ~atime ~mtime ~uid ~gid ()
+      in
+      Lwt.return (Result.Ok stat)
+
+  end
+
   (* We need to remember the mapping of Fid to path *)
-  (* let root = canonicalise path [] in*)
-  let fids = ref Types.Fid.Map.empty
+  let fids : Path.t Types.Fid.Map.t ref = ref Types.Fid.Map.empty
 
   let path_of_fid info fid =
     if fid = info.Server.root
-    then "/"
+    then Path.root
     else Types.Fid.Map.find fid !fids
 
   let read info { Request.Read.fid; offset; count } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      qid_of_path path
+      let realpath = Path.realpath path in
+      qid_of_path realpath
       >>*= fun qid ->
       let buffer = Lwt_bytes.create (Int32.to_int count) in
       if List.mem Types.Qid.Directory qid.Types.Qid.flags then begin
-        Lwt_unix.opendir path
+        Lwt_unix.opendir realpath
         >>= fun h ->
         Lwt_unix.readdir_n h 1024
         >>= fun xs ->
@@ -87,7 +134,7 @@ module New(Params : sig val root : string list end) = struct
         let rec write off rest = function
           | [] -> Lwt.return (Result.Ok off)
           | x :: xs ->
-            stat_of_path (Filename.concat path x)
+            Path.(stat (append path x))
             >>*= fun stat ->
             let n = Types.Stat.sizeof stat in
             if off < offset
@@ -103,7 +150,7 @@ module New(Params : sig val root : string list end) = struct
         let data = Cstruct.sub rest 0 Int64.(to_int (sub offset' offset)) in
         Lwt.return (Result.Ok (Response.Read { Response.Read.data }))
       end else begin
-        Lwt_unix.openfile path [ Lwt_unix.O_RDONLY ] 0
+        Lwt_unix.openfile realpath [ Lwt_unix.O_RDONLY ] 0
         >>= fun fd ->
         Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
         >>= fun _ ->
@@ -119,7 +166,8 @@ module New(Params : sig val root : string list end) = struct
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      qid_of_path path
+      let realpath = Path.realpath path in
+      qid_of_path realpath
       >>*= fun qid ->
       (* Could do a permissions check here *)
       Lwt.return (Result.Ok (Response.Open { Response.Open.qid; iounit = 512l }))
@@ -131,27 +179,128 @@ module New(Params : sig val root : string list end) = struct
   let walk info { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
-        fids := Types.Fid.Map.add newfid (canonicalise Params.root wnames) !fids;
-        Lwt.return (Result.Ok (Response.Walk { Response.Walk.wqids = List.rev qids }))
+        fids := Types.Fid.Map.add newfid dir !fids;
+        Lwt.return (Result.Ok (Response.Walk {
+          Response.Walk.wqids = List.rev qids;
+        }))
       | x :: xs ->
-        let realpath = canonicalise Params.root (List.rev (x :: dir)) in
+        let here = Path.append dir x in
+        let realpath = Path.realpath here in
         qid_of_path realpath
         >>*= fun qid ->
-        walk (x :: dir) (qid :: qids) xs in
-    walk [] [] wnames
+        walk here (qid :: qids) xs
+    in
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      walk path [] wnames
 
   let stat info { Request.Stat.fid } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      let name = path in
-      qid_of_path path
-      >>*= fun qid ->
-      Lwt.return
-        (Result.Ok (Response.Stat (
-           {
-             Response.Stat.stat = Types.Stat.make ~name ~qid ();
-           }
-         )))
+      Path.stat path
+      >>*= fun stat ->
+      Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
 
+  let create info { Request.Create.fid; name; perm; mode } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = (Path.realpath path) / name in
+      (* TODO: use mode *)
+      Lwt_unix.(openfile realpath [O_CREAT; O_EXCL] (Int32.to_int perm))
+      >>= fun fd ->
+      Lwt_unix.close fd
+      >>= fun () ->
+      qid_of_path realpath
+      >>*= fun qid ->
+      Lwt.return (Result.Ok (Response.Create {
+        Response.Create.qid;
+        iounit= 512l;
+      }))
+
+  let write info { Request.Write.fid; offset; data } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = Path.realpath path in
+      Lwt_unix.(openfile realpath [O_WRONLY] 0o600)
+      >>= fun fd ->
+      Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
+      >>= fun _cursor ->
+      let len = Cstruct.len data in
+      Lwt_unix.write fd (Bytes.of_string (Cstruct.to_string data)) 0 len
+      >>= fun written ->
+      Lwt_unix.close fd
+      >>= fun () ->
+      let count = Int32.of_int written in
+      Lwt.return (Result.Ok (Response.Write { Response.Write.count }))
+
+  let set_mode path mode = Lwt.return ()
+  let set_times path atime mtime = Lwt.return ()
+  let set_length path length =
+    Lwt_unix.LargeFile.truncate path length
+  let rename_local path name =
+    let newpath = Filename.((dirname path) / name) in
+    Lwt_unix.rename path newpath
+  let set_owner path owner = Lwt.return ()
+  let set_group path group = Lwt.return ()
+
+  (* Does not guarantee atomicity of general wstat messages like plan
+     9 requires! Luckily, both sides are actually POSIX so we're
+     probably fine. *)
+  let wstat info { Request.Wstat.fid; stat } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = Path.realpath path in
+      let {
+        Types.Stat.ty; dev; qid;
+        mode; atime; mtime; length; name; uid; gid;
+      } = stat in
+      (* we just ignore any attempts to change muid *)
+      if not (Types.Int16.is_any ty)
+      then Lwt.return (Result.Error (`Msg "wstat can't change type"))
+      else if not (Types.Int32.is_any dev)
+      then Lwt.return (Result.Error (`Msg "wstat can't change dev"))
+      else if not (Types.Qid.is_any qid)
+      then Lwt.return (Result.Error (`Msg "wstat can't change qid"))
+      else begin
+        (* TODO: check permissions *)
+        (if not (Types.FileMode.is_any mode)
+         then set_mode realpath mode
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if not (Types.Int32.is_any atime && Types.Int32.is_any mtime)
+         then set_times realpath atime mtime
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if not (Types.Int64.is_any length)
+         then set_length realpath length
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if name <> ""
+         then rename_local realpath name
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if uid <> ""
+         then set_owner realpath uid
+         else Lwt.return ()
+        ) >>= fun () ->
+        (if gid <> ""
+         then set_group realpath gid
+         else Lwt.return ()
+        ) >>= fun () ->
+        Lwt.return (Result.Ok (Response.Wstat ()))
+      end
+
+  let remove info { Request.Remove.fid } =
+    match path_of_fid info fid with
+    | exception Not_found -> bad_fid
+    | path ->
+      let realpath = Path.realpath path in
+      Lwt_unix.unlink realpath
+      >>= fun () ->
+      Lwt.return (Result.Ok (Response.Remove ()))
 end

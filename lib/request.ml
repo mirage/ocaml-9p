@@ -349,16 +349,20 @@ module Wstat = struct
     stat: Types.Stat.t;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.fid) + (Types.Stat.sizeof t.stat)
+  let sizeof t = (Fid.sizeof t.fid) + 2 + (Types.Stat.sizeof t.stat)
 
   let write t rest =
     Fid.write t.fid rest
+    >>= fun rest ->
+    Int16.write (Types.Stat.sizeof t.stat) rest
     >>= fun rest ->
     Types.Stat.write t.stat rest
 
   let read rest =
     Fid.read rest
     >>= fun (fid, rest) ->
+    Int16.read rest
+    >>= fun (_len, rest) ->
     Types.Stat.read rest
     >>= fun (stat, rest) ->
     return ( { fid; stat }, rest )
@@ -440,13 +444,18 @@ let write t rest =
     | Stat x -> Stat.write x rest
     | Wstat x -> Wstat.write x rest
 
-let read rest =
+let read_header rest =
   Int32.read rest
   >>= fun (len, rest) ->
   Int8.read rest
   >>= fun (ty, rest) ->
   Tag.read rest
   >>= fun (tag, rest) ->
+  return (len, ty, tag, rest)
+
+let read rest =
+  read_header rest
+  >>= fun (len, ty, tag, rest) ->
   ( match ty with
     | 100 -> Version.read rest >>= fun (x, rest) -> return ((Version x), rest)
     | 102 -> Auth.read rest    >>= fun (x, rest) -> return ((Auth x), rest)
@@ -461,7 +470,7 @@ let read rest =
     | 122 -> Remove.read rest  >>= fun (x, rest) -> return ((Remove x), rest)
     | 124 -> Stat.read rest    >>= fun (x, rest) -> return ((Stat x), rest)
     | 126 -> Wstat.read rest   >>= fun (x, rest) -> return ((Wstat x), rest)
-    | ty  -> error_msg "Request.read: unknown packet type %d" ty
+    | ty  -> error_msg "unknown packet type %d" ty
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 

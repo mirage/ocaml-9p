@@ -33,6 +33,8 @@ end
 module Int16 : sig
   type t = int with sexp
 
+  val is_any: t -> bool
+
   include S.SERIALISABLE with type t := t
 end
 
@@ -42,11 +44,15 @@ module Int32 : sig
   val t_of_sexp: Sexp.t -> t
   val sexp_of_t: t -> Sexp.t
 
+  val is_any: t -> bool
+
   include S.SERIALISABLE with type t := t
 end
 
 module Int64 : sig
   type t = int64 with sexp
+
+  val is_any: t -> bool
 
   include S.SERIALISABLE with type t := t
 end
@@ -114,6 +120,7 @@ module FileMode : sig
     is_socket: bool;        (** 9P2000.u: true if file is a socket *)
     is_setuid: bool;        (** 9P2000.u: true if file is setuid *)
     is_setgid: bool;        (** 9P2000.u: true if file is setgid *)
+    is_any: bool;           (** true if the mode is a wstat 'any' value *)
   } with sexp
   (** A 'mode' returned from a call to "Stat" *)
 
@@ -121,6 +128,8 @@ module FileMode : sig
     ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_mount:bool -> ?is_auth:bool -> ?temporary:bool ->
     ?is_device:bool -> ?is_symlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
     ?is_setgid:bool -> unit -> t
+
+  val is_any: t -> bool
 
   include S.SERIALISABLE with type t := t
 end
@@ -133,7 +142,8 @@ module Qid : sig
     | Mount      (** file is a mountpoint *)
     | Auth       (** file is an authentication file *)
     | Temporary  (** file is temporary and won't be backed up *)
-    | Link       (** 9P2000.u: file is a symlink *)
+    | Symlink    (** 9P2000.u: file is a symlink *)
+    | Link       (** 9P2000.u: file is a hard-link *)
 
   with sexp
 
@@ -144,6 +154,8 @@ module Qid : sig
   } with sexp
   (** The server's unique id for the file. Two files are the same
       if and only if the Qids are the same. *)
+
+  val is_any: t -> bool
 
   val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool ->
     ?mount:bool -> ?auth:bool -> ?temporary:bool -> ?link:bool -> unit -> t

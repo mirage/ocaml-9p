@@ -28,6 +28,10 @@ module Int8 = struct
 
   let sizeof _ = 1
 
+  let any = 0xFF
+
+  let is_any x = x = any
+
   let read buf =
     big_enough_for "Int8.read" buf 1
     >>= fun () ->
@@ -44,6 +48,10 @@ module Int16 = struct
   type t = int with sexp
 
   let sizeof _ = 2
+
+  let any = 0xFFFF
+
+  let is_any x = x = any
 
   let read buf =
     big_enough_for "Int16.read" buf 2
@@ -66,6 +74,10 @@ module Int32 = struct
 
   let sizeof _ = 4
 
+  let any = 0xFFFFFFFF_l
+
+  let is_any x = x = any
+
   let read buf =
     big_enough_for "Int32.read" buf 4
     >>= fun () ->
@@ -82,6 +94,10 @@ module Int64 = struct
   type t = int64 with sexp
 
   let sizeof _ = 8
+
+  let any = 0xFFFFFFFFFFFFFFFF_L
+
+  let is_any x = x = any
 
   let read buf =
     big_enough_for "Int64.read" buf 8
@@ -170,6 +186,7 @@ module FileMode = struct
     is_socket: bool;
     is_setuid: bool;
     is_setgid: bool;
+    is_any: bool;
   } with sexp
 
   let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
@@ -178,7 +195,15 @@ module FileMode = struct
     ?(is_setuid=false) ?(is_setgid=false) () = {
     owner; group; other; is_directory; append_only; exclusive; is_mount;
     is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
-    is_setuid; is_setgid;
+    is_setuid; is_setgid; is_any = false;
+  }
+
+  let any = {
+    owner = []; group = []; other = [];
+    is_directory = false; append_only = false; exclusive = false;
+    is_mount = false; is_auth = false; temporary = false; is_device = false;
+    is_symlink = false; is_namedpipe = false; is_socket = false;
+    is_setuid = false; is_setgid = false; is_any = true;
   }
 
   let sizeof _ = 4
@@ -199,54 +224,71 @@ module FileMode = struct
       | `Execute -> bit 0 in
     List.fold_left Int32.logor 0l (List.map to_nibble permissions)
 
+  let is_any { is_any } = is_any
+
   let read rest =
     Int32.read rest
     >>= fun (x, rest) ->
-    let is_directory = is_set x 31 in
-    let append_only  = is_set x 30 in
-    let exclusive    = is_set x 29 in
-    let is_mount     = is_set x 28 in
-    let is_auth      = is_set x 27 in
-    let temporary    = is_set x 26 in
-    let is_symlink   = is_set x 25 in
-    let is_device    = is_set x 23 in
-    let is_namedpipe = is_set x 21 in
-    let is_socket    = is_set x 20 in
-    let is_setuid    = is_set x 19 in
-    let is_setgid    = is_set x 18 in
-    let owner = permissions_of_nibble (Int32.shift_right x 6) in
-    let group = permissions_of_nibble (Int32.shift_right x 3) in
-    let other = permissions_of_nibble (Int32.shift_right x 0) in
-    let t = {
-      owner; group; other; is_directory; append_only; exclusive; is_mount;
-      is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
-      is_setuid; is_setgid } in
-    return (t, rest)
+    if Int32.is_any x
+    then return (any, rest)
+    else
+      let is_directory = is_set x 31 in
+      let append_only  = is_set x 30 in
+      let exclusive    = is_set x 29 in
+      let is_mount     = is_set x 28 in
+      let is_auth      = is_set x 27 in
+      let temporary    = is_set x 26 in
+      let is_symlink   = is_set x 25 in
+      let is_device    = is_set x 23 in
+      let is_namedpipe = is_set x 21 in
+      let is_socket    = is_set x 20 in
+      let is_setuid    = is_set x 19 in
+      let is_setgid    = is_set x 18 in
+      let owner = permissions_of_nibble (Int32.shift_right x 6) in
+      let group = permissions_of_nibble (Int32.shift_right x 3) in
+      let other = permissions_of_nibble (Int32.shift_right x 0) in
+      let t = {
+        owner; group; other; is_directory; append_only; exclusive; is_mount;
+        is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+        is_setuid; is_setgid; is_any = false } in
+      return (t, rest)
 
   let write t rest =
-    let x = List.fold_left Int32.logor 0l [
-      if t.is_directory then bit 31 else 0l;
-      if t.append_only  then bit 30 else 0l;
-      if t.exclusive    then bit 29 else 0l;
-      if t.is_mount     then bit 28 else 0l;
-      if t.is_auth      then bit 27 else 0l;
-      if t.temporary    then bit 26 else 0l;
-      if t.is_symlink   then bit 25 else 0l;
-      if t.is_device    then bit 23 else 0l;
-      if t.is_namedpipe then bit 21 else 0l;
-      if t.is_socket    then bit 20 else 0l;
-      if t.is_setuid    then bit 19 else 0l;
-      if t.is_setgid    then bit 18 else 0l;
-      Int32.shift_left (nibble_of_permissions t.owner) 6;
-      Int32.shift_left (nibble_of_permissions t.group) 3;
-      Int32.shift_left (nibble_of_permissions t.other) 0;
-    ] in
-    Int32.write x rest
+    if t.is_any
+    then Int32.(write any rest)
+    else
+      let x = List.fold_left Int32.logor 0l [
+        if t.is_directory then bit 31 else 0l;
+        if t.append_only  then bit 30 else 0l;
+        if t.exclusive    then bit 29 else 0l;
+        if t.is_mount     then bit 28 else 0l;
+        if t.is_auth      then bit 27 else 0l;
+        if t.temporary    then bit 26 else 0l;
+        if t.is_symlink   then bit 25 else 0l;
+        if t.is_device    then bit 23 else 0l;
+        if t.is_namedpipe then bit 21 else 0l;
+        if t.is_socket    then bit 20 else 0l;
+        if t.is_setuid    then bit 19 else 0l;
+        if t.is_setgid    then bit 18 else 0l;
+        Int32.shift_left (nibble_of_permissions t.owner) 6;
+        Int32.shift_left (nibble_of_permissions t.group) 3;
+        Int32.shift_left (nibble_of_permissions t.other) 0;
+      ] in
+      Int32.write x rest
 end
 
 
 module Qid = struct
-  type flag = Directory | AppendOnly | Exclusive | Mount | Auth | Temporary | Link with sexp
+  type flag =
+    | Directory
+    | AppendOnly
+    | Exclusive
+    | Mount
+    | Auth
+    | Temporary
+    | Symlink
+    | Link
+  with sexp
 
   type t = {
    flags: flag list;
@@ -276,7 +318,8 @@ module Qid = struct
     Mount,      0x10;
     Auth,       0x08;
     Temporary,  0x04;
-    Link,       0x02;
+    Symlink,    0x02;
+    Link,       0x01;
   ]
   let flags' = List.map (fun (x, y) -> y, x) flags
 
@@ -289,6 +332,11 @@ module Qid = struct
   let needed = 13
 
   let sizeof _ = needed
+
+  let is_any_flags flags = Int8.is_any (to_int flags)
+
+  let is_any { flags; version; id } =
+    Int32.is_any version && Int64.is_any id && is_any_flags flags
 
   let write t rest =
     big_enough_for "Qid.write" rest needed
@@ -492,7 +540,7 @@ module Stat = struct
 
   let read buf =
     Int16.read buf
-    >>= fun (_len, rest) ->
+    >>= fun (sz, rest) ->
     Int16.read rest
     >>= fun (ty, rest) ->
     Int32.read rest
@@ -521,9 +569,9 @@ module Stat = struct
     let muid = Data.to_string muid in
     let t = { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u = None } in
     (* We are often decoding contiguous arrays of Stat structures,
-       so we must use the _len field to discover where the data ends. *)
+       so we must use the sz field to discover where the data ends. *)
     let consumed = Cstruct.len buf - (Cstruct.len rest) in
-    if consumed = _len + 2 (* Size of the _len field itself *)
+    if consumed = sz + 2 (* Size of the sz field itself *)
     then return (t, rest)
     else
       Data.read rest
@@ -538,7 +586,7 @@ module Stat = struct
       let u = Some { extension; n_uid; n_gid; n_muid } in
       (* In case of future extensions, remove trailing garbage *)
       let consumed = Cstruct.len buf - (Cstruct.len rest) in
-      let trailing_garbage = consumed - _len - 2 in
+      let trailing_garbage = consumed - sz - 2 in
       let rest = Cstruct.shift rest trailing_garbage in
       return ({ t with u }, rest)
 
