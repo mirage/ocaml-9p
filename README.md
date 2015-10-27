@@ -1,12 +1,12 @@
 OCaml-9P
 ========
 
-[![Build Status](https://travis-ci.org/djs55/ocaml-9p.png?branch=master)](https://travis-ci.org/djs55/ocaml-9p) [![Coverage Status](https://coveralls.io/repos/djs55/ocaml-9p/badge.png?branch=master)](https://coveralls.io/r/djs55/ocaml-9p?branch=master)
+[![Build Status](https://travis-ci.org/mirage/ocaml-9p.png?branch=master)](https://travis-ci.org/mirage/ocaml-9p) [![Coverage Status](https://coveralls.io/repos/mirage/ocaml-9p/badge.png?branch=master)](https://coveralls.io/r/mirage/ocaml-9p?branch=master)
 
 This is a work-in-progress implementation of the 9P protocol, written in
 a Mirage-friendly style.
 
-Please read the [API documentation](https://djs55.github.io/ocaml-9p).
+Please read the [API documentation](https://mirage.github.io/ocaml-9p).
 
 Example of the CLI example program:
 ```
