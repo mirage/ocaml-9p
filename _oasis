@@ -2,7 +2,7 @@ OASISFormat: 0.3
 Name:        9p-protocol
 Version:     0.1
 Synopsis:    9P filesystem protocol
-Authors:     David Scott
+Authors:     David Scott, David Sheets, Thomas Leonard
 License:     ISC
 Plugins:     META (0.3)
 BuildTools:  ocamlbuild
