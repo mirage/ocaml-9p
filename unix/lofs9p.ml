@@ -244,8 +244,6 @@ module New(Params : sig val root : string list end) = struct
   let rename_local path name =
     let newpath = Filename.((dirname path) / name) in
     Lwt_unix.rename path newpath
-  let set_owner path owner = Lwt.return ()
-  let set_group path group = Lwt.return ()
 
   (* Does not guarantee atomicity of general wstat messages like plan
      9 requires! Luckily, both sides are actually POSIX so we're
@@ -257,9 +255,9 @@ module New(Params : sig val root : string list end) = struct
       let realpath = Path.realpath path in
       let {
         Types.Stat.ty; dev; qid;
-        mode; atime; mtime; length; name; uid; gid;
+        mode; atime; mtime; length; name;
       } = stat in
-      (* we just ignore any attempts to change muid *)
+      (* we just ignore any attempts to change muid, uid, gid *)
       if not (Types.Int16.is_any ty)
       then Lwt.return (Result.Error (`Msg "wstat can't change type"))
       else if not (Types.Int32.is_any dev)
@@ -282,14 +280,6 @@ module New(Params : sig val root : string list end) = struct
         ) >>= fun () ->
         (if name <> ""
          then rename_local realpath name
-         else Lwt.return ()
-        ) >>= fun () ->
-        (if uid <> ""
-         then set_owner realpath uid
-         else Lwt.return ()
-        ) >>= fun () ->
-        (if gid <> ""
-         then set_group realpath gid
          else Lwt.return ()
         ) >>= fun () ->
         Lwt.return (Result.Ok (Response.Wstat ()))
