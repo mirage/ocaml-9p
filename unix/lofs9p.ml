@@ -241,7 +241,9 @@ module New(Params : sig val root : string list end) = struct
   let set_times path atime mtime = Lwt.return ()
   let set_length path length =
     Lwt_unix.LargeFile.truncate path length
-  let rename_local path newpath = Lwt.return ()
+  let rename_local path name =
+    let newpath = Filename.((dirname path) / name) in
+    Lwt_unix.rename path newpath
   let set_owner path owner = Lwt.return ()
   let set_group path group = Lwt.return ()
 
@@ -254,17 +256,16 @@ module New(Params : sig val root : string list end) = struct
     | path ->
       let realpath = Path.realpath path in
       let {
-        Types.Stat.ty; dev; qid; muid;
+        Types.Stat.ty; dev; qid;
         mode; atime; mtime; length; name; uid; gid;
       } = stat in
+      (* we just ignore any attempts to change muid *)
       if not (Types.Int16.is_any ty)
       then Lwt.return (Result.Error (`Msg "wstat can't change type"))
       else if not (Types.Int32.is_any dev)
       then Lwt.return (Result.Error (`Msg "wstat can't change dev"))
       else if not (Types.Qid.is_any qid)
       then Lwt.return (Result.Error (`Msg "wstat can't change qid"))
-      else if muid <> ""
-      then Lwt.return (Result.Error (`Msg "wstat can't change muid"))
       else begin
         (* TODO: check permissions *)
         (if not (Types.FileMode.is_any mode)
