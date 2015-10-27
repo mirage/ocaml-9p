@@ -224,6 +224,13 @@ module FileMode = struct
       | `Execute -> bit 0 in
     List.fold_left Int32.logor 0l (List.map to_nibble permissions)
 
+  let nonet_of_permissions mode =
+    List.fold_left Int32.logor 0l [
+      Int32.shift_left (nibble_of_permissions mode.owner) 6;
+      Int32.shift_left (nibble_of_permissions mode.group) 3;
+      Int32.shift_left (nibble_of_permissions mode.other) 0;
+    ]
+
   let is_any { is_any } = is_any
 
   let read rest =
@@ -270,9 +277,7 @@ module FileMode = struct
         if t.is_socket    then bit 20 else 0l;
         if t.is_setuid    then bit 19 else 0l;
         if t.is_setgid    then bit 18 else 0l;
-        Int32.shift_left (nibble_of_permissions t.owner) 6;
-        Int32.shift_left (nibble_of_permissions t.group) 3;
-        Int32.shift_left (nibble_of_permissions t.other) 0;
+        nonet_of_permissions t;
       ] in
       Int32.write x rest
 end

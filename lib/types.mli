@@ -131,6 +131,8 @@ module FileMode : sig
 
   val is_any: t -> bool
 
+  val nonet_of_permissions: t -> int32
+
   include S.SERIALISABLE with type t := t
 end
 

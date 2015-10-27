@@ -237,7 +237,11 @@ module New(Params : sig val root : string list end) = struct
       let count = Int32.of_int written in
       Lwt.return (Result.Ok (Response.Write { Response.Write.count }))
 
-  let set_mode path mode = Lwt.return ()
+  let set_mode path mode =
+    (* TODO: handle more than just permissions *)
+    let perms = Int32.to_int (Types.FileMode.nonet_of_permissions mode) in
+    Lwt_unix.chmod path perms
+
   let set_times path atime mtime =
     (* TODO: this can block on Unix.utimes and we shouldn't but
        Lwt_unix does not yet wrap Unix.utimes. *)
