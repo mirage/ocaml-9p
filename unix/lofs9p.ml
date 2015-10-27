@@ -51,6 +51,12 @@ module New(Params : sig val root : string list end) = struct
     let mount_depth = List.length Params.root
     let root = { segments = []; }
 
+    let realroot = match Params.root with
+      | [] -> List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')
+      | ""::path -> path
+      | _::_ ->
+        (List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')) @ Params.root
+
     (* Convert from a segmented path to real paths *)
     let realpath =
       let add_segment buf segment =
@@ -59,7 +65,7 @@ module New(Params : sig val root : string list end) = struct
       in
       fun { segments } ->
         let buf = Buffer.create (8 * (mount_depth + List.length segments)) in
-        List.iter (add_segment buf) Params.root;
+        List.iter (add_segment buf) realroot;
         List.iter (add_segment buf) (List.rev segments);
         Buffer.contents buf
 
