@@ -258,7 +258,7 @@ let address =
 
 let path =
   let doc = "Path on the 9P fileserver" in
-  Arg.(value & pos 0 string "/" & info [] ~doc)
+  Arg.(value & pos 0 string "" & info [] ~doc)
 
 let username =
   let doc = "Username to present to the 9P fileserver" in
