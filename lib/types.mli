@@ -80,19 +80,32 @@ module Fid : sig
   val recommended: Set.t
   (** A list of recommended fids. The client can allocate (on the server) up to
       2^32 distinct fids (in theory) but this is obviously a bad thing to do.
-      Instead clients are recommended to use fids from this (much smaller) list. *)
+      Instead clients are recommended to use fids from this (much smaller) list.
+  *)
 
   include S.SERIALISABLE with type t := t
 end
 
 module OpenMode : sig
-  type t =
+  type io =
   | Read       (** read access *)
   | Write      (** write access *)
   | ReadWrite  (** read and write access *)
   | Exec       (** execute access *)
   with sexp
+  (** The io types allowed in an open 'mode' *)
+
+  type t = {
+    io: io;
+    truncate: bool;  (** truncate file before opening *)
+    rclose: bool;    (** remove file when closing *)
+  } with sexp
   (** A 'mode' passed as an argument to "Open" and "Create" *)
+
+  val read_only: t
+  val write_only: t
+  val read_write: t
+  val exec: t
 
   include S.SERIALISABLE with type t := t
 end
@@ -146,7 +159,6 @@ module Qid : sig
     | Temporary  (** file is temporary and won't be backed up *)
     | Symlink    (** 9P2000.u: file is a symlink *)
     | Link       (** 9P2000.u: file is a hard-link *)
-
   with sexp
 
   type t = {

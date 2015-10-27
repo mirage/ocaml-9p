@@ -253,7 +253,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         let wnames = path in
         walk t fid newfid wnames
         >>*= fun _ -> (* I don't need to know the qids *)
-        openfid t newfid Types.OpenMode.Read
+        openfid t newfid Types.OpenMode.read_only
         >>*= fun _ ->
         let rec loop acc offset remaining =
           let to_request = min remaining t.maximum_payload in
@@ -333,7 +333,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         let wnames = path in
         walk t fid newfid wnames
         >>*= fun _ -> (* I don't need to know the qids *)
-        openfid t newfid Types.OpenMode.Read
+        openfid t newfid Types.OpenMode.read_only
         >>*= fun _ ->
         let rec loop acc offset =
           read t newfid offset t.maximum_payload
