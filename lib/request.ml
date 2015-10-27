@@ -218,7 +218,7 @@ module Create = struct
   type t = {
     fid: Fid.t;
     name: string;
-    perm: int32;
+    perm: FileMode.t;
     mode: OpenMode.t;
     extension: string option;
   } with sexp
@@ -233,7 +233,7 @@ module Create = struct
     let name = Data.of_string t.name in
     Data.write name rest
     >>= fun rest ->
-    Int32.write t.perm rest
+    FileMode.write t.perm rest
     >>= fun rest ->
     OpenMode.write t.mode rest
     >>= fun rest ->
@@ -246,7 +246,7 @@ module Create = struct
     >>= fun (fid, rest) ->
     Data.read rest
     >>= fun (name, rest) ->
-    Int32.read rest
+    FileMode.read rest
     >>= fun (perm, rest) ->
     OpenMode.read rest
     >>= fun (mode, rest) ->

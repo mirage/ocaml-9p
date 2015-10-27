@@ -203,22 +203,57 @@ module New(Params : sig val root : string list end) = struct
       >>*= fun stat ->
       Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
 
+  let bad_create msg = Lwt.return (Result.Error (`Msg ("can't create "^msg)))
+
+  let flags_of_mode mode =
+    let open Types.OpenMode in
+    let flags = match mode.io with
+      | Read -> [ Lwt_unix.O_RDONLY ]
+      | Write -> [ Lwt_unix.O_WRONLY ]
+      | ReadWrite -> [ Lwt_unix.O_RDWR ]
+      | Exec -> []
+    in
+    (* TODO: support ORCLOSE? *)
+    if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
+
   let create info { Request.Create.fid; name; perm; mode } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
       let realpath = (Path.realpath path) / name in
-      (* TODO: use mode *)
-      Lwt_unix.(openfile realpath [O_CREAT; O_EXCL] (Int32.to_int perm))
-      >>= fun fd ->
-      Lwt_unix.close fd
-      >>= fun () ->
-      qid_of_path realpath
-      >>*= fun qid ->
-      Lwt.return (Result.Ok (Response.Create {
-        Response.Create.qid;
-        iounit= 512l;
-      }))
+      let perms = Int32.to_int (Types.FileMode.nonet_of_permissions perm) in
+      if perm.Types.FileMode.is_directory
+      then (
+        if mode.Types.OpenMode.rclose
+        then bad_create "directory with ORCLOSE"
+        else if Types.OpenMode.(mode.io = Write)
+        then bad_create "directory with OWRITE"
+        else if Types.OpenMode.(mode.io = ReadWrite)
+        then bad_create "directory with ORDWR"
+        else if mode.Types.OpenMode.truncate
+        then bad_create "directory with OTRUNC"
+        else
+          Lwt_unix.mkdir realpath perms
+          >>= fun () ->
+          qid_of_path realpath
+          >>*= fun qid ->
+          Lwt.return (Result.Ok (Response.Create {
+            Response.Create.qid;
+            iounit = 512l;
+          }))
+      )
+      else
+        let flags = flags_of_mode mode in
+        Lwt_unix.(openfile realpath (O_CREAT :: O_EXCL :: flags) perms)
+        >>= fun fd ->
+        Lwt_unix.close fd
+        >>= fun () ->
+        qid_of_path realpath
+        >>*= fun qid ->
+        Lwt.return (Result.Ok (Response.Create {
+          Response.Create.qid;
+          iounit = 512l;
+        }))
 
   let write info { Request.Write.fid; offset; data } =
     match path_of_fid info fid with
@@ -251,8 +286,10 @@ module New(Params : sig val root : string list end) = struct
     let mtime = if Types.Int32.is_any mtime then 0.0 else Int32.to_float mtime in
     Unix.utimes path atime mtime;
     Lwt.return ()
+
   let set_length path length =
     Lwt_unix.LargeFile.truncate path length
+
   let rename_local path name =
     let newpath = Filename.((dirname path) / name) in
     Lwt_unix.rename path newpath
