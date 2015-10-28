@@ -140,20 +140,50 @@ module Fid = struct
 end
 
 module OpenMode = struct
-  type t = Read | Write | ReadWrite | Exec with sexp
+  type io =
+    | Read
+    | Write
+    | ReadWrite
+    | Exec
+  with sexp
 
-  let to_int = function
-    | Read      -> 0
-    | Write     -> 1
-    | ReadWrite -> 2
-    | Exec      -> 3
+  type t = {
+    io: io;
+    truncate: bool;
+    rclose: bool;
+  } with sexp
 
-  let of_int = function
-    | 0 -> Result.Ok Read
-    | 1 -> Result.Ok Write
-    | 2 -> Result.Ok ReadWrite
-    | 3 -> Result.Ok Exec
-    | n -> error_msg "Unknown mode number: %d" n
+  let to_int { io; truncate; rclose } =
+    let byte = match io with
+      | Read -> 0
+      | Write -> 1
+      | ReadWrite -> 2
+      | Exec -> 3
+    in
+    let byte = if truncate then byte lor 0x10 else byte in
+    if rclose then byte lor 0x40 else byte
+
+  let all = to_int { io = Exec; truncate = true; rclose = true; }
+
+  let read_only  = { io = Read; truncate = false; rclose = false; }
+  let write_only = { io = Write; truncate = false; rclose = false; }
+  let read_write = { io = ReadWrite; truncate = false; rclose = false; }
+  let exec       = { io = Exec; truncate = false; rclose = false; }
+
+  let of_int x =
+    let io = match x land 3 with
+      | 0 -> Read
+      | 1 -> Write
+      | 2 -> ReadWrite
+      | 3 -> Exec
+      | _ -> assert false
+    in
+    let truncate = x land 0x10 <> 0 in
+    let rclose   = x land 0x40 <> 0 in
+    let extra = x land (lnot all) in
+    if extra <> 0
+    then error_msg "Unknown mode bits: %d" extra
+    else Result.Ok { io; truncate; rclose }
 
   let sizeof _ = 1
 
@@ -224,6 +254,13 @@ module FileMode = struct
       | `Execute -> bit 0 in
     List.fold_left Int32.logor 0l (List.map to_nibble permissions)
 
+  let nonet_of_permissions mode =
+    List.fold_left Int32.logor 0l [
+      Int32.shift_left (nibble_of_permissions mode.owner) 6;
+      Int32.shift_left (nibble_of_permissions mode.group) 3;
+      Int32.shift_left (nibble_of_permissions mode.other) 0;
+    ]
+
   let is_any { is_any } = is_any
 
   let read rest =
@@ -270,9 +307,7 @@ module FileMode = struct
         if t.is_socket    then bit 20 else 0l;
         if t.is_setuid    then bit 19 else 0l;
         if t.is_setgid    then bit 18 else 0l;
-        Int32.shift_left (nibble_of_permissions t.owner) 6;
-        Int32.shift_left (nibble_of_permissions t.group) 3;
-        Int32.shift_left (nibble_of_permissions t.other) 0;
+        nonet_of_permissions t;
       ] in
       Int32.write x rest
 end

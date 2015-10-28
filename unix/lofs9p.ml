@@ -51,6 +51,12 @@ module New(Params : sig val root : string list end) = struct
     let mount_depth = List.length Params.root
     let root = { segments = []; }
 
+    let realroot = match Params.root with
+      | [] -> List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')
+      | ""::path -> path
+      | _::_ ->
+        (List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')) @ Params.root
+
     (* Convert from a segmented path to real paths *)
     let realpath =
       let add_segment buf segment =
@@ -59,7 +65,7 @@ module New(Params : sig val root : string list end) = struct
       in
       fun { segments } ->
         let buf = Buffer.create (8 * (mount_depth + List.length segments)) in
-        List.iter (add_segment buf) Params.root;
+        List.iter (add_segment buf) realroot;
         List.iter (add_segment buf) (List.rev segments);
         Buffer.contents buf
 
@@ -203,22 +209,57 @@ module New(Params : sig val root : string list end) = struct
       >>*= fun stat ->
       Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
 
+  let bad_create msg = Lwt.return (Result.Error (`Msg ("can't create "^msg)))
+
+  let flags_of_mode mode =
+    let open Types.OpenMode in
+    let flags = match mode.io with
+      | Read -> [ Lwt_unix.O_RDONLY ]
+      | Write -> [ Lwt_unix.O_WRONLY ]
+      | ReadWrite -> [ Lwt_unix.O_RDWR ]
+      | Exec -> []
+    in
+    (* TODO: support ORCLOSE? *)
+    if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
+
   let create info { Request.Create.fid; name; perm; mode } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
       let realpath = (Path.realpath path) / name in
-      (* TODO: use mode *)
-      Lwt_unix.(openfile realpath [O_CREAT; O_EXCL] (Int32.to_int perm))
-      >>= fun fd ->
-      Lwt_unix.close fd
-      >>= fun () ->
-      qid_of_path realpath
-      >>*= fun qid ->
-      Lwt.return (Result.Ok (Response.Create {
-        Response.Create.qid;
-        iounit= 512l;
-      }))
+      let perms = Int32.to_int (Types.FileMode.nonet_of_permissions perm) in
+      if perm.Types.FileMode.is_directory
+      then (
+        if mode.Types.OpenMode.rclose
+        then bad_create "directory with ORCLOSE"
+        else if Types.OpenMode.(mode.io = Write)
+        then bad_create "directory with OWRITE"
+        else if Types.OpenMode.(mode.io = ReadWrite)
+        then bad_create "directory with ORDWR"
+        else if mode.Types.OpenMode.truncate
+        then bad_create "directory with OTRUNC"
+        else
+          Lwt_unix.mkdir realpath perms
+          >>= fun () ->
+          qid_of_path realpath
+          >>*= fun qid ->
+          Lwt.return (Result.Ok (Response.Create {
+            Response.Create.qid;
+            iounit = 512l;
+          }))
+      )
+      else
+        let flags = flags_of_mode mode in
+        Lwt_unix.(openfile realpath (O_CREAT :: O_EXCL :: flags) perms)
+        >>= fun fd ->
+        Lwt_unix.close fd
+        >>= fun () ->
+        qid_of_path realpath
+        >>*= fun qid ->
+        Lwt.return (Result.Ok (Response.Create {
+          Response.Create.qid;
+          iounit = 512l;
+        }))
 
   let write info { Request.Write.fid; offset; data } =
     match path_of_fid info fid with
@@ -237,15 +278,27 @@ module New(Params : sig val root : string list end) = struct
       let count = Int32.of_int written in
       Lwt.return (Result.Ok (Response.Write { Response.Write.count }))
 
-  let set_mode path mode = Lwt.return ()
-  let set_times path atime mtime = Lwt.return ()
+  let set_mode path mode =
+    (* TODO: handle more than just permissions *)
+    let perms = Int32.to_int (Types.FileMode.nonet_of_permissions mode) in
+    Lwt_unix.chmod path perms
+
+  let set_times path atime mtime =
+    (* TODO: this can block on Unix.utimes and we shouldn't but
+       Lwt_unix does not yet wrap Unix.utimes. *)
+    (* NOTE: The behavior of this is slightly wrong as 'any' means
+       "don't change" but 0 means "set to now". *)
+    let atime = if Types.Int32.is_any atime then 0.0 else Int32.to_float atime in
+    let mtime = if Types.Int32.is_any mtime then 0.0 else Int32.to_float mtime in
+    Unix.utimes path atime mtime;
+    Lwt.return ()
+
   let set_length path length =
     Lwt_unix.LargeFile.truncate path length
+
   let rename_local path name =
     let newpath = Filename.((dirname path) / name) in
     Lwt_unix.rename path newpath
-  let set_owner path owner = Lwt.return ()
-  let set_group path group = Lwt.return ()
 
   (* Does not guarantee atomicity of general wstat messages like plan
      9 requires! Luckily, both sides are actually POSIX so we're
@@ -257,9 +310,9 @@ module New(Params : sig val root : string list end) = struct
       let realpath = Path.realpath path in
       let {
         Types.Stat.ty; dev; qid;
-        mode; atime; mtime; length; name; uid; gid;
+        mode; atime; mtime; length; name;
       } = stat in
-      (* we just ignore any attempts to change muid *)
+      (* we just ignore any attempts to change muid, uid, gid *)
       if not (Types.Int16.is_any ty)
       then Lwt.return (Result.Error (`Msg "wstat can't change type"))
       else if not (Types.Int32.is_any dev)
@@ -282,14 +335,6 @@ module New(Params : sig val root : string list end) = struct
         ) >>= fun () ->
         (if name <> ""
          then rename_local realpath name
-         else Lwt.return ()
-        ) >>= fun () ->
-        (if uid <> ""
-         then set_owner realpath uid
-         else Lwt.return ()
-        ) >>= fun () ->
-        (if gid <> ""
-         then set_group realpath gid
          else Lwt.return ()
         ) >>= fun () ->
         Lwt.return (Result.Ok (Response.Wstat ()))

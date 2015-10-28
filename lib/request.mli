@@ -94,7 +94,7 @@ module Create : sig
   type t = {
     fid: Types.Fid.t;
     name: string;
-    perm: int32;
+    perm: Types.FileMode.t;
     mode: Types.OpenMode.t;
     extension: string option; (** 9P2000.u: a symlink target, or a device description e.g. "b 1 2" *)
   } with sexp
