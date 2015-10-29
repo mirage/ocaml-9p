@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
 open Protocol_9p
 open Infix
 open Lwt
@@ -21,15 +22,7 @@ open Lwt
 let project_url = "http://github.com/djs55/ocaml-9p"
 let version = "0.0"
 
-module Log = struct
-  let print_debug = ref false
-
-  let debug fmt = Printf.ksprintf (fun s -> if !print_debug then print_endline s) fmt
-  let info  fmt = Printf.ksprintf (fun s -> print_endline s) fmt
-  let warn fmt = Printf.ksprintf (fun s -> print_endline s) fmt
-  let error fmt = Printf.ksprintf (fun s -> print_endline s) fmt
-end
-
+module Log = Log9p_unix.Stdout
 module Client = Client9p_unix.Inet(Log)
 module Server = Server.Make(Log)(Flow_lwt_unix)
 
