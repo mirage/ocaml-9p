@@ -17,22 +17,33 @@
 
 (** Given a traditional file system, construct a handler for 9p messages. *)
 
+open Result
+open Lwt.Infix
+
 module Make(Filesystem : Filesystem.S) = struct
-  
-  let receive_cb info = Request.(function
-    | Walk walk -> Filesystem.walk info walk
-    | Open open_ -> Filesystem.open_ info open_
-    | Read read -> Filesystem.read info read
-    | Clunk clunk -> Filesystem.clunk info clunk
-    | Stat stat -> Filesystem.stat info stat
-    | Create create -> Filesystem.create info create
-    | Write write -> Filesystem.write info write
-    | Remove remove -> Filesystem.remove info remove
-    | Wstat wstat -> Filesystem.wstat info wstat
+  let receive_cb info =
+    let is_unix = (info.Server.version = Types.Version.unix) in
+    let adjust_errno err =
+      if not is_unix then { err with Response.Err.errno = None }
+      else match err.Response.Err.errno with
+      | Some _ -> err
+      | None -> {err with Response.Err.errno = Some 0l} in
+    let wrap fn x result =
+      fn info x >|= function
+      | Ok response -> Ok (result response)
+      | Error err -> Ok (Response.Err (adjust_errno err)) in
+    Request.(function
+    | Walk x   -> wrap Filesystem.walk   x (fun x -> Response.Walk x)
+    | Open x   -> wrap Filesystem.open_  x (fun x -> Response.Open x)
+    | Read x   -> wrap Filesystem.read   x (fun x -> Response.Read x)
+    | Clunk x  -> wrap Filesystem.clunk  x (fun x -> Response.Clunk x)
+    | Stat x   -> wrap Filesystem.stat   x (fun x -> Response.Stat x)
+    | Create x -> wrap Filesystem.create x (fun x -> Response.Create x)
+    | Write x  -> wrap Filesystem.write  x (fun x -> Response.Write x)
+    | Remove x -> wrap Filesystem.remove x (fun x -> Response.Remove x)
+    | Wstat x  -> wrap Filesystem.wstat  x (fun x -> Response.Wstat x)
     | Version _ | Auth _ | Flush _ | Attach _ ->
-      Lwt.return (Result.Ok (Response.Err {
-        Response.Err.ename = "not implemented";
-        errno = None;
-      }))
+        let err = {Response.Err.ename = "not implemented"; errno = None} in
+        Lwt.return (Result.Ok (Response.Err (adjust_errno err)))
   )
 end

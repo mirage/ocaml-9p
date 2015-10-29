@@ -18,8 +18,14 @@
 open Protocol_9p
 open Infix
 open Lwt
+open Result
 
 let (/) = Filename.concat
+
+(* Turn a "fatal" 9p error into a "safe" error response to the client *)
+let errors_to_client = function
+  | Error (`Msg msg) -> Error {Response.Err.ename = msg; errno = None}
+  | Ok _ as ok -> ok
 
 (* We need to associate files with Qids with unique ids and versions *)
 let qid_of_path realpath =
@@ -37,10 +43,7 @@ let qid_of_path realpath =
   let version = 0l in
   Lwt.return (Result.Ok { flags; id; version })
 
-let bad_fid = Lwt.return (Result.Ok (Response.Err {
-  Response.Err.ename = "bad fid";
-  errno = None;
-}))
+let bad_fid = Lwt.return (Response.error "bad fid")
 
 module New(Params : sig val root : string list end) = struct
   module Path = struct
@@ -154,8 +157,9 @@ module New(Params : sig val root : string list end) = struct
         write 0L rest (Array.to_list xs)
         >>*= fun offset' ->
         let data = Cstruct.sub rest 0 Int64.(to_int (sub offset' offset)) in
-        Lwt.return (Result.Ok (Response.Read { Response.Read.data }))
-      end else begin
+        Lwt.return (Result.Ok { Response.Read.data })
+      end >|= errors_to_client
+      else begin
         Lwt_unix.openfile realpath [ Lwt_unix.O_RDONLY ] 0
         >>= fun fd ->
         Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
@@ -165,7 +169,7 @@ module New(Params : sig val root : string list end) = struct
         Lwt_unix.close fd
         >>= fun () ->
         let data = Cstruct.(sub (of_bigarray buffer) 0 n) in
-        Lwt.return (Result.Ok (Response.Read { Response.Read.data }))
+        Lwt.return (Result.Ok { Response.Read.data })
       end
 
   let open_ info { Request.Open.fid; mode } =
@@ -176,19 +180,19 @@ module New(Params : sig val root : string list end) = struct
       qid_of_path realpath
       >>*= fun qid ->
       (* Could do a permissions check here *)
-      Lwt.return (Result.Ok (Response.Open { Response.Open.qid; iounit = 512l }))
+      Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
 
   let clunk info { Request.Clunk.fid } =
     fids := Types.Fid.Map.remove fid !fids;
-    Lwt.return (Result.Ok (Response.Clunk ()))
+    Lwt.return (Result.Ok ())
 
   let walk info { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
         fids := Types.Fid.Map.add newfid dir !fids;
-        Lwt.return (Result.Ok (Response.Walk {
+        Lwt.return (Result.Ok {
           Response.Walk.wqids = List.rev qids;
-        }))
+        })
       | x :: xs ->
         let here = Path.append dir x in
         let realpath = Path.realpath here in
@@ -207,9 +211,9 @@ module New(Params : sig val root : string list end) = struct
     | path ->
       Path.stat path
       >>*= fun stat ->
-      Lwt.return (Result.Ok Response.(Stat { Stat.stat }))
+      Lwt.return (Result.Ok { Response.Stat.stat })
 
-  let bad_create msg = Lwt.return (Result.Error (`Msg ("can't create "^msg)))
+  let bad_create msg = Lwt.return (Response.error "can't create %s" msg)
 
   let flags_of_mode mode =
     let open Types.OpenMode in
@@ -243,10 +247,10 @@ module New(Params : sig val root : string list end) = struct
           >>= fun () ->
           qid_of_path realpath
           >>*= fun qid ->
-          Lwt.return (Result.Ok (Response.Create {
+          Lwt.return (Result.Ok {
             Response.Create.qid;
             iounit = 512l;
-          }))
+          })
       )
       else
         let flags = flags_of_mode mode in
@@ -256,10 +260,10 @@ module New(Params : sig val root : string list end) = struct
         >>= fun () ->
         qid_of_path realpath
         >>*= fun qid ->
-        Lwt.return (Result.Ok (Response.Create {
+        Lwt.return (Result.Ok {
           Response.Create.qid;
           iounit = 512l;
-        }))
+        })
 
   let write info { Request.Write.fid; offset; data } =
     match path_of_fid info fid with
@@ -276,7 +280,7 @@ module New(Params : sig val root : string list end) = struct
       Lwt_unix.close fd
       >>= fun () ->
       let count = Int32.of_int written in
-      Lwt.return (Result.Ok (Response.Write { Response.Write.count }))
+      Lwt.return (Result.Ok { Response.Write.count })
 
   let set_mode path mode =
     (* TODO: handle more than just permissions *)
@@ -314,11 +318,11 @@ module New(Params : sig val root : string list end) = struct
       } = stat in
       (* we just ignore any attempts to change muid, uid, gid *)
       if not (Types.Int16.is_any ty)
-      then Lwt.return (Result.Error (`Msg "wstat can't change type"))
+      then Lwt.return (Response.error "wstat can't change type")
       else if not (Types.Int32.is_any dev)
-      then Lwt.return (Result.Error (`Msg "wstat can't change dev"))
+      then Lwt.return (Response.error "wstat can't change dev")
       else if not (Types.Qid.is_any qid)
-      then Lwt.return (Result.Error (`Msg "wstat can't change qid"))
+      then Lwt.return (Response.error "wstat can't change qid")
       else begin
         (* TODO: check permissions *)
         (if not (Types.FileMode.is_any mode)
@@ -337,7 +341,7 @@ module New(Params : sig val root : string list end) = struct
          then rename_local realpath name
          else Lwt.return ()
         ) >>= fun () ->
-        Lwt.return (Result.Ok (Response.Wstat ()))
+        Lwt.return (Result.Ok ())
       end
 
   let remove info { Request.Remove.fid } =
@@ -347,5 +351,5 @@ module New(Params : sig val root : string list end) = struct
       let realpath = Path.realpath path in
       Lwt_unix.unlink realpath
       >>= fun () ->
-      Lwt.return (Result.Ok (Response.Remove ()))
+      Lwt.return (Result.Ok ())
 end
