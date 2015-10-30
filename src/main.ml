@@ -191,11 +191,7 @@ let serve debug address path =
         | Result.Error (`Msg x) -> fail (Failure x)
         | Result.Ok t ->
           Log.debug "Successfully negotiated a connection.";
-          let rec loop_forever () =
-            Lwt_unix.sleep 60.
-            >>= fun () ->
-            loop_forever () in
-          loop_forever ()
+          Server.after_disconnect t
       ) in
   try
     ignore (Lwt_main.run t);
