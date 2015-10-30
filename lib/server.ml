@@ -31,6 +31,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   open Log
 
   type t = {
+    write_lock : Lwt_mutex.t;
     reader: Reader.t;
     writer: FLOW.flow;
     info: info;
@@ -53,13 +54,13 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     t.please_shutdown <- true;
     t.shutdown_complete_t
 
-  let write_one_packet writer response =
+  let write_one_packet ~write_lock writer response =
     debug "S %s" (Response.to_string response);
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
     >>*= fun _ ->
-    FLOW.write writer buffer
+    Lwt_mutex.with_lock write_lock (fun () -> FLOW.write writer buffer)
     >>|= fun () ->
     Lwt.return (Ok ())
 
@@ -108,42 +109,44 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
           | Ok (_, _, tag, _) ->
             debug "C error: %s" ename;
             let response = error_response tag ename in
-            write_one_packet t.writer response
+            write_one_packet ~write_lock:t.write_lock t.writer response
             >>*= fun () ->
             dispatcher_t shutdown_complete_wakener receive_cb t
         end
       | Ok request ->
-        receive_cb t.info request.Request.payload
-        >>= begin function
-          | Error (`Msg message) ->
-            Lwt.return (error_response request.Request.tag message)
-          | Ok response_payload ->
-            Lwt.return {
-              Response.tag = request.Request.tag;
-              payload = response_payload;
-            }
-        end >>= fun response ->
-        write_one_packet t.writer response
-        >>= begin function
-          | Error (`Msg message) ->
-            debug "S error writing: %s" message;
-            debug "Disconnecting client";
-            disconnect t
-          | Ok () -> Lwt.return ()
-        end >>= fun () ->
+        Lwt.async (fun () ->
+          receive_cb t.info request.Request.payload
+          >>= begin function
+            | Error (`Msg message) ->
+              Lwt.return (error_response request.Request.tag message)
+            | Ok response_payload ->
+              Lwt.return {
+                Response.tag = request.Request.tag;
+                payload = response_payload;
+              }
+          end >>= fun response ->
+          write_one_packet ~write_lock:t.write_lock t.writer response
+          >>= begin function
+            | Error (`Msg message) ->
+              debug "S error writing: %s" message;
+              debug "Disconnecting client";
+              disconnect t
+            | Ok () -> Lwt.return ()
+          end
+        );
         dispatcher_t shutdown_complete_wakener receive_cb t
     end
 
   module LowLevel = struct
 
-    let return_error writer request ename =
-        write_one_packet writer {
+    let return_error ~write_lock writer request ename =
+        write_one_packet ~write_lock writer {
           Response.tag = request.Request.tag;
           payload = Response.Err Response.Err.( { ename; errno = None })
         } >>*= fun () ->
         Lwt.return (Error (`Msg ename))
 
-    let expect_version reader writer =
+    let expect_version ~write_lock reader writer =
       Reader.read reader
       >>*= fun buffer ->
       Lwt.return (Request.read buffer)
@@ -151,9 +154,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | ( { Request.payload = Request.Version v; tag }, _) ->
         Lwt.return (Ok (tag, v))
       | request, _ ->
-        return_error writer request "Expected Version message"
+        return_error ~write_lock writer request "Expected Version message"
 
-    let expect_attach reader writer =
+    let expect_attach ~write_lock reader writer =
       Reader.read reader
       >>*= fun buffer ->
       Lwt.return (Request.read buffer)
@@ -161,13 +164,14 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | ( { Request.payload = Request.Attach a; tag }, _) ->
         Lwt.return (Ok (tag, a))
       | request, _ ->
-        return_error writer request "Expected Attach message"
+        return_error ~write_lock writer request "Expected Attach message"
   end
 
   let connect flow ?(msize=16384l) ~receive_cb () =
+    let write_lock = Lwt_mutex.create () in
     let reader = Reader.create flow in
     let writer = flow in
-    LowLevel.expect_version reader writer
+    LowLevel.expect_version ~write_lock reader writer
     >>*= fun (tag, v) ->
     let msize = min msize v.Request.Version.msize in
     if v.Request.Version.version = Types.Version.unknown then begin
@@ -175,23 +179,23 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       Lwt.return (Error (`Msg "Received unknown 9P version string"))
     end else begin
       let version = v.Request.Version.version in
-      write_one_packet flow {
+      write_one_packet ~write_lock flow {
         Response.tag;
         payload = Response.Version Response.Version.({ msize; version });
       } >>*= fun () ->
       info "Using protocol version %s" (Sexplib.Sexp.to_string (Types.Version.sexp_of_t version));
-      LowLevel.expect_attach reader writer
+      LowLevel.expect_attach ~write_lock reader writer
       >>*= fun (tag, a) ->
       let root = a.Request.Attach.fid in
       let info = { root; version } in
       let root_qid = Types.Qid.dir ~version:0l ~id:0L () in
-      write_one_packet flow {
+      write_one_packet ~write_lock flow {
         Response.tag;
         payload = Response.Attach Response.Attach.({qid = root_qid })
       } >>*= fun () ->
       let please_shutdown = false in
       let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
-      let t = { reader; writer; info; root_qid; please_shutdown; shutdown_complete_t } in
+      let t = { reader; writer; info; root_qid; please_shutdown; shutdown_complete_t; write_lock } in
       Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener receive_cb t);
       Lwt.return (Ok t)
     end
