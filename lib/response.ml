@@ -353,3 +353,6 @@ let read rest =
   return ( { tag; payload }, rest )
 
 let to_string t = Sexplib.Sexp.to_string_hum (sexp_of_t t)
+
+let error ?errno fmt =
+  Printf.ksprintf (fun ename -> Result.Error {Err.ename; errno}) fmt

@@ -173,3 +173,4 @@ type t = {
 include S.SERIALISABLE with type t := t
 
 val to_string: t -> string
+val error: ?errno:int32 -> ('a, unit, string, (_, Err.t) result) format4 -> 'a
