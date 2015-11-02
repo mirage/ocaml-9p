@@ -45,7 +45,7 @@ Library protocol_9p_unix
   Path:               unix
   Findlibparent:      protocol_9p
   Findlibname:        unix
-  Modules:            Flow_lwt_unix, Lofs9p
+  Modules:            Flow_lwt_unix, Client9p_unix, Log9p_unix, Lofs9p
   BuildDepends:       protocol-9p, mirage-types.lwt, lwt, cstruct, cstruct.lwt
 
 Executable "9p"

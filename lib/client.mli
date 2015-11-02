@@ -15,18 +15,9 @@
  *
  *)
 
-(** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
-
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
-
+module type S = sig
   type t
   (** An established connection to a 9P server *)
-
-  val connect: FLOW.flow -> ?msize:int32 -> ?username:string -> ?aname:string -> unit -> t Error.t Lwt.t
-  (** Establish a fresh connection to a 9P server. [msize] gives the maximum
-      message size we support: the server may choose a lower value. [username]
-      is the username to present to the remote server. [aname] is the name of
-      the exported filesystem. *)
 
   val disconnect: t -> unit Lwt.t
   (** Disconnect from the 9P server, but leave the underlying FLOW connected. *)
@@ -41,7 +32,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   val stat: t -> string list -> Types.Stat.t Error.t Lwt.t
   (** Return information about a named directory or named file. *)
 
-  module KV_RO : V1_LWT.KV_RO
+  module KV_RO : V1_LWT.KV_RO with type t = t
 
   module LowLevel : sig
     (** The functions in this module are mapped directly onto individual 9P
@@ -78,4 +69,16 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
         server. The server will "clunk" the fid whether the call succeeds or
         fails. *)
   end
+end
+
+(** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
+module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
+  include S
+
+  val connect: FLOW.flow -> ?msize:int32 -> ?username:string -> ?aname:string -> unit -> t Error.t Lwt.t
+  (** Establish a fresh connection to a 9P server. [msize] gives the maximum
+      message size we support: the server may choose a lower value. [username]
+      is the username to present to the remote server. [aname] is the name of
+      the exported filesystem. *)
+
 end

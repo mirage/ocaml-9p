@@ -6,6 +6,7 @@ PKG lwt
 PKG cmdliner
 PKG stringext
 PKG bisect
+PKG oUnit
 
 S lib
 S src

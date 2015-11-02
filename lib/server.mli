@@ -30,7 +30,7 @@ type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t
-  (** An established connection to a 9P server *)
+  (** An established connection to a 9P client *)
 
   val connect: FLOW.flow -> ?msize:int32 -> receive_cb:receive_cb -> unit -> t Error.t Lwt.t
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
@@ -41,4 +41,11 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   (** Return information about the current connection *)
 
   val disconnect: t -> unit Lwt.t
+  (** [disconnect connection] causes the connection [connection] to
+      close after the next message is processed. Once the connection
+      has been disconnected, the returned thread will resolve. *)
+
+  val after_disconnect: t -> unit Lwt.t
+  (** [after_disconnect connection] resolves after [connection] has
+      disconnected. *)
 end

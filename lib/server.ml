@@ -54,6 +54,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     t.please_shutdown <- true;
     t.shutdown_complete_t
 
+  let after_disconnect t = t.shutdown_complete_t
+
   let write_one_packet ~write_lock writer response =
     debug "S %s" (Response.to_string response);
     let sizeof = Response.sizeof response in
