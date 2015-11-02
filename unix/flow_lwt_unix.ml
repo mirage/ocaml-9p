@@ -34,7 +34,7 @@ let connect fd =
   let read_buffer_size = 1024 in
   { fd; read_buffer_size }
 
-let close { fd } = Lwt_unix.close fd
+let close t = Lwt_unix.close t.fd
 
 let read flow =
   let buffer = Lwt_bytes.create flow.read_buffer_size in

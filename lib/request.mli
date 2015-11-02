@@ -17,7 +17,6 @@
 
 (** Parsers and printers for all 9P request messages. *)
 
-open Sexplib.Std
 open Result
 
 module Version : sig

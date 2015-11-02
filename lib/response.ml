@@ -69,7 +69,7 @@ module Flush = struct
 
   let sizeof _ = 0
 
-  let write t buf = return buf
+  let write () buf = return buf
 
   let read buf = return ((), buf)
 end
@@ -218,7 +218,7 @@ end
 module Clunk = struct
   type t = unit with sexp
   let sizeof _ = 0
-  let write t rest = return rest
+  let write () rest = return rest
   let read rest = return ((), rest)
 end
 
