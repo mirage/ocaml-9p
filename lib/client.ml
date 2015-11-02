@@ -23,54 +23,23 @@ module type S = sig
   type t
 
   val disconnect: t -> unit Lwt.t
-  (** Disconnect from the 9P server, but leave the underlying FLOW connected. *)
-
   val read: t -> string list -> int64 -> int32 -> Cstruct.t list Error.t Lwt.t
-  (** [read t path offset count] returns a list of buffers containing [count]
-      bytes from offset [offset] in the file given by [path] *)
-
+  val mkdir: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
-  (** Return the contents of a named directory. *)
-
   val stat: t -> string list -> Types.Stat.t Error.t Lwt.t
-  (** Return information about a named directory or named file. *)
 
   module KV_RO : V1_LWT.KV_RO with type t = t
 
   module LowLevel : sig
-    (** The functions in this module are mapped directly onto individual 9P
-        RPCs. The client must carefully respect the rules on managing fids
-        and stay within the message size limits. *)
-
     val walk: t -> Types.Fid.t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
-    (** [walk t fid newfid wnames] binds [newfid] to the result of Walking
-        from [fid] along the path given by [wnames] *)
-
     val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
-    (** [open t fid mode] confirms that [fid] can be accessed according to
-        [mode] *)
-
+    val create: t -> Types.Fid.t -> ?extension:string -> string -> Types.FileMode.t ->
+                Types.OpenMode.t -> Response.Create.t Error.t Lwt.t
     val stat: t -> Types.Fid.t -> Response.Stat.t Error.t Lwt.t
-    (** [stat t fid] returns a description of the file associated with [fid] *)
-
     val read: t -> Types.Fid.t -> int64 -> int32 -> Response.Read.t Error.t Lwt.t
-    (** [read t fid offset count] returns [count] bytes of data at [offset] in
-        the file referenced by [pid]. Note that [count] must be less than the
-        server's negotiated maximum message size. *)
-
     val write: t -> Types.Fid.t -> int64 -> Cstruct.t -> Response.Write.t Error.t Lwt.t
-    (** [write t fid offset data] writes [data] to the file given by [fid] at
-        offset [offset]. *)
-
     val clunk: t -> Types.Fid.t -> Response.Clunk.t Error.t Lwt.t
-    (** [clunk t fid] informs the server that the reference [fid] should be
-        forgotten about. When this call returns, it is safe for the client to
-        re-use the fid. *)
-
     val remove: t -> Types.Fid.t -> Response.Remove.t Error.t Lwt.t
-    (** [remove t fid] removes the file associated with [fid] from the file
-        server. The server will "clunk" the fid whether the call succeeds or
-        fails. *)
   end
 end
 
@@ -217,6 +186,12 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Response.Walk x -> Lwt.return (Ok x)
       | response -> return_error response
 
+    let create t fid ?extension name perm mode =
+      rpc t Request.(Create { Create.fid; name; perm; mode; extension })
+      >>*= function
+      | Response.Create x -> Lwt.return (Ok x)
+      | response -> return_error response
+
     let openfid t fid mode =
       rpc t Request.(Open { Open.fid; mode })
       >>*= function
@@ -320,6 +295,19 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
           else
             loop (data :: acc) Int64.(add offset (of_int n)) Int32.(sub remaining (of_int n)) in
          loop [] offset count
+      )
+
+  let mkdir t path name perm =
+    let open LowLevel in
+    let fid = t.root in
+    with_fid t
+      (fun newfid ->
+        let wnames = path in
+        walk t fid newfid wnames
+        >>*= fun _ -> (* I don't need to know the qids *)
+        create t newfid name {perm with Types.FileMode.is_directory = true} Types.OpenMode.read_only
+        >>*= fun _ ->
+        Lwt.return (Ok ())
       )
 
   let stat t path =
