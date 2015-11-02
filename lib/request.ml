@@ -15,7 +15,6 @@
  *
  *)
 open Sexplib.Std
-open Result
 open Types
 open Error
 
@@ -51,7 +50,7 @@ module Auth = struct
 
   let sizeof t =
     (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
-    + (match t.n_uname with Some x -> 4 | None -> 0)
+    + (match t.n_uname with Some _ -> 4 | None -> 0)
 
   let write t rest =
     Fid.write t.afid rest

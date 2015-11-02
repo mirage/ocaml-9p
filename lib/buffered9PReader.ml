@@ -20,8 +20,6 @@ open Error
 open Infix
 
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
-  open Log
-
   type t = {
     flow: FLOW.flow;
     read_m: Lwt_mutex.t;

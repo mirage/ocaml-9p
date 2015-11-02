@@ -17,7 +17,6 @@
 
 (** Parsers and printers for 9P response messages *)
 
-open Sexplib
 open Types
 open Result
 

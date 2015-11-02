@@ -261,7 +261,7 @@ module FileMode = struct
       Int32.shift_left (nibble_of_permissions mode.other) 0;
     ]
 
-  let is_any { is_any } = is_any
+  let is_any t = t.is_any
 
   let read rest =
     Int32.read rest
