@@ -61,6 +61,8 @@ module Inet(Log: S.LOG) = struct
 
   let read { client } = Client.read client
 
+  let mkdir { client } = Client.mkdir client
+
   let readdir { client } = Client.readdir client
 
   let stat { client } = Client.stat client
@@ -91,6 +93,8 @@ module Inet(Log: S.LOG) = struct
     let walk { client } = LowLevel.walk client
 
     let openfid { client } = LowLevel.openfid client
+
+    let create { client } = LowLevel.create client
 
     let stat { client } = LowLevel.stat client
 

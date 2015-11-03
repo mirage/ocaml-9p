@@ -26,6 +26,10 @@ module type S = sig
   (** [read t path offset count] returns a list of buffers containing [count]
       bytes from offset [offset] in the file given by [path] *)
 
+  val mkdir: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
+  (** [mkdir t path name perm] creates a new directory [name] inside [path] with
+   * the given permissions. *)
+
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
   (** Return the contents of a named directory. *)
 
@@ -46,6 +50,12 @@ module type S = sig
     val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
     (** [open t fid mode] confirms that [fid] can be accessed according to
         [mode] *)
+
+    val create: t -> Types.Fid.t -> ?extension:string -> string -> Types.FileMode.t ->
+                Types.OpenMode.t -> Response.Create.t Error.t Lwt.t
+    (** [create t fid name perm mode] creates a new file or directory called
+        [name] and with permissions [perm] inside the directory [fid] and opens it
+        according to [mode] (which is not checked against [perm]). *)
 
     val stat: t -> Types.Fid.t -> Response.Stat.t Error.t Lwt.t
     (** [stat t fid] returns a description of the file associated with [fid] *)
