@@ -106,4 +106,7 @@ module Inet(Log: S.LOG) = struct
 
     let remove { client } = LowLevel.remove client
   end
+
+  let walk_from_root { client } = Client.walk_from_root client
+  let with_fid { client } = Client.with_fid client
 end
