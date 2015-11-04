@@ -69,3 +69,17 @@ Test test_parse_print
   Run$:               flag(tests)
   Command:            $test_parse_print -runner sequential
   WorkingDirectory:   lib_test
+
+Executable test_client_lofs_server
+  Path:               lib_test
+  MainIs:             lofs_test.ml
+  Build$:             flag(tests)
+  Custom:             true
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       protocol-9p.unix, oUnit (>= 1.0.2)
+
+Test test_client_lofs_server
+  Run$:               flag(tests)
+  Command:            $test_client_lofs_server -runner sequential
+  WorkingDirectory:   lib_test

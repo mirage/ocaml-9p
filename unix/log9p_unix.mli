@@ -20,3 +20,9 @@ module Stdout : sig
 
   val print_debug : bool ref
 end
+
+module StdoutPrefix(Config: sig val prefix : string end) : sig
+  include Protocol_9p.S.LOG
+
+  val print_debug : bool ref
+end
