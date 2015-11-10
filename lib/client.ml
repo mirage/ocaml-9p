@@ -41,6 +41,9 @@ module type S = sig
     val clunk: t -> Types.Fid.t -> Response.Clunk.t Error.t Lwt.t
     val remove: t -> Types.Fid.t -> Response.Remove.t Error.t Lwt.t
   end
+
+  val walk_from_root: t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
+  val with_fid: t -> (Types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
 end
 
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
@@ -253,6 +256,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt.return (Ok x)
       | { Response.payload = p } -> return_error p
   end
+
+  let walk_from_root t = LowLevel.walk t t.root
 
   let rec allocate_fid t =
     let open Lwt in

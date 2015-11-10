@@ -79,6 +79,14 @@ module type S = sig
         server. The server will "clunk" the fid whether the call succeeds or
         fails. *)
   end
+
+  val walk_from_root: t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
+  (** [walk_from_root t] is [LowLevel.walk t root], where [root] is the internal Fid
+      representing the root directory (which is not exposed by the API). *)
+
+  val with_fid: t -> (Types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_fid t fn] is the result of running [fn x] with a fresh Fid [x], which
+      is returned to the free pool when the thread finishes. *)
 end
 
 (** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
