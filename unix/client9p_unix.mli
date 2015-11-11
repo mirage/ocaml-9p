@@ -15,7 +15,7 @@
  *
  *)
 
-module Inet(Log: S.LOG) : sig
+module Inet(Log: Protocol_9p.S.LOG) : sig
   include Protocol_9p.Client.S
 
   val connect:

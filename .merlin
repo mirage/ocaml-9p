@@ -10,4 +10,5 @@ PKG oUnit
 
 S lib
 S src
+S unix
 B _build/**
