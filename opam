@@ -8,16 +8,17 @@ homepage: "https://github.com/mirage/ocaml-9p"
 dev-repo: "https://github.com/mirage/ocaml-9p.git"
 bug-reports: "https://github.com/mirage/ocaml-9p/issues"
 
-tags: [
-]
-
 build: [
-  [make "PREFIX=%{prefix}%"]
+  ["./configure"]
+  [make]
 ]
 
-install: [make "PREFIX=%{prefix}%" "install"]
-
-remove: [["ocamlfind" "remove" "protocol-9p"]]
+build-test:[
+  ["./configure --enable-tests"]
+  [make "test"]
+]
+install: [make "install"]
+remove: ["ocamlfind" "remove" "protocol-9p"]
 
 depends: [
   "base-bytes"
@@ -28,17 +29,7 @@ depends: [
   "lwt"
   "cmdliner"
   "stringext"
-  "bisect"
   "ocamlfind" {build}
-  "oasis" {build}
-  "ounit" {test}
+  "alcotest" {test & >= "0.4.0"}
 ]
-build-doc: ["ocaml" "setup.ml" "-doc"]
-
-build-test: [
-  ["ocaml" "setup.ml" "-configure" "--enable-tests"]
-  ["ocaml" "setup.ml" "-build"]
-  ["ocaml" "setup.ml" "-test"]
-]
-
 available: [ocaml-version >= "4.02.0"]
