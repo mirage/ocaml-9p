@@ -17,9 +17,8 @@
 
 module Stdout = struct
   let print_debug = ref false
-
   let debug fmt =
-    Printf.ksprintf (fun s -> if !print_debug then print_endline s) fmt
-  let info  fmt = Printf.ksprintf (fun s -> print_endline s) fmt
-  let error fmt = Printf.ksprintf (fun s -> print_endline s) fmt
+    Fmt.kstrf (fun s -> if !print_debug then print_endline s) fmt
+  let info  fmt = Fmt.kstrf (fun s -> print_endline s) fmt
+  let error fmt = Fmt.kstrf (fun s -> print_endline s) fmt
 end
