@@ -171,5 +171,10 @@ type t = {
 
 include S.SERIALISABLE with type t := t
 
-val to_string: t -> string
+val pp: t Fmt.t
+(** [pp] pretty-prints responses. *)
+
+val equal: t -> t -> bool
+(** [equal] is the equality function over responses. *)
+
 val error: ?errno:int32 -> ('a, unit, string, (_, Err.t) result) format4 -> 'a

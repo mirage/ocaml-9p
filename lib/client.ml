@@ -84,12 +84,11 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun buffer ->
     Lwt.return (Response.read buffer)
     >>*= fun (response, _) ->
-    let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
-    debug "S %s" pretty_printed;
+    debug "S %a" Response.pp response;
     Lwt.return (Ok response)
 
   let write_one_packet flow request =
-    debug "C %s" (Request.to_string request);
+    debug "C %a" Request.pp request;
     let sizeof = Request.sizeof request in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Request.write request buffer)

@@ -184,6 +184,9 @@ end
 module Tag : sig
   type t with sexp
 
+  val equal: t -> t -> bool
+  (** [equal] is the equality function over tags. *)
+
   module Set : Set.S with type elt = t
   module Map : Map.S with type key = t
 

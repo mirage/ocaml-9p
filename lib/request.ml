@@ -25,7 +25,7 @@ module Version = struct
   } with sexp
 
   let sizeof t = 4 + (Types.Version.sizeof t.version)
-  
+
   let write t rest =
     Int32.write t.msize rest
     >>= fun rest ->
@@ -49,7 +49,9 @@ module Auth = struct
   } with sexp
 
   let sizeof t =
-    (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+    (Fid.sizeof t.afid) + 2 +
+    (String.length t.uname) + 2 +
+    (String.length t.aname)
     + (match t.n_uname with Some _ -> 4 | None -> 0)
 
   let write t rest =
@@ -109,7 +111,8 @@ module Attach = struct
   } with sexp
 
   let sizeof t =
-    (Fid.sizeof t.fid) + (Fid.sizeof t.afid) + 2 + (String.length t.uname) + 2 + (String.length t.aname)
+    (Fid.sizeof t.fid) + (Fid.sizeof t.afid) + 2 +
+    (String.length t.uname) + 2 + (String.length t.aname)
     + (match t.n_uname with Some _ -> 4 | None -> 0)
 
   let write t rest =
@@ -155,7 +158,9 @@ module Walk = struct
     wnames: string list;
   } with sexp
 
-  let sizeof t = (Fid.sizeof t.fid) + (Fid.sizeof t.newfid) + 2 + (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
+  let sizeof t =
+    (Fid.sizeof t.fid) + (Fid.sizeof t.newfid) + 2 +
+    (List.fold_left (+) 0 (List.map (fun x -> 2 + (String.length x)) t.wnames))
 
   let write t rest =
     Fid.write t.fid rest
@@ -190,9 +195,11 @@ module Walk = struct
     loop rest [] length
     >>= fun (wnames, rest) ->
     return ( { fid; newfid; wnames }, rest)
+
 end
 
 module Open = struct
+
   type t = {
     fid: Fid.t;
     mode: OpenMode.t;
@@ -292,6 +299,9 @@ module Write = struct
     data: Cstruct.t;
   } with sexp
 
+  let equal a b =
+    a.fid = b.fid && a.offset = b.offset && Cstruct.equal a.data b.data
+
   let sizeof t = (Fid.sizeof t.fid) + 8 + 4 + (Cstruct.len t.data)
 
   let write t rest =
@@ -383,10 +393,19 @@ type payload =
   | Wstat of Wstat.t
 with sexp
 
+let equal_payload a b = match a, b with
+  | Write a, Write b -> Write.equal a b
+  | _ -> a = b
+
 type t = {
   tag: Types.Tag.t;
   payload: payload
 } with sexp
+
+
+let equal a b =
+  Types.Tag.equal a.tag b.tag
+  && equal_payload a.payload b.payload
 
 let sizeof t = 4 + 1 + 2 + (match t.payload with
   | Version x -> Version.sizeof x
@@ -473,4 +492,4 @@ let read rest =
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 
-let to_string t = Sexplib.Sexp.to_string_hum (sexp_of_t t)
+let pp ppf t = Sexplib.Sexp.pp_hum ppf (sexp_of_t t)

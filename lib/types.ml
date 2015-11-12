@@ -400,6 +400,11 @@ end
 module Tag = struct
   type t = int option with sexp
 
+  let equal (a: t) (b: t) = match a, b with
+    | None, None -> true
+    | Some x, Some y -> x = y
+    | _ -> false
+
   let compare (a: t) (b: t) = match a, b with
     | None, None -> 0
     | Some _, None -> -1

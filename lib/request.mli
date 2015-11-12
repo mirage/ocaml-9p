@@ -185,4 +185,8 @@ val read_header:
   Cstruct.t -> (Int32.t * Types.Int8.t * Types.Tag.t * Cstruct.t,
                 [ `Msg of string]) result
 
-val to_string: t -> string
+val pp: t Fmt.t
+(** [pp] formats request. *)
+
+val equal: t -> t -> bool
+(** [equal] is the equality function for requests. *)
