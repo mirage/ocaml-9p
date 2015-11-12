@@ -16,7 +16,6 @@
  *)
 open Protocol_9p
 open Result
-open OUnit
 
 let example_data =
   let data = Cstruct.create 1 in
@@ -111,6 +110,9 @@ let expect_ok = function
   | Ok x -> x
   | Error (`Msg m) -> failwith m
 
+let request: Request.t Alcotest.testable = (module Request)
+let response: Response.t Alcotest.testable = (module Response)
+
 let print_parse_request r () =
   let open Error in
   expect_ok (
@@ -118,11 +120,11 @@ let print_parse_request r () =
     let buf = Cstruct.create needed in
     Request.write r buf
     >>= fun remaining ->
-    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
+    Alcotest.(check int) "write request" 0 (Cstruct.len remaining);
     Request.read buf
     >>= fun (r', remaining) ->
-    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
-    assert_equal ~printer:(fun x -> x) (Request.to_string r) (Request.to_string r');
+    Alcotest.(check int) "read request" 0 (Cstruct.len remaining);
+    Alcotest.(check request) "request" r r';
     return ()
   )
 
@@ -133,25 +135,29 @@ let print_parse_response r () =
     let buf = Cstruct.create needed in
     Response.write r buf
     >>= fun remaining ->
-    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
+    Alcotest.(check int) "write response" 0 (Cstruct.len remaining);
     Response.read buf
     >>= fun (r', remaining) ->
-    assert_equal ~printer:string_of_int 0 (Cstruct.len remaining);
-    assert_equal ~printer:(fun x -> x) (Response.to_string r) (Response.to_string r');
+    Alcotest.(check int) "read respsonse" 0 (Cstruct.len remaining);
+    Alcotest.(check response) "response" r r';
     return ()
   )
 
-let tests =
-  let requests =
-    List.map (fun r ->
-      Printf.sprintf "print then parse %s" (Request.to_string r) >:: (print_parse_request r)
-    ) requests in
-  let responses =
-    List.map (fun r ->
-      Printf.sprintf "print then parse %s" (Response.to_string r) >:: (print_parse_response r)
-    ) responses in
-  requests @ responses
+let test_requests = List.map (fun r ->
+    Fmt.strf "print then parse %a" Request.pp r,
+    `Quick,
+    print_parse_request r
+  ) requests
 
-let _ =
-  let suite = "parse and print" >::: tests in
-  OUnit2.run_test_tt_main (ounit2_of_ounit1 suite)
+let test_responses = List.map (fun r ->
+    Fmt.strf "print then parse %a" Response.pp r,
+    `Quick,
+    print_parse_response r
+  ) responses
+
+let tests = [
+  "request" , test_requests;
+  "response", test_responses;
+]
+
+let () = Alcotest.run "9p" tests
