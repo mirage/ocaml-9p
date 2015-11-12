@@ -4,32 +4,20 @@ Version:     0.1
 Synopsis:    9P filesystem protocol
 Authors:     David Scott, David Sheets, Thomas Leonard
 License:     ISC
-Plugins:     META (0.3)
+Plugins:     META (0.3), DevFiles (0.4)
 BuildTools:  ocamlbuild
-
-Flag lwt
-  Description: build the Lwt library
-  Default:     false
-
-Flag lwt_unix
-  Description: build the Lwt-unix library
-  Default:     false
-
-Flag async
-  Description: build the Core/Async library
-  Default:     false
-
-Flag js
-  Description: build the Javascript client library
-  Default:     false
 
 Library protocol_9p
   Pack:               true
   CompiledObject:     best
   Path:               lib
   Findlibname:        protocol-9p
-  Modules:            S, Request, Error, Response, Types, Client, Server, Buffered9PReader, Handler, Filesystem, Infix
-  BuildDepends:       result, cstruct, sexplib, sexplib.syntax, mirage-types.lwt, lwt, stringext
+  Modules:            S, Request, Error, Response, Types, Client, Server,
+                      Buffered9PReader, Handler, Filesystem, Infix
+  BuildDepends:       result, cstruct, sexplib, sexplib.syntax,
+                      mirage-types.lwt, lwt, stringext, fmt
+  XMETARequires:      result, cstruct, sexplib, sexplib,
+                      mirage-types.lwt, lwt, stringext, fmt
 
 Document protocol_9p
   Title:                9P docs
@@ -63,9 +51,9 @@ Executable test_parse_print
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       protocol-9p, oUnit (>= 1.0.2)
+  BuildDepends:       protocol-9p, alcotest
 
 Test test_parse_print
   Run$:               flag(tests)
-  Command:            $test_parse_print -runner sequential
+  Command:            $test_parse_print
   WorkingDirectory:   lib_test
