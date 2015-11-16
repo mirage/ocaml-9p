@@ -6,9 +6,11 @@ PKG lwt
 PKG cmdliner
 PKG stringext
 PKG bisect
-PKG oUnit
+PKG alcotest
+PKG fmt
 
 S lib
 S src
+S lib_test
 S unix
 B _build/**

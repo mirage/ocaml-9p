@@ -57,7 +57,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   let after_disconnect t = t.shutdown_complete_t
 
   let write_one_packet ~write_lock writer response =
-    debug "S %s" (Response.to_string response);
+    debug "S %a" Response.pp response;
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
@@ -77,7 +77,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         | Error (`Msg ename) ->
           Error (`Parse (ename, buffer))
         | Ok (request, _) ->
-          debug "C %s" (Request.to_string request);
+          debug "C %a" Request.pp request;
           Ok request
       end
 

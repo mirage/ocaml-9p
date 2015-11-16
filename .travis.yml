@@ -6,5 +6,6 @@ script: bash -ex .travis-opam.sh && bash -ex travis-coveralls.sh
 sudo: required
 env:
   global:
-    - PACKAGE="protocol-9p" OCAML_VERSION=4.02
-    - COV_CONF="export TESTS=--enable-tests"
+    - PACKAGE="protocol-9p"
+    - OCAML_VERSION=4.02
+    - COV_CONF="oasis setup && ./configure --enable-tests"

@@ -168,6 +168,8 @@ module Read = struct
     data: Cstruct.t
   }
 
+  let equal a b = Cstruct.equal a.data b.data
+
   type _t = string with sexp
   let sexp_of_t t = sexp_of__t (Cstruct.to_string t.data)
   let t_of_sexp s =
@@ -263,10 +265,18 @@ type payload =
   | Wstat of Wstat.t
 with sexp
 
+let equal_payload a b = match a, b with
+  | Read a, Read b -> Read.equal a b
+  | _ -> a = b
+
 type t = {
   tag: Types.Tag.t;
   payload: payload;
 } with sexp
+
+let equal a b =
+  Types.Tag.equal a.tag b.tag
+  && equal_payload a.payload b.payload
 
 let sizeof t = 4 + 1 + 2 + (match t.payload with
   | Version x -> Version.sizeof x
@@ -352,7 +362,7 @@ let read rest =
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 
-let to_string t = Sexplib.Sexp.to_string_hum (sexp_of_t t)
+let pp ppf t = Sexplib.Sexp.pp_hum ppf (sexp_of_t t)
 
 let error ?errno fmt =
   Printf.ksprintf (fun ename -> Result.Error {Err.ename; errno}) fmt

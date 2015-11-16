@@ -1,41 +1,41 @@
-.PHONY: all clean install build
-all: build test doc
+# OASIS_START
+# DO NOT EDIT (digest: a3c674b4239234cbbe53afe090018954)
 
-PREFIX ?= /usr/local
-NAME=9p-protocol
+SETUP = ocaml setup.ml
 
-LWT ?= $(shell if ocamlfind query lwt >/dev/null 2>&1; then echo --enable-lwt; fi)
-LWT_UNIX ?= $(shell if ocamlfind query lwt.unix >/dev/null 2>&1; then echo --enable-lwt-unix; fi)
-ASYNC ?= $(shell if ocamlfind query async >/dev/null 2>&1; then echo --enable-async; fi)
-JS ?= $(shell if ocamlfind query js_of_ocaml >/dev/null 2>&1; then echo --enable-js; fi)
+build: setup.data
+	$(SETUP) -build $(BUILDFLAGS)
 
-setup.ml: _oasis
-	oasis setup
+doc: setup.data build
+	$(SETUP) -doc $(DOCFLAGS)
 
-setup.bin: setup.ml
-	ocamlopt.opt -o $@ $< 2>/dev/null || ocamlopt -o $@ $< 2>/dev/null || ocamlc -o $@ $<
-	rm -f setup.cmx setup.cmi setup.o setup.cmo
+test: setup.data build
+	$(SETUP) -test $(TESTFLAGS)
 
-setup.data: setup.bin
-	./setup.bin -configure $(LWT) $(ASYNC) $(LWT_UNIX) $(JS) $(TESTS) --prefix $(PREFIX)
+all:
+	$(SETUP) -all $(ALLFLAGS)
 
-build: setup.data setup.bin
-	./setup.bin -build -classic-display
+install: setup.data
+	$(SETUP) -install $(INSTALLFLAGS)
 
-doc: setup.data setup.bin
-	./setup.bin -doc
+uninstall: setup.data
+	$(SETUP) -uninstall $(UNINSTALLFLAGS)
 
-install: setup.bin
-	./setup.bin -install
-
-test: setup.bin build
-	./setup.bin -test -runner sequential
-
-reinstall: setup.bin
-	ocamlfind remove $(NAME) || true
-	./setup.bin -reinstall
+reinstall: setup.data
+	$(SETUP) -reinstall $(REINSTALLFLAGS)
 
 clean:
-	ocamlbuild -clean
-	rm -f setup.data setup.log setup.bin
+	$(SETUP) -clean $(CLEANFLAGS)
 
+distclean:
+	$(SETUP) -distclean $(DISTCLEANFLAGS)
+
+setup.data:
+	$(SETUP) -configure $(CONFIGUREFLAGS)
+
+configure:
+	$(SETUP) -configure $(CONFIGUREFLAGS)
+
+.PHONY: build doc test all install uninstall reinstall clean distclean configure
+
+# OASIS_STOP

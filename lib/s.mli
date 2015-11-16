@@ -22,9 +22,9 @@ open Result
 module type LOG = sig
   (** Common logging functions *)
 
-  val debug : ('a, unit, string, unit) format4 -> 'a
-  val info  : ('a, unit, string, unit) format4 -> 'a
-  val error : ('a, unit, string, unit) format4 -> 'a
+  val debug : ('a, Format.formatter, unit, unit) format4 -> 'a
+  val info  : ('a, Format.formatter, unit, unit) format4 -> 'a
+  val error : ('a, Format.formatter, unit, unit) format4 -> 'a
 end
 
 module type SERIALISABLE = sig
@@ -44,4 +44,5 @@ module type SERIALISABLE = sig
   val write: t -> Cstruct.t -> (Cstruct.t, [ `Msg of string]) result
   (** Write a [t] into the given buffer. If the buffer is too small,
       then return an error. Return the unused remainder of the buffer.*)
+
 end
