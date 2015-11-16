@@ -14,7 +14,7 @@ build: [
 ]
 
 build-test:[
-  ["./configure --enable-tests"]
+  ["./configure" "--enable-tests"]
   [make "test"]
 ]
 install: [make "install"]
