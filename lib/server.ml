@@ -36,6 +36,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     writer: FLOW.flow;
     info: info;
     root_qid: Types.Qid.t;
+    (* Press the "cancel button" by setting the ref to true (if present in the
+       map) *)
+    mutable cancel_buttons: bool ref Types.Tag.Map.t;
     mutable please_shutdown: bool;
     shutdown_complete_t: unit Lwt.t;
   }
@@ -56,13 +59,17 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let after_disconnect t = t.shutdown_complete_t
 
-  let write_one_packet ~write_lock writer response =
+  let write_one_packet ?write_lock writer response =
     debug "S %a" Response.pp response;
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
     >>*= fun _ ->
-    Lwt_mutex.with_lock write_lock (fun () -> FLOW.write writer buffer)
+    ( match write_lock with
+      | Some m ->
+        Lwt_mutex.with_lock m (fun () -> FLOW.write writer buffer)
+      | None ->
+        FLOW.write writer buffer )
     >>|= fun () ->
     Lwt.return (Ok ())
 
@@ -115,7 +122,28 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
             >>*= fun () ->
             dispatcher_t shutdown_complete_wakener receive_cb t
         end
+      | Ok { Request.tag; payload = Request.Flush { Request.Flush.oldtag } } ->
+        Lwt_mutex.with_lock t.write_lock
+          (fun () ->
+            if Types.Tag.Map.mem oldtag t.cancel_buttons then begin
+              let cancel = Types.Tag.Map.find oldtag t.cancel_buttons in
+              cancel := true;
+              debug "S will suppress response for tag %s" (Types.Tag.to_string oldtag);
+              t.cancel_buttons <- Types.Tag.Map.remove oldtag t.cancel_buttons;
+            end;
+            write_one_packet t.writer { Response.tag; payload = Response.Flush () }
+          )
+          >>= begin function
+          | Ok () ->
+            dispatcher_t shutdown_complete_wakener receive_cb t
+          | Error (`Msg m) ->
+            disconnect t
+            >>= fun () ->
+            Lwt.return (Error (`Msg m))
+          end
       | Ok request ->
+        let cancel = ref false in
+        t.cancel_buttons <- Types.Tag.Map.add request.Request.tag cancel t.cancel_buttons;
         Lwt.async (fun () ->
           receive_cb t.info request.Request.payload
           >>= begin function
@@ -127,7 +155,18 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
                 payload = response_payload;
               }
           end >>= fun response ->
-          write_one_packet ~write_lock:t.write_lock t.writer response
+          Lwt_mutex.with_lock t.write_lock
+            (fun () ->
+              (* acquire lock *)
+              if not !cancel then begin
+                (* It's safe to unbind the tag because the flush hasn't been
+                   transmitted yet. *)
+                t.cancel_buttons <- Types.Tag.Map.remove request.Request.tag t.cancel_buttons;
+                write_one_packet t.writer response
+              end else begin
+                Lwt.return (Ok ())
+              end
+          )
           >>= begin function
             | Error (`Msg message) ->
               debug "S error writing: %s" message;
@@ -191,13 +230,14 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       let root = a.Request.Attach.fid in
       let info = { root; version } in
       let root_qid = Types.Qid.dir ~version:0l ~id:0L () in
+      let cancel_buttons = Types.Tag.Map.empty in
       write_one_packet ~write_lock flow {
         Response.tag;
         payload = Response.Attach Response.Attach.({qid = root_qid })
       } >>*= fun () ->
       let please_shutdown = false in
       let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
-      let t = { reader; writer; info; root_qid; please_shutdown; shutdown_complete_t; write_lock } in
+      let t = { reader; writer; info; root_qid; cancel_buttons; please_shutdown; shutdown_complete_t; write_lock } in
       Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener receive_cb t);
       Lwt.return (Ok t)
     end
