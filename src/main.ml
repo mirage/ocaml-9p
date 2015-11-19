@@ -170,9 +170,9 @@ let serve_local_fs_cb path =
   let module Lofs = Lofs9p.New(struct let root = path end) in
   let module Fs = Handler.Make(Lofs) in
   (* Translate errors, especially Unix-y ones like ENOENT *)
-  fun info request ->
+  fun info ~cancel request ->
     Lwt.catch
-      (fun () -> Fs.receive_cb info request)
+      (fun () -> Fs.receive_cb info ~cancel request)
       (function
        | Unix.Unix_error(err, _, _) ->
          Lwt.return (Result.Ok (Response.Err { Response.Err.ename = Unix.error_message err; errno = None }))

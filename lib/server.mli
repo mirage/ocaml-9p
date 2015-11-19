@@ -23,7 +23,7 @@ type info = {
 }
 (** Information about the active connection, passed to the receive callback. *)
 
-type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
+type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
 (** Every time a request is received, this is the type of the callback which
     is called. *)
 

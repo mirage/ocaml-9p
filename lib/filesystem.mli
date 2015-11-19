@@ -23,13 +23,13 @@ module type S = sig
   (** A traditional protocol message handler.
      If an [Error] is returned, it will be reported back to the client. *)
 
-  val walk: Server.info -> Request.Walk.t -> Response.Walk.t or_error Lwt.t
-  val clunk: Server.info -> Request.Clunk.t -> Response.Clunk.t or_error Lwt.t
-  val open_: Server.info -> Request.Open.t -> Response.Open.t or_error Lwt.t
-  val read: Server.info -> Request.Read.t -> Response.Read.t or_error Lwt.t
-  val stat: Server.info -> Request.Stat.t -> Response.Stat.t or_error Lwt.t
-  val create: Server.info -> Request.Create.t -> Response.Create.t or_error Lwt.t
-  val write: Server.info -> Request.Write.t -> Response.Write.t or_error Lwt.t
-  val remove: Server.info -> Request.Remove.t -> Response.Remove.t or_error Lwt.t
-  val wstat: Server.info -> Request.Wstat.t -> Response.Wstat.t or_error Lwt.t
+  val walk: Server.info -> cancel:unit Lwt.t -> Request.Walk.t -> Response.Walk.t or_error Lwt.t
+  val clunk: Server.info -> cancel:unit Lwt.t -> Request.Clunk.t -> Response.Clunk.t or_error Lwt.t
+  val open_: Server.info -> cancel:unit Lwt.t -> Request.Open.t -> Response.Open.t or_error Lwt.t
+  val read: Server.info -> cancel:unit Lwt.t -> Request.Read.t -> Response.Read.t or_error Lwt.t
+  val stat: Server.info -> cancel:unit Lwt.t -> Request.Stat.t -> Response.Stat.t or_error Lwt.t
+  val create: Server.info -> cancel:unit Lwt.t -> Request.Create.t -> Response.Create.t or_error Lwt.t
+  val write: Server.info -> cancel:unit Lwt.t -> Request.Write.t -> Response.Write.t or_error Lwt.t
+  val remove: Server.info -> cancel:unit Lwt.t -> Request.Remove.t -> Response.Remove.t or_error Lwt.t
+  val wstat: Server.info -> cancel:unit Lwt.t -> Request.Wstat.t -> Response.Wstat.t or_error Lwt.t
 end
