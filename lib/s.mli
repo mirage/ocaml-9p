@@ -22,6 +22,10 @@ open Result
 module type LOG = sig
   (** Common logging functions *)
 
+  (** Performance hack to avoid generating too many strings if we aren't going
+      to print them. *)
+  val print_debug: bool ref
+
   val debug : ('a, Format.formatter, unit, unit) format4 -> 'a
   val info  : ('a, Format.formatter, unit, unit) format4 -> 'a
   val error : ('a, Format.formatter, unit, unit) format4 -> 'a
