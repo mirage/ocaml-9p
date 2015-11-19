@@ -24,7 +24,7 @@ type info = {
   version: Types.Version.t;
 }
 
-type receive_cb = info -> Request.payload -> Response.payload Error.t Lwt.t
+type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
 
 module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   module Reader = Buffered9PReader.Make(Log)(FLOW)
@@ -38,7 +38,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
     root_qid: Types.Qid.t;
     (* Press the "cancel button" by setting the ref to true (if present in the
        map) *)
-    mutable cancel_buttons: bool ref Types.Tag.Map.t;
+    mutable cancel_buttons: unit Lwt.u Types.Tag.Map.t;
     mutable please_shutdown: bool;
     shutdown_complete_t: unit Lwt.t;
   }
@@ -126,9 +126,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt_mutex.with_lock t.write_lock
           (fun () ->
             if Types.Tag.Map.mem oldtag t.cancel_buttons then begin
-              let cancel = Types.Tag.Map.find oldtag t.cancel_buttons in
-              cancel := true;
-              debug "S will suppress response for tag %s" (Types.Tag.to_string oldtag);
+              let cancel_u = Types.Tag.Map.find oldtag t.cancel_buttons in
+              Lwt.wakeup_later cancel_u ();
+              debug "S will suppress response for tag %s" (Sexplib.Sexp.to_string (Types.Tag.sexp_of_t oldtag));
               t.cancel_buttons <- Types.Tag.Map.remove oldtag t.cancel_buttons;
             end;
             write_one_packet t.writer { Response.tag; payload = Response.Flush () }
@@ -142,10 +142,10 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
             Lwt.return (Error (`Msg m))
           end
       | Ok request ->
-        let cancel = ref false in
-        t.cancel_buttons <- Types.Tag.Map.add request.Request.tag cancel t.cancel_buttons;
+        let cancel_t, cancel_u = Lwt.task () in
+        t.cancel_buttons <- Types.Tag.Map.add request.Request.tag cancel_u t.cancel_buttons;
         Lwt.async (fun () ->
-          receive_cb t.info request.Request.payload
+          receive_cb t.info ~cancel:cancel_t request.Request.payload
           >>= begin function
             | Error (`Msg message) ->
               Lwt.return (error_response request.Request.tag message)
@@ -157,8 +157,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
           end >>= fun response ->
           Lwt_mutex.with_lock t.write_lock
             (fun () ->
-              (* acquire lock *)
-              if not !cancel then begin
+              if Lwt.state cancel_t = Lwt.Sleep then begin
                 (* It's safe to unbind the tag because the flush hasn't been
                    transmitted yet. *)
                 t.cancel_buttons <- Types.Tag.Map.remove request.Request.tag t.cancel_buttons;

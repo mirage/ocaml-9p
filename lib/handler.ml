@@ -21,7 +21,7 @@ open Result
 open Lwt.Infix
 
 module Make(Filesystem : Filesystem.S) = struct
-  let receive_cb info =
+  let receive_cb info ~cancel =
     let is_unix = (info.Server.version = Types.Version.unix) in
     let adjust_errno err =
       if not is_unix then { err with Response.Err.errno = None }
@@ -29,7 +29,7 @@ module Make(Filesystem : Filesystem.S) = struct
       | Some _ -> err
       | None -> {err with Response.Err.errno = Some 0l} in
     let wrap fn x result =
-      fn info x >|= function
+      fn info ~cancel x >|= function
       | Ok response -> Ok (result response)
       | Error err -> Ok (Response.Err (adjust_errno err)) in
     Request.(function

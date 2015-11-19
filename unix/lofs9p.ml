@@ -125,7 +125,7 @@ module New(Params : sig val root : string list end) = struct
     then Path.root
     else Types.Fid.Map.find fid !fids
 
-  let read info { Request.Read.fid; offset; count } =
+  let read info ~cancel { Request.Read.fid; offset; count } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -169,10 +169,11 @@ module New(Params : sig val root : string list end) = struct
         Lwt_unix.close fd
         >>= fun () ->
         let data = Cstruct.(sub (of_bigarray buffer) 0 n) in
+
         Lwt.return (Result.Ok { Response.Read.data })
       end
 
-  let open_ info { Request.Open.fid; mode } =
+  let open_ info ~cancel { Request.Open.fid; mode } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -182,11 +183,11 @@ module New(Params : sig val root : string list end) = struct
       (* Could do a permissions check here *)
       Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
 
-  let clunk info { Request.Clunk.fid } =
+  let clunk info ~cancel { Request.Clunk.fid } =
     fids := Types.Fid.Map.remove fid !fids;
     Lwt.return (Result.Ok ())
 
-  let walk info { Request.Walk.fid; newfid; wnames } =
+  let walk info ~cancel { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
         fids := Types.Fid.Map.add newfid dir !fids;
@@ -205,7 +206,7 @@ module New(Params : sig val root : string list end) = struct
     | path ->
       walk path [] wnames
 
-  let stat info { Request.Stat.fid } =
+  let stat info ~cancel { Request.Stat.fid } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -226,7 +227,7 @@ module New(Params : sig val root : string list end) = struct
     (* TODO: support ORCLOSE? *)
     if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
 
-  let create info { Request.Create.fid; name; perm; mode } =
+  let create info ~cancel { Request.Create.fid; name; perm; mode } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -265,7 +266,7 @@ module New(Params : sig val root : string list end) = struct
           iounit = 512l;
         })
 
-  let write info { Request.Write.fid; offset; data } =
+  let write info ~cancel { Request.Write.fid; offset; data } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -307,7 +308,7 @@ module New(Params : sig val root : string list end) = struct
   (* Does not guarantee atomicity of general wstat messages like plan
      9 requires! Luckily, both sides are actually POSIX so we're
      probably fine. *)
-  let wstat info { Request.Wstat.fid; stat } =
+  let wstat info ~cancel { Request.Wstat.fid; stat } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -344,7 +345,7 @@ module New(Params : sig val root : string list end) = struct
         Lwt.return (Result.Ok ())
       end
 
-  let remove info { Request.Remove.fid } =
+  let remove info ~cancel { Request.Remove.fid } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
