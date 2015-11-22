@@ -58,7 +58,7 @@ let start_server listening =
 
 let server_tear_down pid =
   if not !server_down
-  then begin
+  then try
     Unix.kill pid Sys.sigterm;
     let rec wait () =
       let result =
@@ -79,9 +79,10 @@ let server_tear_down pid =
     Sys.(set_signal sigint (Signal_handle (fun _sig ->
       exit 0
     )));
-    Unix.rmdir "tmp";
-    server_down := true
-  end
+    let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
+    ()
+  with Unix.Unix_error(Unix.ESRCH, _, _) ->
+    Printf.fprintf stderr "PID %d failed to kill process %d\n%!" (Unix.getpid ()) pid
 
 let server_setup () =
   (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
@@ -169,6 +170,34 @@ let connect1 () =
 let connect2 () =
   with_client1 (fun _client1 ->
     with_client2 (fun _client2 -> return_unit)
+  )
+
+let create_rebind_fid () =
+  with_client1 (fun _client1 ->
+    Client1.with_fid _client1
+      (fun fid ->
+        Client1.walk_from_root _client1 fid []
+        >>= function
+        | Error (`Msg err) -> assert_failure ("client1: walk_from_root []: " ^ err)
+        | Ok _ ->
+          let filemode = Types.FileMode.make ~owner:[`Write] () in
+          let openmode = Types.OpenMode.read_write in
+          (* create should rebind the fid to refer to the file foo... *)
+          Client1.LowLevel.create _client1 fid "foo"  filemode openmode
+          >>= function
+          | Error (`Msg err) ->
+          assert_failure ("client1: create foo: " ^ err)
+          | Ok _ ->
+            let buf = Cstruct.create 16 in
+            Cstruct.memset buf 0;
+            (* ... so a write should succeed (but would fail on a directory) *)
+            Client1.LowLevel.write _client1 fid 0L buf
+            >>= function
+            | Error (`Msg err) ->
+             assert_failure ("client1: write: " ^ err)
+            | Ok _ ->
+                Lwt.return ()
+      )
   )
 
 let () = LogServer.print_debug := false
