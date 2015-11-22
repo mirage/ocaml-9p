@@ -60,7 +60,24 @@ let server_tear_down pid =
   if not !server_down
   then begin
     Unix.kill pid Sys.sigterm;
-    let _pid, _status = Unix.waitpid [] pid in
+    let rec wait () =
+      let result =
+        try
+          Some (Unix.waitpid [] pid)
+        with
+        | Unix.Unix_error(Unix.EINTR, _, _) ->
+          None in
+      match result with
+      | Some x -> x
+      | None -> wait () in
+    let _pid, _status = wait () in
+    (* Don't kill child pids in the signal handlers, since the child is dead *)
+    Sys.(set_signal sigterm (Signal_handle (fun _sig ->
+      exit 0
+    )));
+    Sys.(set_signal sigint (Signal_handle (fun _sig ->
+      exit 0
+    )));
     Unix.rmdir "tmp";
     server_down := true
   end
