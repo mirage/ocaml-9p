@@ -29,7 +29,7 @@ module Client1 = Client9p_unix.Inet(LogClient1)
 module Client2 = Client9p_unix.Inet(LogClient2)
 
 let ip = "127.0.0.1"
-let port = 5640
+let port = 5749
 
 let serve_local_fs_cb path =
   let module Lofs = Lofs9p.New(struct let root = path end) in
