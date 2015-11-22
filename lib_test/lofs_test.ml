@@ -50,90 +50,28 @@ let serve_local_fs_cb path =
            errno = None;
          })))
 
-let server_down = ref true
-let start_server listening =
-  server_down := false;
+let finally f g =
+ Lwt.catch
+   (fun () ->
+      f () >>= fun result ->
+      g () >>= fun _ignored ->
+      Lwt.return result
+   ) (fun e ->
+     g () >>= fun _ignored ->
+     Lwt.fail e)
+
+let with_server f =
   let path = ["tmp"] in
-  let server = Server.create ip port (serve_local_fs_cb path) in
-  Server.serve_forever ~listening server
-
-let server_tear_down pid =
-  if not !server_down
-  then try
-    Unix.kill pid Sys.sigterm;
-    let rec wait () =
-      let result =
-        try
-          Some (Unix.waitpid [] pid)
-        with
-        | Unix.Unix_error(Unix.EINTR, _, _) ->
-          None in
-      match result with
-      | Some x -> x
-      | None -> wait () in
-    let _pid, _status = wait () in
-    server_down := true;
-    (* Don't kill child pids in the signal handlers, since the child is dead *)
-    Sys.(set_signal sigterm (Signal_handle (fun _sig ->
-      exit 0
-    )));
-    Sys.(set_signal sigint (Signal_handle (fun _sig ->
-      exit 0
-    )));
-    let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
-    ()
-  with Unix.Unix_error(Unix.ESRCH, _, _) ->
-    Printf.fprintf stderr "PID %d failed to kill process %d\n%!" (Unix.getpid ()) pid
-
-let server_setup () =
   (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
-  let from_child, to_parent = Unix.pipe () in
-  let ready_msg = Bytes.of_string "ready" in
-  match Lwt_unix.fork () with
-  | 0 ->
-    Unix.close from_child;
-    begin
-      try
-        Lwt_main.run (
-          let ready, wakener = wait () in
-          async (fun () ->
-            ready
-            >>= fun () ->
-            let to_parent = Lwt_unix.of_unix_file_descr to_parent in
-            Lwt_unix.write to_parent ready_msg 0 5
-            >>= fun _written ->
-            return_unit
-          );
-          start_server wakener
-          >>= fun () ->
-          exit 0
-        )
-      with e ->
-        (* We really don't want an exception to propagate by accident *)
-        Printf.fprintf stderr "child failed with %s\n%!" (Printexc.to_string e);
-        exit 0
-    end
-  | child ->
-    server_down := false;
-    Unix.close to_parent;
-    Sys.(set_signal sigterm (Signal_handle (fun _sig ->
-      server_tear_down child;
-      exit 0
-    )));
-    Sys.(set_signal sigint (Signal_handle (fun _sig ->
-      server_tear_down child;
-      exit 0
-    )));
-    let buf = Bytes.create 5 in
-    let _read = Unix.read from_child buf 0 5 in
-    if buf = ready_msg
-    then child
-    else
-      let msg = Bytes.to_string buf in
-      assert_failure ("couldn't confirm server startup: "^msg)
-
-let with_server test =
-  bracket server_setup (fun _ -> Lwt_main.run (test ())) server_tear_down
+  let server = Server.create ip port (serve_local_fs_cb path) in
+  Lwt.async (fun () -> Server.serve_forever server);
+  finally f
+    (fun () ->
+      Server.shutdown server
+      >>= fun () ->
+      let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
+      return ()
+    )
 
 let with_client1 f =
   Client1.connect ip port ()
@@ -205,10 +143,14 @@ let () = LogServer.print_debug := false
 let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
 
-let tests =
-  let connect1 = "connect1" >:: (with_server connect1) in
-  let connect2 = "connect2" >:: (with_server connect2) in
-  [ connect1; connect2 ]
+let lwt_test name f =
+  name >:: (fun () -> Lwt_main.run (f ()))
+
+let tests = [
+  lwt_test "connect1" (fun () -> with_server connect1);
+  lwt_test "connect2" (fun () -> with_server connect2);
+  lwt_test "check that create rebinds fids" (fun () -> with_server create_rebind_fid);
+]
 
 let () =
   let suite = "client server" >::: tests in
