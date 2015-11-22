@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
-
+open Protocol_9p
 open Lwt
 
 module Make(Log : S.LOG) = struct
