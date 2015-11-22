@@ -89,20 +89,27 @@ let server_setup () =
   match Lwt_unix.fork () with
   | 0 ->
     Unix.close from_child;
-    Lwt_main.run (
-      let ready, wakener = wait () in
-      async (fun () ->
-        ready
-        >>= fun () ->
-        let to_parent = Lwt_unix.of_unix_file_descr to_parent in
-        Lwt_unix.write to_parent ready_msg 0 5
-        >>= fun _written ->
-        return_unit
-      );
-      start_server wakener
-      >>= fun () ->
-      exit 0
-    )
+    begin
+      try
+        Lwt_main.run (
+          let ready, wakener = wait () in
+          async (fun () ->
+            ready
+            >>= fun () ->
+            let to_parent = Lwt_unix.of_unix_file_descr to_parent in
+            Lwt_unix.write to_parent ready_msg 0 5
+            >>= fun _written ->
+            return_unit
+          );
+          start_server wakener
+          >>= fun () ->
+          exit 0
+        )
+      with e ->
+        (* We really don't want an exception to propagate by accident *)
+        Printf.fprintf stderr "child failed with %s\n%!" (Printexc.to_string e);
+        exit 0
+    end
   | child ->
     Unix.close to_parent;
     Sys.(set_signal sigterm (Signal_handle (fun _sig ->
