@@ -66,7 +66,7 @@ let server_tear_down pid =
   end
 
 let server_setup () =
-  Unix.mkdir "tmp" 0o700;
+  (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
   let from_child, to_parent = Unix.pipe () in
   let ready_msg = Bytes.of_string "ready" in
   match Lwt_unix.fork () with
