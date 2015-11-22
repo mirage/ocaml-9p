@@ -1,9 +1,9 @@
 # OASIS_START
-# DO NOT EDIT (digest: a3dc4d5c9a4af684e5faca3fa4ebd651)
+# DO NOT EDIT (digest: 49cac28383ea997d88bd8a80362032f9)
 version = "0.1"
 description = "9P filesystem protocol"
 requires =
-"result cstruct sexplib sexplib.syntax mirage-types.lwt lwt stringext fmt"
+"result cstruct sexplib sexplib mirage-types.lwt lwt stringext fmt"
 archive(byte) = "protocol_9p.cma"
 archive(byte, plugin) = "protocol_9p.cma"
 archive(native) = "protocol_9p.cmxa"

@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 67a0ebff644ccc3a840134f47f85c28b)
+# DO NOT EDIT (digest: 65771002b3bb51da9749cdc321321c1b)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -87,14 +87,31 @@ true: annot, bin_annot
 <lib_test/tests.{native,byte}>: pkg_stringext
 <lib_test/tests.{native,byte}>: use_protocol_9p
 <lib_test/*.ml{,i,y}>: pkg_alcotest
+<lib_test/tests.{native,byte}>: custom
+# Executable test_client_lofs_server
+<lib_test/lofs_test.{native,byte}>: pkg_cstruct
+<lib_test/lofs_test.{native,byte}>: pkg_cstruct.lwt
+<lib_test/lofs_test.{native,byte}>: pkg_fmt
+<lib_test/lofs_test.{native,byte}>: pkg_lwt
+<lib_test/lofs_test.{native,byte}>: pkg_mirage-types.lwt
+<lib_test/lofs_test.{native,byte}>: pkg_oUnit
+<lib_test/lofs_test.{native,byte}>: pkg_result
+<lib_test/lofs_test.{native,byte}>: pkg_sexplib
+<lib_test/lofs_test.{native,byte}>: pkg_sexplib.syntax
+<lib_test/lofs_test.{native,byte}>: pkg_stringext
+<lib_test/lofs_test.{native,byte}>: use_protocol_9p
+<lib_test/lofs_test.{native,byte}>: use_protocol_9p_unix
 <lib_test/*.ml{,i,y}>: pkg_cstruct
+<lib_test/*.ml{,i,y}>: pkg_cstruct.lwt
 <lib_test/*.ml{,i,y}>: pkg_fmt
 <lib_test/*.ml{,i,y}>: pkg_lwt
 <lib_test/*.ml{,i,y}>: pkg_mirage-types.lwt
+<lib_test/*.ml{,i,y}>: pkg_oUnit
 <lib_test/*.ml{,i,y}>: pkg_result
 <lib_test/*.ml{,i,y}>: pkg_sexplib
 <lib_test/*.ml{,i,y}>: pkg_sexplib.syntax
 <lib_test/*.ml{,i,y}>: pkg_stringext
 <lib_test/*.ml{,i,y}>: use_protocol_9p
-<lib_test/tests.{native,byte}>: custom
+<lib_test/*.ml{,i,y}>: use_protocol_9p_unix
+<lib_test/lofs_test.{native,byte}>: custom
 # OASIS_STOP
