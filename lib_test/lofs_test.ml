@@ -129,7 +129,11 @@ let server_setup () =
       assert_failure ("couldn't confirm server startup: "^msg)
 
 let with_server test =
-  bracket server_setup (fun _ -> Lwt_main.run (test ())) server_tear_down
+  bracket server_setup (fun _ -> Lwt_main.run (test ()))
+    (fun child ->
+      server_tear_down child;
+      server_down := false
+    )
 
 let with_client1 f =
   Client1.connect ip port ()
