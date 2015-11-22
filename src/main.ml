@@ -173,7 +173,8 @@ let serve debug address path =
   Log.print_debug := debug;
   let path = parse_path path in
   let ip, port = parse_address address in
-  let t = Server.serve_forever ip port (serve_local_fs_cb path) in
+  let server = Server.create ip port (serve_local_fs_cb path) in
+  let t = Server.serve_forever server in
   try
     ignore (Lwt_main.run t);
     `Ok ()

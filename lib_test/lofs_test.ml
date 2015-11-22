@@ -54,7 +54,8 @@ let server_down = ref true
 let start_server listening =
   server_down := false;
   let path = ["tmp"] in
-  Server.serve_forever ~listening ip port (serve_local_fs_cb path)
+  let server = Server.create ip port (serve_local_fs_cb path) in
+  Server.serve_forever ~listening server
 
 let server_tear_down pid =
   if not !server_down
