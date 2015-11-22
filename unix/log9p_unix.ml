@@ -29,7 +29,7 @@ module StdoutPrefix(Config : sig val prefix : string end) = struct
   let print = Printf.printf "%s %s\n%!" Config.prefix
 
   let debug fmt =
-    Printf.ksprintf (fun s -> if !print_debug then print s) fmt
-  let info  fmt = Printf.ksprintf (fun s -> print s) fmt
-  let error fmt = Printf.ksprintf (fun s -> print s) fmt
+    Fmt.kstrf (fun s -> if !print_debug then print s) fmt
+  let info  fmt = Fmt.kstrf (fun s -> print s) fmt
+  let error fmt = Fmt.kstrf (fun s -> print s) fmt
 end
