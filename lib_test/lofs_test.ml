@@ -50,7 +50,7 @@ let serve_local_fs_cb path =
            errno = None;
          })))
 
-let server_down = ref false
+let server_down = ref true
 let start_server listening =
   server_down := false;
   let path = ["tmp"] in
@@ -71,6 +71,7 @@ let server_tear_down pid =
       | Some x -> x
       | None -> wait () in
     let _pid, _status = wait () in
+    server_down := true;
     (* Don't kill child pids in the signal handlers, since the child is dead *)
     Sys.(set_signal sigterm (Signal_handle (fun _sig ->
       exit 0
@@ -111,6 +112,7 @@ let server_setup () =
         exit 0
     end
   | child ->
+    server_down := false;
     Unix.close to_parent;
     Sys.(set_signal sigterm (Signal_handle (fun _sig ->
       server_tear_down child;
@@ -129,11 +131,7 @@ let server_setup () =
       assert_failure ("couldn't confirm server startup: "^msg)
 
 let with_server test =
-  bracket server_setup (fun _ -> Lwt_main.run (test ()))
-    (fun child ->
-      server_tear_down child;
-      server_down := false
-    )
+  bracket server_setup (fun _ -> Lwt_main.run (test ())) server_tear_down
 
 let with_client1 f =
   Client1.connect ip port ()
