@@ -24,7 +24,7 @@ let version = "0.0"
 
 module Log = Log9p_unix.Stdout
 module Client = Client9p_unix.Inet(Log)
-module Server = Server.Make(Log)(Flow_lwt_unix)
+module Server = Server9p_unix.Make(Log)
 
 let finally f g =
   Lwt.catch
@@ -39,27 +39,11 @@ let finally f g =
 let parse_address address =
   try
     let colon = String.index address ':' in
-    String.sub address 0 colon, int_of_string (String.sub address (colon + 1) (String.length address - colon - 1))
+    let last = String.length address - colon - 1 in
+    String.sub address 0 colon,
+    int_of_string (String.sub address (colon + 1) last)
   with Not_found ->
     address, 5640
-
-let accept_forever address f =
-  let ip, port = parse_address address in
-  Log.debug "Listening on %s port %d" ip port;
-  let s = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
-  Lwt_unix.setsockopt s Lwt_unix.SO_REUSEADDR true;
-  let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string ip, port) in
-  Lwt_unix.bind s sockaddr;
-  Lwt_unix.listen s 5;
-  let rec loop_forever () =
-    Lwt_unix.accept s
-    >>= fun (client, _client_addr) ->
-    Lwt.async
-      (fun () ->
-        finally (fun () -> f client) (fun () -> Lwt_unix.close client)
-      );
-    loop_forever () in
-  loop_forever ()
 
 let parse_path x = Stringext.split x ~on:'/'
 
@@ -175,24 +159,21 @@ let serve_local_fs_cb path =
       (fun () -> Fs.receive_cb info ~cancel request)
       (function
        | Unix.Unix_error(err, _, _) ->
-         Lwt.return (Result.Ok (Response.Err { Response.Err.ename = Unix.error_message err; errno = None }))
+         Lwt.return (Result.Ok (Response.Err {
+           Response.Err.ename = Unix.error_message err;
+           errno = None;
+         }))
        | e ->
-         Lwt.return (Result.Ok (Response.Err { Response.Err.ename = Printexc.to_string e; errno = None })))
+         Lwt.return (Result.Ok (Response.Err {
+           Response.Err.ename = Printexc.to_string e;
+           errno = None;
+         })))
 
 let serve debug address path =
   Log.print_debug := debug;
   let path = parse_path path in
-  let t =
-    accept_forever address
-      (fun fd ->
-        let flow = Flow_lwt_unix.connect fd in
-        Server.connect flow ~receive_cb:(serve_local_fs_cb path) ()
-        >>= function
-        | Result.Error (`Msg x) -> fail (Failure x)
-        | Result.Ok t ->
-          Log.debug "Successfully negotiated a connection.";
-          Server.after_disconnect t
-      ) in
+  let ip, port = parse_address address in
+  let t = Server.serve_forever ip port (serve_local_fs_cb path) in
   try
     ignore (Lwt_main.run t);
     `Ok ()
