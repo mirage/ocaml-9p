@@ -65,9 +65,9 @@ Executable test_client_lofs_server
   Custom:             true
   CompiledObject:     best
   Install:            false
-  BuildDepends:       protocol-9p.unix, oUnit (>= 1.0.2)
+  BuildDepends:       protocol-9p.unix, alcotest
 
 Test test_client_lofs_server
   Run$:               flag(tests)
-  Command:            $test_client_lofs_server -runner sequential
+  Command:            $test_client_lofs_server
   WorkingDirectory:   lib_test
