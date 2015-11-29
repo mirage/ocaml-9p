@@ -252,7 +252,7 @@ module New(Params : sig val root : string list end) = struct
     (* TODO: support ORCLOSE? *)
     if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
 
-  let create info ~cancel { Request.Create.fid; name; perm; mode } =
+  let create info ~cancel { Request.Create.fid; name; perm; mode; extension } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -278,6 +278,22 @@ module New(Params : sig val root : string list end) = struct
             Response.Create.qid;
             iounit = 512l;
           })
+      )
+      else if perm.Types.FileMode.is_symlink
+      then (
+        match extension with
+        | Some target ->
+          Lwt_unix.symlink target realpath
+          >>= fun () ->
+          qid_of_path realpath
+          >>*= fun qid ->
+          fids := Types.Fid.Map.add fid (Path.append path name) !fids;
+          Lwt.return (Result.Ok {
+            Response.Create.qid;
+            iounit = 512l;
+          })
+        | None ->
+          Lwt.return (Response.error "creating symlinks requires 9p2000.u extension")
       )
       else
         let flags = flags_of_mode mode in
