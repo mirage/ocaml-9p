@@ -139,6 +139,31 @@ let create_rebind_fid () =
       )
   )
 
+let create_remove_file () =
+  with_client1 (fun _client1 ->
+    Client1.with_fid _client1
+      (fun fid ->
+        Client1.walk_from_root _client1 fid []
+        >>= function
+        | Error (`Msg err) -> assert_failure ("client1: walk_from_root []: " ^ err)
+        | Ok _ ->
+          let filemode = Types.FileMode.make ~owner:[`Write] () in
+          let openmode = Types.OpenMode.read_write in
+          (* create should rebind the fid to refer to the file foo... *)
+          Client1.LowLevel.create _client1 fid "foo"  filemode openmode
+          >>= function
+          | Error (`Msg err) ->
+            assert_failure ("client1: create foo: " ^ err)
+          | Ok _ ->
+          Client1.remove _client1 [ "foo" ]
+          >>= function
+          | Error (`Msg err) ->
+            assert_failure ("client1: remove foo: " ^ err)
+          | Ok () ->
+            Lwt.return ()
+      )
+    )
+
 let () = LogServer.print_debug := false
 let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
@@ -150,6 +175,7 @@ let tests = [
   lwt_test "connect1" (fun () -> with_server connect1);
   lwt_test "connect2" (fun () -> with_server connect2);
   lwt_test "check that create rebinds fids" (fun () -> with_server create_rebind_fid);
+  lwt_test "check that we can remove a file" (fun () -> with_server create_remove_file);
 ]
 
 let () =
