@@ -62,15 +62,14 @@ let finally f g =
 
 let with_server f =
   let path = ["tmp"] in
+  let (_: Unix.process_status) = Unix.system "chmod -R u+rw tmp/*" in
+  let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
   (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
   let server = Server.create ip port (serve_local_fs_cb path) in
   Lwt.async (fun () -> Server.serve_forever server);
   finally f
     (fun () ->
       Server.shutdown server
-      >>= fun () ->
-      let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
-      return ()
     )
 
 let with_client1 f =
