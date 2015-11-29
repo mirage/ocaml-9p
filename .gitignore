@@ -13,3 +13,4 @@ setup.bin
 setup.data
 setup.log
 .coverage/
+lib_test/_tests

@@ -19,7 +19,6 @@ open Protocol_9p
 open Lwt
 open Infix
 open Result
-open OUnit
 
 module LogServer  = Log9p_unix.StdoutPrefix(struct let prefix = "S" end)
 module LogClient1 = Log9p_unix.StdoutPrefix(struct let prefix = "C1" end)
@@ -75,7 +74,7 @@ let with_server f =
 let with_client1 f =
   Client1.connect ip port ()
   >>= function
-  | Error (`Msg err) -> assert_failure ("client1: "^err)
+  | Error (`Msg err) -> Alcotest.fail ("client1: "^err)
   | Ok client ->
     Lwt.catch (fun () ->
       f client
@@ -90,7 +89,7 @@ let with_client1 f =
 let with_client2 f =
   Client2.connect ip port ()
   >>= function
-  | Error (`Msg err) -> assert_failure ("client2: "^err)
+  | Error (`Msg err) -> Alcotest.fail ("client2: "^err)
   | Ok client ->
     Lwt.catch (fun () ->
       f client
@@ -116,7 +115,8 @@ let create_rebind_fid () =
       (fun fid ->
         Client1.walk_from_root _client1 fid []
         >>= function
-        | Error (`Msg err) -> assert_failure ("client1: walk_from_root []: " ^ err)
+        | Error (`Msg err) ->
+          Alcotest.fail ("client1: walk_from_root []: " ^ err)
         | Ok _ ->
           let filemode = Types.FileMode.make ~owner:[`Write] () in
           let openmode = Types.OpenMode.read_write in
@@ -124,7 +124,7 @@ let create_rebind_fid () =
           Client1.LowLevel.create _client1 fid "foo"  filemode openmode
           >>= function
           | Error (`Msg err) ->
-          assert_failure ("client1: create foo: " ^ err)
+          Alcotest.fail ("client1: create foo: " ^ err)
           | Ok _ ->
             let buf = Cstruct.create 16 in
             Cstruct.memset buf 0;
@@ -132,7 +132,7 @@ let create_rebind_fid () =
             Client1.LowLevel.write _client1 fid 0L buf
             >>= function
             | Error (`Msg err) ->
-             assert_failure ("client1: write: " ^ err)
+             Alcotest.fail ("client1: write: " ^ err)
             | Ok _ ->
                 Lwt.return ()
       )
@@ -182,9 +182,9 @@ let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
 
 let lwt_test name f =
-  name >:: (fun () -> Lwt_main.run (f ()))
+  name, `Quick, (fun () -> Lwt_main.run (f ()))
 
-let tests = [
+let test_client = [
   lwt_test "connect1" (fun () -> with_server connect1);
   lwt_test "connect2" (fun () -> with_server connect2);
   lwt_test "check that create rebinds fids" (fun () -> with_server create_rebind_fid);
@@ -192,7 +192,8 @@ let tests = [
   lwt_test "check that we can remove a directory" (fun () -> with_server create_remove_dir);
 ]
 
-let () =
-  let suite = "client server" >::: tests in
+let tests = [
+  "client", test_client;
+]
 
-  OUnit2.run_test_tt_main (ounit2_of_ounit1 suite)
+let () = Alcotest.run "client server" tests
