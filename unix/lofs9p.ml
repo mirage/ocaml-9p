@@ -223,6 +223,14 @@ module New(Params : sig val root : string list end) = struct
     | path ->
       walk path [] wnames
 
+  let attach info ~cancel { Request.Attach.fid } =
+    (* bind the fid as another root *)
+    fids := Types.Fid.Map.add fid Path.root !fids;
+    let realpath = Path.realpath Path.root in
+    qid_of_path realpath
+    >>*= fun qid ->
+    Lwt.return (Result.Ok { Response.Attach.qid })
+
   let stat info ~cancel { Request.Stat.fid } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
