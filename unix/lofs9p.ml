@@ -396,6 +396,8 @@ module New(Params : sig val root : string list end) = struct
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
+      (* Always clunk the fid, even if remove fails *)
+      fids := Types.Fid.Map.remove fid !fids;
       let realpath = Path.realpath path in
       let rec loop () =
         Lwt.catch

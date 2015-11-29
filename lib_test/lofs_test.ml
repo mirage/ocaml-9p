@@ -177,6 +177,36 @@ let create_remove_dir () =
       Lwt.return ()
   )
 
+let failed_remove_clunk_fid () =
+  with_client1 (fun _client1 ->
+    let filemode = Types.FileMode.make ~owner:[`Write; `Execute] () in
+    Client1.mkdir _client1 [] "foo" filemode
+    >>= function
+    | Error (`Msg err) -> Alcotest.fail ("client1: mkdir [] foo: " ^ err)
+    | Ok _ ->
+    Client1.mkdir _client1 ["foo"] "bar" filemode
+    >>= function
+    | Error (`Msg err) -> Alcotest.fail ("client1: mkdir [foo] bar: " ^ err)
+    | Ok _ ->
+    Client1.with_fid _client1
+      (fun fid ->
+        Client1.walk_from_root _client1 fid ["foo"]
+        >>= function
+        | Error (`Msg err) -> Alcotest.fail ("client1: walk_from_root [foo]: " ^ err)
+        | Ok _ ->
+        Client1.LowLevel.remove _client1 fid
+        >>= function
+        | Ok () -> Alcotest.fail ("client1: remove a non-empty dir should fail")
+        | Error (`Msg _) ->
+          (* The fid should have been clunked so I can now re-use it *)
+          Client1.walk_from_root _client1 fid []
+          >>= function
+          | Error (`Msg err) -> Alcotest.fail ("client1: walk_from_root after failed remove: " ^ err)
+          | Ok _ ->
+            Lwt.return ()
+      )
+  )
+
 let () = LogServer.print_debug := false
 let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
@@ -190,6 +220,7 @@ let test_client = [
   lwt_test "check that create rebinds fids" (fun () -> with_server create_rebind_fid);
   lwt_test "check that we can remove a file" (fun () -> with_server create_remove_file);
   lwt_test "check that we can remove a directory" (fun () -> with_server create_remove_dir);
+  lwt_test "failed remove should clunk the fid" (fun () -> with_server failed_remove_clunk_fid);
 ]
 
 let tests = [
