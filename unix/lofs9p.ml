@@ -87,7 +87,7 @@ module New(Params : sig val root : string list end) = struct
       | 7 -> [ `Execute; `Write; `Read ]
       | _ -> []
 
-    let stat path =
+    let stat info path =
       let realpath = realpath path in
       let open Lwt_unix in
       LargeFile.lstat realpath
@@ -110,8 +110,25 @@ module New(Params : sig val root : string list end) = struct
       let mtime = Int32.of_float stats.LargeFile.st_mtime in
       let uid = string_of_int stats.LargeFile.st_uid in
       let gid = string_of_int stats.LargeFile.st_gid in
+      ( if info.Server.version = Types.Version.unix then begin
+          ( match stats.LargeFile.st_kind with
+            | S_LNK ->
+              Lwt_unix.readlink realpath
+            | S_BLK ->
+              return "b 0 0" (* FIXME: need major, minor *)
+            | S_CHR ->
+              return "c 0 0" (* FIXME: need major, minor *)
+            | _ ->
+              return "" )
+          >>= fun extension ->
+          let n_uid = Int32.of_int stats.LargeFile.st_uid in
+          let n_gid = Int32.of_int stats.LargeFile.st_gid in
+          let n_muid = n_uid in
+          return (Some { Types.Stat.extension; n_uid; n_gid; n_muid })
+        end else return None )
+      >>= fun u ->
       let stat =
-        Types.Stat.make ~name ~qid ~mode ~length ~atime ~mtime ~uid ~gid ()
+        Types.Stat.make ~name ~qid ~mode ~length ~atime ~mtime ~uid ~gid ?u ()
       in
       Lwt.return (Result.Ok stat)
 
@@ -143,7 +160,7 @@ module New(Params : sig val root : string list end) = struct
         let rec write off rest = function
           | [] -> Lwt.return (Result.Ok off)
           | x :: xs ->
-            Path.(stat (append path x))
+            Path.(stat info (append path x))
             >>*= fun stat ->
             let n = Types.Stat.sizeof stat in
             if off < offset
@@ -210,7 +227,7 @@ module New(Params : sig val root : string list end) = struct
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      Path.stat path
+      Path.stat info path
       >>*= fun stat ->
       Lwt.return (Result.Ok { Response.Stat.stat })
 
