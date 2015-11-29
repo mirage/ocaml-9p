@@ -141,7 +141,15 @@ let ls debug address path username =
            in
            let day = string_of_int tm.Unix.tm_mday in
            let year = string_of_int (1900 + tm.Unix.tm_year) in
-           let name = x.Types.Stat.name in
+           let name =
+            let name = x.Types.Stat.name in
+            if filemode.is_symlink
+            then match x.Types.Stat.u with
+              | Some { Types.Stat.extension = e } ->
+                name ^ " -> " ^ e
+              | None ->
+                name
+            else name in
            Array.of_list [
              perms; links; uid; gid; length; month; day; year; name;
            ] in
