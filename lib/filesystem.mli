@@ -23,6 +23,7 @@ module type S = sig
   (** A traditional protocol message handler.
      If an [Error] is returned, it will be reported back to the client. *)
 
+  val attach: Server.info -> cancel:unit Lwt.t -> Request.Attach.t -> Response.Attach.t or_error Lwt.t
   val walk: Server.info -> cancel:unit Lwt.t -> Request.Walk.t -> Response.Walk.t or_error Lwt.t
   val clunk: Server.info -> cancel:unit Lwt.t -> Request.Clunk.t -> Response.Clunk.t or_error Lwt.t
   val open_: Server.info -> cancel:unit Lwt.t -> Request.Open.t -> Response.Open.t or_error Lwt.t

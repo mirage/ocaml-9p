@@ -29,7 +29,7 @@ let errors_to_client = function
 
 (* We need to associate files with Qids with unique ids and versions *)
 let qid_of_path realpath =
-  Lwt_unix.LargeFile.stat realpath
+  Lwt_unix.LargeFile.lstat realpath
   >>= fun stats ->
   let open Types.Qid in
   let flags =
@@ -87,7 +87,7 @@ module New(Params : sig val root : string list end) = struct
       | 7 -> [ `Execute; `Write; `Read ]
       | _ -> []
 
-    let stat path =
+    let stat info path =
       let realpath = realpath path in
       let open Lwt_unix in
       LargeFile.lstat realpath
@@ -110,8 +110,25 @@ module New(Params : sig val root : string list end) = struct
       let mtime = Int32.of_float stats.LargeFile.st_mtime in
       let uid = string_of_int stats.LargeFile.st_uid in
       let gid = string_of_int stats.LargeFile.st_gid in
+      ( if info.Server.version = Types.Version.unix then begin
+          ( match stats.LargeFile.st_kind with
+            | S_LNK ->
+              Lwt_unix.readlink realpath
+            | S_BLK ->
+              return "b 0 0" (* FIXME: need major, minor *)
+            | S_CHR ->
+              return "c 0 0" (* FIXME: need major, minor *)
+            | _ ->
+              return "" )
+          >>= fun extension ->
+          let n_uid = Int32.of_int stats.LargeFile.st_uid in
+          let n_gid = Int32.of_int stats.LargeFile.st_gid in
+          let n_muid = n_uid in
+          return (Some { Types.Stat.extension; n_uid; n_gid; n_muid })
+        end else return None )
+      >>= fun u ->
       let stat =
-        Types.Stat.make ~name ~qid ~mode ~length ~atime ~mtime ~uid ~gid ()
+        Types.Stat.make ~name ~qid ~mode ~length ~atime ~mtime ~uid ~gid ?u ()
       in
       Lwt.return (Result.Ok stat)
 
@@ -143,7 +160,7 @@ module New(Params : sig val root : string list end) = struct
         let rec write off rest = function
           | [] -> Lwt.return (Result.Ok off)
           | x :: xs ->
-            Path.(stat (append path x))
+            Path.(stat info (append path x))
             >>*= fun stat ->
             let n = Types.Stat.sizeof stat in
             if off < offset
@@ -206,11 +223,19 @@ module New(Params : sig val root : string list end) = struct
     | path ->
       walk path [] wnames
 
+  let attach info ~cancel { Request.Attach.fid } =
+    (* bind the fid as another root *)
+    fids := Types.Fid.Map.add fid Path.root !fids;
+    let realpath = Path.realpath Path.root in
+    qid_of_path realpath
+    >>*= fun qid ->
+    Lwt.return (Result.Ok { Response.Attach.qid })
+
   let stat info ~cancel { Request.Stat.fid } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      Path.stat path
+      Path.stat info path
       >>*= fun stat ->
       Lwt.return (Result.Ok { Response.Stat.stat })
 
@@ -227,7 +252,7 @@ module New(Params : sig val root : string list end) = struct
     (* TODO: support ORCLOSE? *)
     if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
 
-  let create info ~cancel { Request.Create.fid; name; perm; mode } =
+  let create info ~cancel { Request.Create.fid; name; perm; mode; extension } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
@@ -253,6 +278,22 @@ module New(Params : sig val root : string list end) = struct
             Response.Create.qid;
             iounit = 512l;
           })
+      )
+      else if perm.Types.FileMode.is_symlink
+      then (
+        match extension with
+        | Some target ->
+          Lwt_unix.symlink target realpath
+          >>= fun () ->
+          qid_of_path realpath
+          >>*= fun qid ->
+          fids := Types.Fid.Map.add fid (Path.append path name) !fids;
+          Lwt.return (Result.Ok {
+            Response.Create.qid;
+            iounit = 512l;
+          })
+        | None ->
+          Lwt.return (Response.error "creating symlinks requires 9p2000.u extension")
       )
       else
         let flags = flags_of_mode mode in

@@ -33,6 +33,7 @@ module Make(Filesystem : Filesystem.S) = struct
       | Ok response -> Ok (result response)
       | Error err -> Ok (Response.Err (adjust_errno err)) in
     Request.(function
+    | Attach x -> wrap Filesystem.attach x (fun x -> Response.Attach x)
     | Walk x   -> wrap Filesystem.walk   x (fun x -> Response.Walk x)
     | Open x   -> wrap Filesystem.open_  x (fun x -> Response.Open x)
     | Read x   -> wrap Filesystem.read   x (fun x -> Response.Read x)
@@ -42,8 +43,8 @@ module Make(Filesystem : Filesystem.S) = struct
     | Write x  -> wrap Filesystem.write  x (fun x -> Response.Write x)
     | Remove x -> wrap Filesystem.remove x (fun x -> Response.Remove x)
     | Wstat x  -> wrap Filesystem.wstat  x (fun x -> Response.Wstat x)
-    | Version _ | Auth _ | Flush _ | Attach _ ->
-        let err = {Response.Err.ename = "not implemented"; errno = None} in
+    | Version _ | Auth _ | Flush _ ->
+        let err = {Response.Err.ename = "Function not implemented"; errno = None} in
         Lwt.return (Result.Ok (Response.Err (adjust_errno err)))
   )
 end
