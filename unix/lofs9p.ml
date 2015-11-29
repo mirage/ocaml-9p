@@ -29,7 +29,7 @@ let errors_to_client = function
 
 (* We need to associate files with Qids with unique ids and versions *)
 let qid_of_path realpath =
-  Lwt_unix.LargeFile.stat realpath
+  Lwt_unix.LargeFile.lstat realpath
   >>= fun stats ->
   let open Types.Qid in
   let flags =
