@@ -25,6 +25,7 @@ module type S = sig
   val disconnect: t -> unit Lwt.t
   val read: t -> string list -> int64 -> int32 -> Cstruct.t list Error.t Lwt.t
   val mkdir: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
+  val remove: t -> string list -> unit Error.t Lwt.t
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
   val stat: t -> string list -> Types.Stat.t Error.t Lwt.t
 
@@ -310,6 +311,19 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         walk t fid newfid wnames
         >>*= fun _ -> (* I don't need to know the qids *)
         create t newfid name {perm with Types.FileMode.is_directory = true} Types.OpenMode.read_only
+        >>*= fun _ ->
+        Lwt.return (Ok ())
+      )
+
+  let remove t path =
+    let open LowLevel in
+    let fid = t.root in
+    with_fid t
+      (fun newfid ->
+        let wnames = path in
+        walk t fid newfid wnames
+        >>*= fun _ -> (* I don't need to know the qids *)
+        remove t newfid
         >>*= fun _ ->
         Lwt.return (Ok ())
       )

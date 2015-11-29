@@ -30,6 +30,9 @@ module type S = sig
   (** [mkdir t path name perm] creates a new directory [name] inside [path] with
    * the given permissions. *)
 
+  val remove: t -> string list -> unit Error.t Lwt.t
+  (** [remove t path] removes a file or directory from the filesystem. *)
+
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
   (** Return the contents of a named directory. *)
 

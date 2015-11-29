@@ -62,15 +62,14 @@ let finally f g =
 
 let with_server f =
   let path = ["tmp"] in
+  let (_: Unix.process_status) = Unix.system "chmod -R u+rw tmp/*" in
+  let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
   (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
   let server = Server.create ip port (serve_local_fs_cb path) in
   Lwt.async (fun () -> Server.serve_forever server);
   finally f
     (fun () ->
       Server.shutdown server
-      >>= fun () ->
-      let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
-      return ()
     )
 
 let with_client1 f =
@@ -139,6 +138,45 @@ let create_rebind_fid () =
       )
   )
 
+let create_remove_file () =
+  with_client1 (fun _client1 ->
+    Client1.with_fid _client1
+      (fun fid ->
+        Client1.walk_from_root _client1 fid []
+        >>= function
+        | Error (`Msg err) -> assert_failure ("client1: walk_from_root []: " ^ err)
+        | Ok _ ->
+          let filemode = Types.FileMode.make ~owner:[`Write] () in
+          let openmode = Types.OpenMode.read_write in
+          (* create should rebind the fid to refer to the file foo... *)
+          Client1.LowLevel.create _client1 fid "foo"  filemode openmode
+          >>= function
+          | Error (`Msg err) ->
+            assert_failure ("client1: create foo: " ^ err)
+          | Ok _ ->
+          Client1.remove _client1 [ "foo" ]
+          >>= function
+          | Error (`Msg err) ->
+            assert_failure ("client1: remove foo: " ^ err)
+          | Ok () ->
+            Lwt.return ()
+      )
+    )
+
+let create_remove_dir () =
+  with_client1 (fun _client1 ->
+    let filemode = Types.FileMode.make ~owner:[`Write] () in
+    Client1.mkdir _client1 [] "foo" filemode
+    >>= function
+    | Error (`Msg err) -> assert_failure ("client1: mkdir [] foo: " ^ err)
+    | Ok _ ->
+    Client1.remove _client1 ["foo"]
+    >>= function
+    | Error (`Msg err) -> assert_failure ("client1: rm [foo]: " ^ err)
+    | Ok () ->
+      Lwt.return ()
+  )
+
 let () = LogServer.print_debug := false
 let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
@@ -150,6 +188,8 @@ let tests = [
   lwt_test "connect1" (fun () -> with_server connect1);
   lwt_test "connect2" (fun () -> with_server connect2);
   lwt_test "check that create rebinds fids" (fun () -> with_server create_rebind_fid);
+  lwt_test "check that we can remove a file" (fun () -> with_server create_remove_file);
+  lwt_test "check that we can remove a directory" (fun () -> with_server create_remove_dir);
 ]
 
 let () =

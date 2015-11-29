@@ -83,6 +83,26 @@ let read debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
+let remove debug address path username =
+  Log.print_debug := debug;
+  let path = parse_path path in
+  let t =
+    with_client address username
+      (fun t ->
+        Client.remove t path
+        >>*= fun () ->
+        return (Result.Ok ())
+      ) in
+  try
+    begin match Lwt_main.run t with
+    | Ok () -> `Ok ()
+    | Error (`Msg m) -> `Error(false, m)
+    end
+  with Failure e ->
+    `Error(false, e)
+  | e ->
+    `Error(false, Printexc.to_string e)
+
 let ls debug address path username =
   Log.print_debug := debug;
   let path = parse_path path in
@@ -225,6 +245,15 @@ let read_cmd =
   Term.(ret(pure read $ debug $ address $ path $ username)),
   Term.info "read" ~doc ~man
 
+let remove_cmd =
+  let doc = "Remove a file or directory" in
+  let man = [
+    `S "DESCRIPTION";
+    `P "Remove a file or directory.";
+  ] @ help in
+  Term.(ret(pure remove $ debug $ address $ path $ username)),
+  Term.info "remove" ~doc ~man
+
 let serve_cmd =
   let doc = "Serve a directory over 9P" in
   let man = [
@@ -241,6 +270,6 @@ let default_cmd =
   Term.info (Sys.argv.(0)) ~version ~doc ~man
 
 let _ =
-  match Term.eval_choice default_cmd [ ls_cmd; read_cmd; serve_cmd ] with
+  match Term.eval_choice default_cmd [ ls_cmd; read_cmd; remove_cmd; serve_cmd ] with
   | `Error _ -> exit 1
   | _ -> exit 0

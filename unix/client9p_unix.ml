@@ -63,6 +63,8 @@ module Inet(Log: S.LOG) = struct
 
   let mkdir { client } = Client.mkdir client
 
+  let remove { client } = Client.remove client
+
   let readdir { client } = Client.readdir client
 
   let stat { client } = Client.stat client
