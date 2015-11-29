@@ -144,7 +144,7 @@ let create_remove_file () =
       (fun fid ->
         Client1.walk_from_root _client1 fid []
         >>= function
-        | Error (`Msg err) -> assert_failure ("client1: walk_from_root []: " ^ err)
+        | Error (`Msg err) -> Alcotest.fail ("client1: walk_from_root []: " ^ err)
         | Ok _ ->
           let filemode = Types.FileMode.make ~owner:[`Write] () in
           let openmode = Types.OpenMode.read_write in
@@ -152,12 +152,12 @@ let create_remove_file () =
           Client1.LowLevel.create _client1 fid "foo"  filemode openmode
           >>= function
           | Error (`Msg err) ->
-            assert_failure ("client1: create foo: " ^ err)
+            Alcotest.fail ("client1: create foo: " ^ err)
           | Ok _ ->
           Client1.remove _client1 [ "foo" ]
           >>= function
           | Error (`Msg err) ->
-            assert_failure ("client1: remove foo: " ^ err)
+            Alcotest.fail ("client1: remove foo: " ^ err)
           | Ok () ->
             Lwt.return ()
       )
@@ -168,11 +168,11 @@ let create_remove_dir () =
     let filemode = Types.FileMode.make ~owner:[`Write] () in
     Client1.mkdir _client1 [] "foo" filemode
     >>= function
-    | Error (`Msg err) -> assert_failure ("client1: mkdir [] foo: " ^ err)
+    | Error (`Msg err) -> Alcotest.fail ("client1: mkdir [] foo: " ^ err)
     | Ok _ ->
     Client1.remove _client1 ["foo"]
     >>= function
-    | Error (`Msg err) -> assert_failure ("client1: rm [foo]: " ^ err)
+    | Error (`Msg err) -> Alcotest.fail ("client1: rm [foo]: " ^ err)
     | Ok () ->
       Lwt.return ()
   )
