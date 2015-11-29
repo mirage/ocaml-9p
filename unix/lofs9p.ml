@@ -44,6 +44,7 @@ let qid_of_path realpath =
   Lwt.return (Result.Ok { flags; id; version })
 
 let bad_fid = Lwt.return (Response.error "bad fid")
+let fid_in_use = Lwt.return (Response.error "fid already in use")
 
 module New(Params : sig val root : string list end) = struct
   module Path = struct
@@ -218,10 +219,13 @@ module New(Params : sig val root : string list end) = struct
         >>*= fun qid ->
         walk here (qid :: qids) xs
     in
-    match path_of_fid info fid with
-    | exception Not_found -> bad_fid
-    | path ->
-      walk path [] wnames
+    if Types.Fid.Map.mem newfid !fids && (fid <> newfid)
+    then fid_in_use
+    else
+      match path_of_fid info fid with
+      | exception Not_found -> bad_fid
+      | path ->
+        walk path [] wnames
 
   let attach info ~cancel { Request.Attach.fid } =
     (* bind the fid as another root *)
