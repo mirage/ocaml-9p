@@ -163,6 +163,20 @@ let create_remove_file () =
       )
     )
 
+let create_remove_dir () =
+  with_client1 (fun _client1 ->
+    let filemode = Types.FileMode.make ~owner:[`Write] () in
+    Client1.mkdir _client1 [] "foo" filemode
+    >>= function
+    | Error (`Msg err) -> assert_failure ("client1: mkdir [] foo: " ^ err)
+    | Ok _ ->
+    Client1.remove _client1 ["foo"]
+    >>= function
+    | Error (`Msg err) -> assert_failure ("client1: rm [foo]: " ^ err)
+    | Ok () ->
+      Lwt.return ()
+  )
+
 let () = LogServer.print_debug := false
 let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
@@ -175,6 +189,7 @@ let tests = [
   lwt_test "connect2" (fun () -> with_server connect2);
   lwt_test "check that create rebinds fids" (fun () -> with_server create_rebind_fid);
   lwt_test "check that we can remove a file" (fun () -> with_server create_remove_file);
+  lwt_test "check that we can remove a directory" (fun () -> with_server create_remove_dir);
 ]
 
 let () =

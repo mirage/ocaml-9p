@@ -352,7 +352,19 @@ module New(Params : sig val root : string list end) = struct
     | exception Not_found -> bad_fid
     | path ->
       let realpath = Path.realpath path in
-      Lwt_unix.unlink realpath
+      let rec loop () =
+        Lwt.catch
+          (fun () ->
+            Lwt_unix.LargeFile.stat realpath
+            >>= fun stats ->
+            ( if stats.Lwt_unix.LargeFile.st_kind = Lwt_unix.S_DIR
+              then Lwt_unix.rmdir else Lwt_unix.unlink ) realpath
+          ) (function
+            | Unix.Unix_error((Unix.EISDIR | Unix.ENOTDIR), _, _) ->
+              loop ()
+            | e ->
+              fail e) in
+      loop ()
       >>= fun () ->
       Lwt.return (Result.Ok ())
 end
