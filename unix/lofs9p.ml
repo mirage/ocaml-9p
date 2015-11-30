@@ -205,7 +205,7 @@ module New(Params : sig val root : string list end) = struct
           let rest = Cstruct.of_bigarray buffer in
           write 0L rest (Array.to_list xs)
           >>*= fun offset' ->
-          let data = Cstruct.sub rest 0 Int64.(to_int (sub offset' offset)) in
+          let data = Cstruct.sub rest 0 Int64.(to_int (max 0L (sub offset' offset))) in
           Lwt.return (Result.Ok { Response.Read.data }) in
         t >>= fun x -> Lwt.return (errors_to_client x)
       | Some (Resource.File fd) ->
