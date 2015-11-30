@@ -145,14 +145,17 @@ module New(Params : sig val root : string list end) = struct
     type t = {
       path: Path.t;
       handle: handle option;
+      m: Lwt_mutex.t;
     }
 
-    let of_path path = { path; handle = None }
-    let of_fd path fd = { path; handle = Some (File fd) }
+    let of_path path = { path; handle = None; m = Lwt_mutex.create () }
+    let of_fd path fd = { path; handle = Some (File fd); m = Lwt_mutex.create () }
     let of_dir path =
       Lwt_unix.opendir (Path.realpath path)
       >>= fun h ->
-      Lwt.return { path; handle = Some (Dir h) }
+      Lwt.return { path; handle = Some (Dir h); m = Lwt_mutex.create () }
+
+    let with_lock t f = Lwt_mutex.with_lock t.m f
 
     let is_open t = t.handle <> None
 
@@ -173,47 +176,47 @@ module New(Params : sig val root : string list end) = struct
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      let realpath = Path.realpath path in
-      qid_of_path realpath
-      >>*= fun qid ->
       let buffer = Lwt_bytes.create (Int32.to_int count) in
-      if List.mem Types.Qid.Directory qid.Types.Qid.flags then begin
-        Lwt_unix.opendir realpath
-        >>= fun h ->
-        Lwt_unix.readdir_n h 1024
-        >>= fun xs ->
-        Lwt_unix.closedir h
-        >>= fun () ->
-        let rec write off rest = function
-          | [] -> Lwt.return (Result.Ok off)
-          | x :: xs ->
-            Path.(stat info (append path x))
-            >>*= fun stat ->
-            let n = Types.Stat.sizeof stat in
-            if off < offset
-            then write Int64.(add off (of_int n)) rest xs
-            else if Cstruct.len rest < n then Lwt.return (Result.Ok off)
-            else
-              Lwt.return (Types.Stat.write stat rest)
-              >>*= fun rest ->
-              write Int64.(add off (of_int n)) rest xs in
-        let rest = Cstruct.of_bigarray buffer in
-        write 0L rest (Array.to_list xs)
-        >>*= fun offset' ->
-        let data = Cstruct.sub rest 0 Int64.(to_int (sub offset' offset)) in
-        Lwt.return (Result.Ok { Response.Read.data })
-      end >|= errors_to_client
-      else begin
-        Lwt_unix.openfile realpath [ Lwt_unix.O_RDONLY ] 0
-        >>= fun fd ->
-        Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
-        >>= fun _ ->
-        Lwt_bytes.read fd buffer 0 (Lwt_bytes.length buffer)
+      let resource = Types.Fid.Map.find fid !fids in
+      begin match resource.Resource.handle with
+      | None -> bad_fid
+      | Some (Resource.Dir h) ->
+        let t =
+          Resource.with_lock resource
+            (fun () ->
+              Lwt_unix.rewinddir h
+              >>= fun () ->
+              Lwt_unix.readdir_n h 1024
+            )
+          >>= fun xs ->
+          let rec write off rest = function
+            | [] -> Lwt.return (Result.Ok off)
+            | x :: xs ->
+              Path.(stat info (append path x))
+              >>*= fun stat ->
+              let n = Types.Stat.sizeof stat in
+              if off < offset
+              then write Int64.(add off (of_int n)) rest xs
+              else if Cstruct.len rest < n then Lwt.return (Result.Ok off)
+              else
+                Lwt.return (Types.Stat.write stat rest)
+                >>*= fun rest ->
+                write Int64.(add off (of_int n)) rest xs in
+          let rest = Cstruct.of_bigarray buffer in
+          write 0L rest (Array.to_list xs)
+          >>*= fun offset' ->
+          let data = Cstruct.sub rest 0 Int64.(to_int (sub offset' offset)) in
+          Lwt.return (Result.Ok { Response.Read.data }) in
+        t >>= fun x -> Lwt.return (errors_to_client x)
+      | Some (Resource.File fd) ->
+        Resource.with_lock resource
+          (fun () ->
+            Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
+            >>= fun _ ->
+            Lwt_bytes.read fd buffer 0 (Lwt_bytes.length buffer)
+          )
         >>= fun n ->
-        Lwt_unix.close fd
-        >>= fun () ->
         let data = Cstruct.(sub (of_bigarray buffer) 0 n) in
-
         Lwt.return (Result.Ok { Response.Read.data })
       end
 
@@ -367,18 +370,22 @@ module New(Params : sig val root : string list end) = struct
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      let realpath = Path.realpath path in
-      Lwt_unix.(openfile realpath [O_WRONLY] 0o600)
-      >>= fun fd ->
-      Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
-      >>= fun _cursor ->
-      let len = Cstruct.len data in
-      Lwt_unix.write fd (Bytes.of_string (Cstruct.to_string data)) 0 len
-      >>= fun written ->
-      Lwt_unix.close fd
-      >>= fun () ->
-      let count = Int32.of_int written in
-      Lwt.return (Result.Ok { Response.Write.count })
+      let resource = Types.Fid.Map.find fid !fids in
+      begin match resource.Resource.handle with
+      | None -> bad_fid
+      | Some (Dir _) -> bad_fid
+      | Some (File fd) ->
+        Resource.with_lock resource
+          (fun () ->
+            Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
+            >>= fun _cursor ->
+            let len = Cstruct.len data in
+            Lwt_unix.write fd (Bytes.of_string (Cstruct.to_string data)) 0 len
+          )
+        >>= fun written ->
+        let count = Int32.of_int written in
+        Lwt.return (Result.Ok { Response.Write.count })
+      end
 
   let set_mode path mode =
     (* TODO: handle more than just permissions *)
