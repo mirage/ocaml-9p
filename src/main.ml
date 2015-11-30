@@ -19,7 +19,7 @@ open Protocol_9p
 open Infix
 open Lwt
 
-let project_url = "http://github.com/djs55/ocaml-9p"
+let project_url = "http://github.com/mirage/ocaml-9p"
 let version = "0.0"
 
 module Log = Log9p_unix.Stdout
