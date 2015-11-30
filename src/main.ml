@@ -185,17 +185,32 @@ let serve_local_fs_cb path =
   fun info ~cancel request ->
     Lwt.catch
       (fun () -> Fs.receive_cb info ~cancel request)
-      (function
-       | Unix.Unix_error(err, _, _) ->
-         Lwt.return (Result.Ok (Response.Err {
-           Response.Err.ename = Unix.error_message err;
-           errno = None;
-         }))
-       | e ->
-         Lwt.return (Result.Ok (Response.Err {
-           Response.Err.ename = Printexc.to_string e;
-           errno = None;
-         })))
+      (fun exn ->
+         let is_unix = (info.Protocol_9p.Server.version = Types.Version.unix) in
+         match exn with
+         | Unix.Unix_error(err, _, _) ->
+           let host = match info.Protocol_9p.Server.aname with
+             | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
+             | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
+             | _ -> None
+           in
+           let errno = match host with
+             | None -> None
+             | Some host -> match Errno_unix.of_unix ~host err with
+               | [] -> None
+               | errno::_ -> match Errno.to_code ~host errno with
+                 | None -> None
+                 | Some i -> Some (Int32.of_int i)
+           in
+           Lwt.return (Result.Ok (Response.Err {
+             Response.Err.ename = Unix.error_message err;
+             errno;
+           }))
+         | e ->
+           Lwt.return (Result.Ok (Response.Err {
+             Response.Err.ename = Printexc.to_string e;
+             errno = None;
+           })))
 
 let serve debug address path =
   Log.print_debug := debug;

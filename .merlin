@@ -8,6 +8,7 @@ PKG stringext
 PKG bisect
 PKG alcotest
 PKG fmt
+PKG unix-errno.unix
 
 S lib
 S src

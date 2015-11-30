@@ -27,6 +27,7 @@ depends: [
   "result"
   "mirage-types-lwt"
   "lwt"
+  "unix-errno" {>= "0.3.0"}
   "cmdliner"
   "stringext"
   "fmt"
