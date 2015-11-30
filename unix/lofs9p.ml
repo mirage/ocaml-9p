@@ -220,8 +220,15 @@ module New(Params : sig val root : string list end) = struct
       Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
 
   let clunk info ~cancel { Request.Clunk.fid } =
-    fids := Types.Fid.Map.remove fid !fids;
-    Lwt.return (Result.Ok ())
+    if not (Types.Fid.Map.mem fid !fids)
+    then bad_fid
+    else begin
+      let resource = Types.Fid.Map.find fid !fids in
+      fids := Types.Fid.Map.remove fid !fids;
+      Resource.close resource
+      >>= fun () ->
+      Lwt.return (Result.Ok ())
+    end
 
   let walk info ~cancel { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
@@ -415,7 +422,10 @@ module New(Params : sig val root : string list end) = struct
     | exception Not_found -> bad_fid
     | path ->
       (* Always clunk the fid, even if remove fails *)
+      let resource = Types.Fid.Map.find fid !fids in
       fids := Types.Fid.Map.remove fid !fids;
+      Resource.close resource
+      >>= fun () ->
       let realpath = Path.realpath path in
       let rec loop () =
         Lwt.catch
