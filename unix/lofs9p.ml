@@ -136,12 +136,17 @@ module New(Params : sig val root : string list end) = struct
   end
 
   (* We need to remember the mapping of Fid to path *)
-  let fids : Path.t Types.Fid.Map.t ref = ref Types.Fid.Map.empty
+
+  type resource = {
+    path: Path.t
+  }
+
+  let fids : resource Types.Fid.Map.t ref = ref Types.Fid.Map.empty
 
   let path_of_fid info fid =
     if fid = info.Server.root
     then Path.root
-    else Types.Fid.Map.find fid !fids
+    else (Types.Fid.Map.find fid !fids).path
 
   let read info ~cancel { Request.Read.fid; offset; count } =
     match path_of_fid info fid with
@@ -208,7 +213,7 @@ module New(Params : sig val root : string list end) = struct
   let walk info ~cancel { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
-        fids := Types.Fid.Map.add newfid dir !fids;
+        fids := Types.Fid.Map.add newfid { path = dir } !fids;
         Lwt.return (Result.Ok {
           Response.Walk.wqids = List.rev qids;
         })
@@ -229,7 +234,7 @@ module New(Params : sig val root : string list end) = struct
 
   let attach info ~cancel { Request.Attach.fid } =
     (* bind the fid as another root *)
-    fids := Types.Fid.Map.add fid Path.root !fids;
+    fids := Types.Fid.Map.add fid { path = Path.root } !fids;
     let realpath = Path.realpath Path.root in
     qid_of_path realpath
     >>*= fun qid ->
@@ -277,7 +282,7 @@ module New(Params : sig val root : string list end) = struct
           >>= fun () ->
           qid_of_path realpath
           >>*= fun qid ->
-          fids := Types.Fid.Map.add fid (Path.append path name) !fids;
+          fids := Types.Fid.Map.add fid { path = Path.append path name } !fids;
           Lwt.return (Result.Ok {
             Response.Create.qid;
             iounit = 512l;
@@ -291,7 +296,7 @@ module New(Params : sig val root : string list end) = struct
           >>= fun () ->
           qid_of_path realpath
           >>*= fun qid ->
-          fids := Types.Fid.Map.add fid (Path.append path name) !fids;
+          fids := Types.Fid.Map.add fid { path = Path.append path name } !fids;
           Lwt.return (Result.Ok {
             Response.Create.qid;
             iounit = 512l;
@@ -307,7 +312,7 @@ module New(Params : sig val root : string list end) = struct
         >>= fun () ->
         qid_of_path realpath
         >>*= fun qid ->
-        fids := Types.Fid.Map.add fid (Path.append path name) !fids;
+        fids := Types.Fid.Map.add fid { path = Path.append path name } !fids;
         Lwt.return (Result.Ok {
           Response.Create.qid;
           iounit = 512l;
