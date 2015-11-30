@@ -148,6 +148,14 @@ module New(Params : sig val root : string list end) = struct
     }
 
     let of_path path = { path; handle = None }
+    let of_fd path fd = { path; handle = Some (File fd) }
+    let of_dir path =
+      Lwt_unix.opendir (Path.realpath path)
+      >>= fun h ->
+      Lwt.return { path; handle = Some (Dir h) }
+
+    let is_open t = t.handle <> None
+
     let close t = match t.handle with
       | None -> Lwt.return ()
       | Some (File f) -> Lwt_unix.close f
@@ -209,15 +217,43 @@ module New(Params : sig val root : string list end) = struct
         Lwt.return (Result.Ok { Response.Read.data })
       end
 
+  let flags_of_mode mode =
+    let open Types.OpenMode in
+    let flags = match mode.io with
+      | Read -> [ Lwt_unix.O_RDONLY ]
+      | Write -> [ Lwt_unix.O_WRONLY ]
+      | ReadWrite -> [ Lwt_unix.O_RDWR ]
+      | Exec -> []
+    in
+    (* TODO: support ORCLOSE? *)
+    if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
+
   let open_ info ~cancel { Request.Open.fid; mode } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
-      let realpath = Path.realpath path in
-      qid_of_path realpath
-      >>*= fun qid ->
-      (* Could do a permissions check here *)
-      Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
+      let resource = Types.Fid.Map.find fid !fids in
+      if Resource.is_open resource
+      then bad_fid
+      else begin
+        let realpath = Path.realpath path in
+        qid_of_path realpath
+        >>*= fun qid ->
+        ( if List.mem Types.Qid.Directory qid.Types.Qid.flags then begin
+            Resource.of_dir resource.Resource.path
+            >>= fun resource ->
+            fids := Types.Fid.Map.add fid resource !fids;
+            Lwt.return ()
+          end else begin
+            Lwt_unix.openfile realpath (flags_of_mode mode) 0
+            >>= fun fd ->
+            let resource = Resource.of_fd resource.Resource.path fd in
+            fids := Types.Fid.Map.add fid resource !fids;
+            Lwt.return ()
+          end )
+        >>= fun () ->
+        Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
+      end
 
   let clunk info ~cancel { Request.Clunk.fid } =
     if not (Types.Fid.Map.mem fid !fids)
@@ -270,17 +306,6 @@ module New(Params : sig val root : string list end) = struct
 
   let bad_create msg = Lwt.return (Response.error "can't create %s" msg)
 
-  let flags_of_mode mode =
-    let open Types.OpenMode in
-    let flags = match mode.io with
-      | Read -> [ Lwt_unix.O_RDONLY ]
-      | Write -> [ Lwt_unix.O_WRONLY ]
-      | ReadWrite -> [ Lwt_unix.O_RDWR ]
-      | Exec -> []
-    in
-    (* TODO: support ORCLOSE? *)
-    if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
-
   let create info ~cancel { Request.Create.fid; name; perm; mode; extension } =
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
@@ -302,7 +327,9 @@ module New(Params : sig val root : string list end) = struct
           >>= fun () ->
           qid_of_path realpath
           >>*= fun qid ->
-          fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !fids;
+          Resource.of_dir (Path.append path name)
+          >>= fun resource ->
+          fids := Types.Fid.Map.add fid resource !fids;
           Lwt.return (Result.Ok {
             Response.Create.qid;
             iounit = 512l;
@@ -328,11 +355,9 @@ module New(Params : sig val root : string list end) = struct
         let flags = flags_of_mode mode in
         Lwt_unix.(openfile realpath (O_CREAT :: O_EXCL :: flags) perms)
         >>= fun fd ->
-        Lwt_unix.close fd
-        >>= fun () ->
         qid_of_path realpath
         >>*= fun qid ->
-        fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !fids;
+        fids := Types.Fid.Map.add fid (Resource.of_fd (Path.append path name) fd) !fids;
         Lwt.return (Result.Ok {
           Response.Create.qid;
           iounit = 512l;

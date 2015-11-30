@@ -165,7 +165,7 @@ let create_remove_file () =
 
 let create_remove_dir () =
   with_client1 (fun _client1 ->
-    let filemode = Types.FileMode.make ~owner:[`Write] () in
+    let filemode = Types.FileMode.make ~owner:[`Read; `Write] () in
     Client1.mkdir _client1 [] "foo" filemode
     >>= function
     | Error (`Msg err) -> Alcotest.fail ("client1: mkdir [] foo: " ^ err)
@@ -179,7 +179,7 @@ let create_remove_dir () =
 
 let failed_remove_clunk_fid () =
   with_client1 (fun _client1 ->
-    let filemode = Types.FileMode.make ~owner:[`Write; `Execute] () in
+    let filemode = Types.FileMode.make ~owner:[`Read; `Write; `Execute] () in
     Client1.mkdir _client1 [] "foo" filemode
     >>= function
     | Error (`Msg err) -> Alcotest.fail ("client1: mkdir [] foo: " ^ err)
