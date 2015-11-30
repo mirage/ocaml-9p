@@ -94,10 +94,10 @@ let remove debug address path username =
         return (Result.Ok ())
       ) in
   try
-    begin match Lwt_main.run t with
-    | Ok () -> `Ok ()
-    | Error (`Msg m) -> `Error(false, m)
-    end
+    Result.(match Lwt_main.run t with
+      | Ok () -> `Ok ()
+      | Error (`Msg m) -> `Error(false, m)
+    )
   with Failure e ->
     `Error(false, e)
   | e ->
@@ -143,7 +143,7 @@ let ls debug address path username =
            let year = string_of_int (1900 + tm.Unix.tm_year) in
            let name =
             let name = x.Types.Stat.name in
-            if filemode.is_symlink
+            if filemode.Types.FileMode.is_symlink
             then match x.Types.Stat.u with
               | Some { Types.Stat.extension = e } ->
                 name ^ " -> " ^ e
