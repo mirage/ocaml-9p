@@ -454,11 +454,9 @@ module New(Params : sig val root : string list end) = struct
     | exception Not_found -> bad_fid
     | path ->
       (* Always clunk the fid, even if remove fails *)
-      let resource = Types.Fid.Map.find fid !fids in
-      fids := Types.Fid.Map.remove fid !fids;
-      Resource.close resource
-      >>= fun () ->
       let realpath = Path.realpath path in
+      clunk info ~cancel { Request.Clunk.fid }
+      >>*= fun () ->
       let rec loop () =
         Lwt.catch
           (fun () ->
