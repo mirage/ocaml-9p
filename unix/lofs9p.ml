@@ -160,7 +160,7 @@ module New(Params : sig val root : string list end) = struct
     let is_open t = t.handle <> None
 
     let close t = match t.handle with
-      | None -> Lwt.return ()
+      | None -> return_unit
       | Some (File f) -> Lwt_unix.close f
       | Some (Dir d) -> Lwt_unix.closedir d
   end
@@ -246,13 +246,13 @@ module New(Params : sig val root : string list end) = struct
             Resource.of_dir resource.Resource.path
             >>= fun resource ->
             fids := Types.Fid.Map.add fid resource !fids;
-            Lwt.return ()
+            return_unit
           end else begin
             Lwt_unix.openfile realpath (flags_of_mode mode) 0
             >>= fun fd ->
             let resource = Resource.of_fd resource.Resource.path fd in
             fids := Types.Fid.Map.add fid resource !fids;
-            Lwt.return ()
+            return_unit
           end )
         >>= fun () ->
         Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
@@ -400,7 +400,7 @@ module New(Params : sig val root : string list end) = struct
     let atime = if Types.Int32.is_any atime then 0.0 else Int32.to_float atime in
     let mtime = if Types.Int32.is_any mtime then 0.0 else Int32.to_float mtime in
     Unix.utimes path atime mtime;
-    Lwt.return ()
+    return_unit
 
   let set_length path length =
     Lwt_unix.LargeFile.truncate path length
@@ -432,19 +432,19 @@ module New(Params : sig val root : string list end) = struct
         (* TODO: check permissions *)
         (if not (Types.FileMode.is_any mode)
          then set_mode realpath mode
-         else Lwt.return ()
+         else return_unit
         ) >>= fun () ->
         (if not (Types.Int32.is_any atime && Types.Int32.is_any mtime)
          then set_times realpath atime mtime
-         else Lwt.return ()
+         else return_unit
         ) >>= fun () ->
         (if not (Types.Int64.is_any length)
          then set_length realpath length
-         else Lwt.return ()
+         else return_unit
         ) >>= fun () ->
         (if name <> ""
          then rename_local realpath name
-         else Lwt.return ()
+         else return_unit
         ) >>= fun () ->
         Lwt.return (Result.Ok ())
       end
