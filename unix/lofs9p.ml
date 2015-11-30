@@ -462,7 +462,7 @@ module New(Params : sig val root : string list end) = struct
       let rec loop () =
         Lwt.catch
           (fun () ->
-            Lwt_unix.LargeFile.stat realpath
+            Lwt_unix.LargeFile.lstat realpath
             >>= fun stats ->
             ( if stats.Lwt_unix.LargeFile.st_kind = Lwt_unix.S_DIR
               then Lwt_unix.rmdir else Lwt_unix.unlink ) realpath
