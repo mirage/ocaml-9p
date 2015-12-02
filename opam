@@ -28,6 +28,8 @@ depends: [
   "mirage-types-lwt"
   "lwt"
   "unix-errno" {>= "0.3.0"}
+  "ctypes"
+  "base-unix"
   "cmdliner"
   "stringext"
   "fmt"
