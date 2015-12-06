@@ -20,6 +20,7 @@
 type info = {
   root: Types.Fid.t;        (** The initial fid provided by the client *)
   version: Types.Version.t; (** The protocol version we negotiated *)
+  aname: string;            (** The aname tree attached to *)
 }
 (** Information about the active connection, passed to the receive callback. *)
 

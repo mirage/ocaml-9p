@@ -22,6 +22,7 @@ open Infix
 type info = {
   root: Types.Fid.t;
   version: Types.Version.t;
+  aname: string;
 }
 
 type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
@@ -227,7 +228,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       LowLevel.expect_attach ~write_lock reader writer
       >>*= fun (tag, a) ->
       let root = a.Request.Attach.fid in
-      let info = { root; version } in
+      let aname = a.Request.Attach.aname in
+      let info = { root; version; aname } in
       let root_qid = Types.Qid.dir ~version:0l ~id:0L () in
       let cancel_buttons = Types.Tag.Map.empty in
       write_one_packet ~write_lock flow {

@@ -15,6 +15,10 @@
  *
  *)
 
+(* This is an implementation of a POSIX loopback filesystem on top of
+   a POSIX syscall interface which is expected to be consumed by a
+   POSIX client. *)
+
 open Protocol_9p
 open Infix
 open Lwt
@@ -373,8 +377,8 @@ module New(Params : sig val root : string list end) = struct
       let resource = Types.Fid.Map.find fid !fids in
       begin match resource.Resource.handle with
       | None -> bad_fid
-      | Some (Dir _) -> bad_fid
-      | Some (File fd) ->
+      | Some (Resource.Dir _) -> bad_fid
+      | Some (Resource.File fd) ->
         Resource.with_lock resource
           (fun () ->
             Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
