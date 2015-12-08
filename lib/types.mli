@@ -99,6 +99,7 @@ module OpenMode : sig
     io: io;
     truncate: bool;  (** truncate file before opening *)
     rclose: bool;    (** remove file when closing *)
+    append: bool;    (** meaningless flag *)
   } with sexp
   (** A 'mode' passed as an argument to "Open" and "Create" *)
 

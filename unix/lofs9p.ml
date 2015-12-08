@@ -250,6 +250,12 @@ module New(Params : sig val root : string list end) = struct
           end else begin
             Lwt_unix.openfile realpath (flags_of_mode mode) 0
             >>= fun fd ->
+            (* What is the point of seeking to the end of the file when
+               read and write have offset arguments? *)
+            ( if mode.Types.OpenMode.append
+              then Lwt_unix.LargeFile.lseek fd 0L Lwt_unix.SEEK_END
+              else Lwt.return 0L
+            ) >>= fun _ ->
             let resource = Resource.of_fd resource.Resource.path fd in
             fids := Types.Fid.Map.add fid resource !fids;
             return_unit

@@ -151,9 +151,10 @@ module OpenMode = struct
     io: io;
     truncate: bool;
     rclose: bool;
+    append: bool;
   } with sexp
 
-  let to_int { io; truncate; rclose } =
+  let to_int { io; truncate; rclose; append } =
     let byte = match io with
       | Read -> 0
       | Write -> 1
@@ -161,14 +162,15 @@ module OpenMode = struct
       | Exec -> 3
     in
     let byte = if truncate then byte lor 0x10 else byte in
-    if rclose then byte lor 0x40 else byte
+    let byte = if rclose then byte lor 0x40 else byte in
+    if append then byte lor 0x80 else byte
 
-  let all = to_int { io = Exec; truncate = true; rclose = true; }
+  let all = to_int { io = Exec; truncate = true; rclose = true; append = true}
 
-  let read_only  = { io = Read; truncate = false; rclose = false; }
-  let write_only = { io = Write; truncate = false; rclose = false; }
-  let read_write = { io = ReadWrite; truncate = false; rclose = false; }
-  let exec       = { io = Exec; truncate = false; rclose = false; }
+  let read_only  = { io = Read; truncate = false; rclose = false; append = false}
+  let write_only = { io = Write; truncate = false; rclose = false; append = false}
+  let read_write = { io = ReadWrite; truncate = false; rclose = false; append = false}
+  let exec       = { io = Exec; truncate = false; rclose = false; append = false}
 
   let of_int x =
     let io = match x land 3 with
@@ -180,10 +182,11 @@ module OpenMode = struct
     in
     let truncate = x land 0x10 <> 0 in
     let rclose   = x land 0x40 <> 0 in
+    let append   = x land 0x80 <> 0 in
     let extra = x land (lnot all) in
     if extra <> 0
     then error_msg "Unknown mode bits: %d" extra
-    else Result.Ok { io; truncate; rclose }
+    else Result.Ok { io; truncate; rclose; append }
 
   let sizeof _ = 1
 
