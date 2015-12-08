@@ -354,6 +354,31 @@ module New(Params : sig val root : string list end) = struct
         | None ->
           Lwt.return (Response.error "creating symlinks requires 9p2000.u extension")
       )
+      else if perm.Types.FileMode.is_hardlink
+      then (
+        match extension with
+        | Some fid_string ->
+          (* Linux puts a newline on the end of the string for some reason *)
+          let lookup_fid x =
+            match Types.Fid.of_int32 @@ Int32.of_string @@ String.trim fid_string with
+            | Ok fid -> path_of_fid info fid
+            | _ -> raise Not_found in
+          begin match lookup_fid fid_string with
+          | exception Not_found -> bad_fid
+          | target ->
+            Lwt_unix.link (Path.realpath target) realpath
+            >>= fun () ->
+            qid_of_path realpath
+            >>*= fun qid ->
+            fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !fids;
+            Lwt.return (Result.Ok {
+              Response.Create.qid;
+              iounit = 512l;
+            })
+          end
+        | None ->
+          Lwt.return (Response.error "creating hardlinks requires 9p2000.u extension")
+        )
       else
         let flags = flags_of_mode mode in
         Lwt_unix.(openfile realpath (O_CREAT :: O_EXCL :: flags) perms)

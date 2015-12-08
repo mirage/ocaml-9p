@@ -212,6 +212,7 @@ module FileMode = struct
     temporary: bool;
     is_device: bool;
     is_symlink: bool;
+    is_hardlink: bool;
     is_namedpipe: bool;
     is_socket: bool;
     is_setuid: bool;
@@ -221,10 +222,10 @@ module FileMode = struct
 
   let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
     ?(append_only=false) ?(exclusive=false) ?(is_mount=false) ?(is_auth=false) ?(temporary=false)
-    ?(is_device=false) ?(is_symlink=false) ?(is_namedpipe=false) ?(is_socket=false)
+    ?(is_device=false) ?(is_symlink=false) ?(is_hardlink=false) ?(is_namedpipe=false) ?(is_socket=false)
     ?(is_setuid=false) ?(is_setgid=false) () = {
     owner; group; other; is_directory; append_only; exclusive; is_mount;
-    is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+    is_auth; temporary; is_device; is_symlink; is_hardlink; is_namedpipe; is_socket;
     is_setuid; is_setgid; is_any = false;
   }
 
@@ -232,7 +233,7 @@ module FileMode = struct
     owner = []; group = []; other = [];
     is_directory = false; append_only = false; exclusive = false;
     is_mount = false; is_auth = false; temporary = false; is_device = false;
-    is_symlink = false; is_namedpipe = false; is_socket = false;
+    is_symlink = false; is_hardlink = false; is_namedpipe = false; is_socket = false;
     is_setuid = false; is_setgid = false; is_any = true;
   }
 
@@ -276,6 +277,7 @@ module FileMode = struct
       let is_auth      = is_set x 27 in
       let temporary    = is_set x 26 in
       let is_symlink   = is_set x 25 in
+      let is_hardlink  = is_set x 24 in
       let is_device    = is_set x 23 in
       let is_namedpipe = is_set x 21 in
       let is_socket    = is_set x 20 in
@@ -286,7 +288,7 @@ module FileMode = struct
       let other = permissions_of_nibble (Int32.shift_right x 0) in
       let t = {
         owner; group; other; is_directory; append_only; exclusive; is_mount;
-        is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+        is_auth; temporary; is_device; is_symlink; is_hardlink; is_namedpipe; is_socket;
         is_setuid; is_setgid; is_any = false } in
       return (t, rest)
 
@@ -302,6 +304,7 @@ module FileMode = struct
         if t.is_auth      then bit 27 else 0l;
         if t.temporary    then bit 26 else 0l;
         if t.is_symlink   then bit 25 else 0l;
+        if t.is_hardlink  then bit 24 else 0l;
         if t.is_device    then bit 23 else 0l;
         if t.is_namedpipe then bit 21 else 0l;
         if t.is_socket    then bit 20 else 0l;
