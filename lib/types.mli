@@ -99,6 +99,7 @@ module OpenMode : sig
     io: io;
     truncate: bool;  (** truncate file before opening *)
     rclose: bool;    (** remove file when closing *)
+    append: bool;    (** meaningless flag *)
   } with sexp
   (** A 'mode' passed as an argument to "Open" and "Create" *)
 
@@ -129,6 +130,7 @@ module FileMode : sig
     temporary: bool;        (** true if the file is temporary and should be skipped from nightly backups *)
     is_device: bool;        (** 9P2000.u: true if file is a char/block device *)
     is_symlink: bool;       (** 9P2000.u: true if file is a symlink *)
+    is_hardlink: bool;      (** 9P2000.u?: true if file should be a hardlink *)
     is_namedpipe: bool;     (** 9P2000.u: true if file is a nomed pipe *)
     is_socket: bool;        (** 9P2000.u: true if file is a socket *)
     is_setuid: bool;        (** 9P2000.u: true if file is setuid *)
@@ -139,7 +141,7 @@ module FileMode : sig
 
   val make: ?owner:permission list -> ?group:permission list -> ?other:permission list ->
     ?is_directory:bool -> ?append_only:bool -> ?exclusive:bool -> ?is_mount:bool -> ?is_auth:bool -> ?temporary:bool ->
-    ?is_device:bool -> ?is_symlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
+    ?is_device:bool -> ?is_symlink:bool -> ?is_hardlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
     ?is_setgid:bool -> unit -> t
 
   val is_any: t -> bool

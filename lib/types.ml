@@ -151,9 +151,10 @@ module OpenMode = struct
     io: io;
     truncate: bool;
     rclose: bool;
+    append: bool;
   } with sexp
 
-  let to_int { io; truncate; rclose } =
+  let to_int { io; truncate; rclose; append } =
     let byte = match io with
       | Read -> 0
       | Write -> 1
@@ -161,14 +162,15 @@ module OpenMode = struct
       | Exec -> 3
     in
     let byte = if truncate then byte lor 0x10 else byte in
-    if rclose then byte lor 0x40 else byte
+    let byte = if rclose then byte lor 0x40 else byte in
+    if append then byte lor 0x80 else byte
 
-  let all = to_int { io = Exec; truncate = true; rclose = true; }
+  let all = to_int { io = Exec; truncate = true; rclose = true; append = true}
 
-  let read_only  = { io = Read; truncate = false; rclose = false; }
-  let write_only = { io = Write; truncate = false; rclose = false; }
-  let read_write = { io = ReadWrite; truncate = false; rclose = false; }
-  let exec       = { io = Exec; truncate = false; rclose = false; }
+  let read_only  = { io = Read; truncate = false; rclose = false; append = false}
+  let write_only = { io = Write; truncate = false; rclose = false; append = false}
+  let read_write = { io = ReadWrite; truncate = false; rclose = false; append = false}
+  let exec       = { io = Exec; truncate = false; rclose = false; append = false}
 
   let of_int x =
     let io = match x land 3 with
@@ -180,10 +182,11 @@ module OpenMode = struct
     in
     let truncate = x land 0x10 <> 0 in
     let rclose   = x land 0x40 <> 0 in
+    let append   = x land 0x80 <> 0 in
     let extra = x land (lnot all) in
     if extra <> 0
     then error_msg "Unknown mode bits: %d" extra
-    else Result.Ok { io; truncate; rclose }
+    else Result.Ok { io; truncate; rclose; append }
 
   let sizeof _ = 1
 
@@ -212,6 +215,7 @@ module FileMode = struct
     temporary: bool;
     is_device: bool;
     is_symlink: bool;
+    is_hardlink: bool;
     is_namedpipe: bool;
     is_socket: bool;
     is_setuid: bool;
@@ -221,10 +225,10 @@ module FileMode = struct
 
   let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
     ?(append_only=false) ?(exclusive=false) ?(is_mount=false) ?(is_auth=false) ?(temporary=false)
-    ?(is_device=false) ?(is_symlink=false) ?(is_namedpipe=false) ?(is_socket=false)
+    ?(is_device=false) ?(is_symlink=false) ?(is_hardlink=false) ?(is_namedpipe=false) ?(is_socket=false)
     ?(is_setuid=false) ?(is_setgid=false) () = {
     owner; group; other; is_directory; append_only; exclusive; is_mount;
-    is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+    is_auth; temporary; is_device; is_symlink; is_hardlink; is_namedpipe; is_socket;
     is_setuid; is_setgid; is_any = false;
   }
 
@@ -232,7 +236,7 @@ module FileMode = struct
     owner = []; group = []; other = [];
     is_directory = false; append_only = false; exclusive = false;
     is_mount = false; is_auth = false; temporary = false; is_device = false;
-    is_symlink = false; is_namedpipe = false; is_socket = false;
+    is_symlink = false; is_hardlink = false; is_namedpipe = false; is_socket = false;
     is_setuid = false; is_setgid = false; is_any = true;
   }
 
@@ -276,6 +280,7 @@ module FileMode = struct
       let is_auth      = is_set x 27 in
       let temporary    = is_set x 26 in
       let is_symlink   = is_set x 25 in
+      let is_hardlink  = is_set x 24 in
       let is_device    = is_set x 23 in
       let is_namedpipe = is_set x 21 in
       let is_socket    = is_set x 20 in
@@ -286,7 +291,7 @@ module FileMode = struct
       let other = permissions_of_nibble (Int32.shift_right x 0) in
       let t = {
         owner; group; other; is_directory; append_only; exclusive; is_mount;
-        is_auth; temporary; is_device; is_symlink; is_namedpipe; is_socket;
+        is_auth; temporary; is_device; is_symlink; is_hardlink; is_namedpipe; is_socket;
         is_setuid; is_setgid; is_any = false } in
       return (t, rest)
 
@@ -302,6 +307,7 @@ module FileMode = struct
         if t.is_auth      then bit 27 else 0l;
         if t.temporary    then bit 26 else 0l;
         if t.is_symlink   then bit 25 else 0l;
+        if t.is_hardlink  then bit 24 else 0l;
         if t.is_device    then bit 23 else 0l;
         if t.is_namedpipe then bit 21 else 0l;
         if t.is_socket    then bit 20 else 0l;
