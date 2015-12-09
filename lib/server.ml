@@ -230,12 +230,14 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       let root = a.Request.Attach.fid in
       let aname = a.Request.Attach.aname in
       let info = { root; version; aname } in
+      let cancel, _ = Lwt.task () in
+      receive_cb info ~cancel (Request.Attach a)
+      >>*= fun payload ->
+      write_one_packet ~write_lock flow {
+        Response.tag; payload
+      } >>*= fun () ->
       let root_qid = Types.Qid.dir ~version:0l ~id:0L () in
       let cancel_buttons = Types.Tag.Map.empty in
-      write_one_packet ~write_lock flow {
-        Response.tag;
-        payload = Response.Attach Response.Attach.({qid = root_qid })
-      } >>*= fun () ->
       let please_shutdown = false in
       let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
       let t = { reader; writer; info; root_qid; cancel_buttons; please_shutdown; shutdown_complete_t; write_lock } in
