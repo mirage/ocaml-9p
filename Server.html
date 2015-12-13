@@ -18,7 +18,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Server</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Server</title>
 </head>
 <body>
 <div class="navbar"><a class="pre" href="Client.html" title="Client">Previous</a>
@@ -31,5 +34,40 @@
 Given a transport (a Mirage FLOW), construct a 9P server on top.<br>
 </div>
 <hr width="100%">
+
+<pre><code><span id="TYPEinfo"><span class="keyword">type</span> <code class="type"></code>info</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinfo.root">root</span>&nbsp;: <code class="type"><a href="Types.Fid.html#TYPEt">Types.Fid.t</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The initial fid provided by the client<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinfo.version">version</span>&nbsp;: <code class="type"><a href="Types.Version.html#TYPEt">Types.Version.t</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The protocol version we negotiated<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info ">
+Information about the active connection, passed to the receive callback.<br>
+</div>
+
+
+<pre><span id="TYPEreceive_cb"><span class="keyword">type</span> <code class="type"></code>receive_cb</span> = <code class="type"><a href="Server.html#TYPEinfo">info</a> -><br>       cancel:unit Lwt.t -> <a href="Request.html#TYPEpayload">Request.payload</a> -> <a href="Response.html#TYPEpayload">Response.payload</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code> </pre>
+<div class="info ">
+Every time a request is received, this is the type of the callback which
+    is called.<br>
+</div>
+
 
 <pre><span class="keyword">module</span> <a href="Server.Make.html">Make</a>: <div class="sig_block"><code class="code">functor (</code><code class="code">Log</code><code class="code"> : </code><code class="type"><a href="S.LOG.html">S.LOG</a></code><code class="code">) -&gt; </code><div class="sig_block"><code class="code">functor (</code><code class="code">FLOW</code><code class="code"> : </code><code class="type">V1_LWT.FLOW</code><code class="code">) -&gt; </code><code class="code">sig</code> <a href="Server.Make.html">..</a> <code class="code">end</code></div></div></pre></body></html>

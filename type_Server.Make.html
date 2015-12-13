@@ -13,22 +13,20 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Server.Make</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Server.Make</title>
 </head>
 <body>
-<code class="code"><span class="keyword">functor</span>&nbsp;(<span class="constructor">Log</span>&nbsp;:&nbsp;<span class="constructor">S</span>.<span class="constructor">LOG</span>)&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;<span class="keyword">functor</span>&nbsp;(<span class="constructor">FLOW</span>&nbsp;:&nbsp;<span class="constructor">V1_LWT</span>.<span class="constructor">FLOW</span>)&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">sig</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;info&nbsp;=&nbsp;{&nbsp;root&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">Fid</span>.t;&nbsp;version&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">Version</span>.t;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;receive_cb&nbsp;=<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.info&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Request</span>.payload&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Response</span>.payload&nbsp;<span class="constructor">Error</span>.t&nbsp;<span class="constructor">Lwt</span>.t<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;connect&nbsp;:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">FLOW</span>.flow&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?msize:int32&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receive_cb:<span class="constructor">Server</span>.<span class="constructor">Make</span>.receive_cb&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="constructor">Error</span>.t&nbsp;<span class="constructor">Lwt</span>.t<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_info&nbsp;:&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.info<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;disconnect&nbsp;:&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="constructor">Lwt</span>.t<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">end</span></code></body></html>
+<code class="code"><span class="keyword">functor</span>&nbsp;(<span class="constructor">Log</span>&nbsp;:&nbsp;<span class="constructor">S</span>.<span class="constructor">LOG</span>)&nbsp;(<span class="constructor">FLOW</span>&nbsp;:&nbsp;<span class="constructor">V1_LWT</span>.<span class="constructor">FLOW</span>)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;<span class="keyword">sig</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;connect&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">FLOW</span>.flow&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?msize:int32&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receive_cb:<span class="constructor">Server</span>.receive_cb&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="constructor">Error</span>.t&nbsp;<span class="constructor">Lwt</span>.t<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_info&nbsp;:&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Server</span>.info<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;disconnect&nbsp;:&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="constructor">Lwt</span>.t<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;after_disconnect&nbsp;:&nbsp;<span class="constructor">Server</span>.<span class="constructor">Make</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit&nbsp;<span class="constructor">Lwt</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">end</span></code></body></html>

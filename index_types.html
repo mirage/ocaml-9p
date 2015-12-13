@@ -14,7 +14,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Index of types</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Index of types</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
@@ -30,11 +33,19 @@
 <tr><td><a href="Types.Qid.html#TYPEflag">flag</a> [<a href="Types.Qid.html">Types.Qid</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>I</td></tr>
-<tr><td><a href="Server.Make.html#TYPEinfo">info</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<tr><td><a href="Server.html#TYPEinfo">info</a> [<a href="Server.html">Server</a>]</td>
 <td><div class="info">
 Information about the active connection, passed to the receive callback.
 </div>
 </td></tr>
+<tr><td><a href="Types.OpenMode.html#TYPEio">io</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
+<td><div class="info">
+The io types allowed in an open 'mode'
+</div>
+</td></tr>
+<tr><td align="left"><br>O</td></tr>
+<tr><td><a href="Filesystem.html#TYPEor_error">or_error</a> [<a href="Filesystem.html">Filesystem</a>]</td>
+<td></td></tr>
 <tr><td align="left"><br>P</td></tr>
 <tr><td><a href="Response.html#TYPEpayload">payload</a> [<a href="Response.html">Response</a>]</td>
 <td></td></tr>
@@ -43,10 +54,10 @@ Information about the active connection, passed to the receive callback.
 <tr><td><a href="Types.FileMode.html#TYPEpermission">permission</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>R</td></tr>
-<tr><td><a href="Server.Make.html#TYPEreceive_cb">receive_cb</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<tr><td><a href="Server.html#TYPEreceive_cb">receive_cb</a> [<a href="Server.html">Server</a>]</td>
 <td><div class="info">
 Every time a request is received, this is the type of the callback which
-      is called.
+    is called.
 </div>
 </td></tr>
 <tr><td align="left"><br>T</td></tr>
@@ -57,10 +68,10 @@ A buffered 9P message reader over a FLOW
 </td></tr>
 <tr><td><a href="Server.Make.html#TYPEt">t</a> [<a href="Server.Make.html">Server.Make</a>]</td>
 <td><div class="info">
-An established connection to a 9P server
+An established connection to a 9P client
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.html#TYPEt">t</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<tr><td><a href="Client.S.html#TYPEt">t</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td><div class="info">
 An established connection to a 9P server
 </div>

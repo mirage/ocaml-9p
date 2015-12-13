@@ -15,7 +15,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title></title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title></title>
 </head>
 <body>
 <h1></h1>
@@ -48,7 +51,7 @@ Parsers and printers for types used in 9P messages
 </div>
 </td></tr>
 <tr><td class="module"><a href="Client.html">Client</a></td><td><div class="info">
-Given a transport (a Mirage FLOW), construct a 9P client on top.
+An established connection to a 9P server
 </div>
 </td></tr>
 <tr><td class="module"><a href="Server.html">Server</a></td><td><div class="info">
@@ -59,6 +62,15 @@ Given a transport (a Mirage FLOW), construct a 9P server on top.
 A buffered 9P message reader over a FLOW
 </div>
 </td></tr>
+<tr><td class="module"><a href="Handler.html">Handler</a></td><td><div class="info">
+Given a traditional file system, construct a handler for 9p messages.
+</div>
+</td></tr>
+<tr><td class="module"><a href="Filesystem.html">Filesystem</a></td><td><div class="info">
+A traditional protocol message handler.
+</div>
+</td></tr>
+<tr><td class="module"><a href="Infix.html">Infix</a></td><td></td></tr>
 </table>
 </body>
 </html>

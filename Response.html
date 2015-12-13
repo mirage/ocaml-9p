@@ -18,7 +18,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Response</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Response</title>
 </head>
 <body>
 <div class="navbar"><a class="pre" href="Error.html" title="Error">Previous</a>
@@ -143,7 +146,10 @@ Parsers and printers for 9P response messages<br>
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTpayload.Wstat"><span class="constructor">Wstat</span></span> <span class="keyword">of</span> <code class="type"><a href="Response.Wstat.html#TYPEt">Wstat.t</a></code></code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >A variant including all possible 9P response payloads</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+A variant including all possible 9P response payloads<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
 
 
@@ -154,7 +160,10 @@ Parsers and printers for 9P response messages<br>
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTt.tag">tag</span>&nbsp;: <code class="type"><a href="Types.Tag.html#TYPEt">Types.Tag.t</a></code>;</code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The tag used to match this response with the original request</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The tag used to match this response with the original request<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
 <tr>
 <td align="left" valign="top" >
@@ -172,7 +181,15 @@ A 9P protocol response<br>
 
 <pre><span class="keyword">include</span> <a href="S.SERIALISABLE.html">S.SERIALISABLE</a></pre>
 
-<pre><span id="VALto_string"><span class="keyword">val</span> to_string</span> : <code class="type"><a href="Response.html#TYPEt">t</a> -> string</code></pre>
+<pre><span id="VALpp"><span class="keyword">val</span> pp</span> : <code class="type"><a href="Response.html#TYPEt">t</a> Fmt.t</code></pre><div class="info ">
+<code class="code">pp</code> pretty-prints responses.<br>
+</div>
+
+<pre><span id="VALequal"><span class="keyword">val</span> equal</span> : <code class="type"><a href="Response.html#TYPEt">t</a> -> <a href="Response.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
+<code class="code">equal</code> is the equality function over responses.<br>
+</div>
+
+<pre><span id="VALerror"><span class="keyword">val</span> error</span> : <code class="type">?errno:int32 -><br>       ('a, unit, string, ('b, <a href="Response.Err.html#TYPEt">Err.t</a>) Result.result) Pervasives.format4 -><br>       'a</code></pre>
 <pre><span id="VALpayload_of_sexp"><span class="keyword">val</span> payload_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Response.html#TYPEpayload">payload</a></code></pre>
 <pre><span id="VALsexp_of_payload"><span class="keyword">val</span> sexp_of_payload</span> : <code class="type"><a href="Response.html#TYPEpayload">payload</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
 A variant including all possible 9P response payloads<br>
@@ -182,4 +199,8 @@ A variant including all possible 9P response payloads<br>
 <pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Response.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
 A 9P protocol response<br>
 </div>
+<br>
+<code class="code">pp</code> pretty-prints responses.<br>
+<br>
+<code class="code">equal</code> is the equality function over responses.<br>
 </body></html>

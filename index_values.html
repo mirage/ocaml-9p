@@ -14,7 +14,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Index of values</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Index of values</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
@@ -22,9 +25,20 @@
 <h1>Index of values</h1>
 <table>
 <tr><td align="left"><br></td></tr>
+<tr><td><a href="Infix.html#VAL(>>*=)">(&gt;&gt;*=)</a> [<a href="Infix.html">Infix</a>]</td>
+<td></td></tr>
 <tr><td><a href="Error.html#VAL(>>=)">(&gt;&gt;=)</a> [<a href="Error.html">Error</a>]</td>
 <td></td></tr>
 <tr><td><a href="Types.FileMode.html#VAL__permission_of_sexp__">__permission_of_sexp__</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
+<td></td></tr>
+<tr><td align="left"><br>A</td></tr>
+<tr><td><a href="Server.Make.html#VALafter_disconnect">after_disconnect</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<td><div class="info">
+<code class="code">after_disconnect connection</code> resolves after <code class="code">connection</code> has
+      disconnected.
+</div>
+</td></tr>
+<tr><td><a href="Filesystem.S.html#VALattach">attach</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>B</td></tr>
 <tr><td><a href="Types.html#VALbig_enough_for">big_enough_for</a> [<a href="Types.html">Types</a>]</td>
@@ -34,7 +48,9 @@
 </div>
 </td></tr>
 <tr><td align="left"><br>C</td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALclunk">clunk</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Filesystem.S.html#VALclunk">clunk</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALclunk">clunk</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">clunk t fid</code> informs the server that the reference <code class="code">fid</code> should be
         forgotten about.
@@ -50,9 +66,18 @@ Establish a fresh connection to a 9P client.
 Establish a fresh connection to a 9P server.
 </div>
 </td></tr>
+<tr><td><a href="Filesystem.S.html#VALcreate">create</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
 <tr><td><a href="Buffered9PReader.Make.html#VALcreate">create</a> [<a href="Buffered9PReader.Make.html">Buffered9PReader.Make</a>]</td>
 <td><div class="info">
 Construct a buffered 9P message reader over a FLOW
+</div>
+</td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALcreate">create</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
+<td><div class="info">
+<code class="code">create t fid name perm mode</code> creates a new file or directory called
+        <code class="code">name</code> and with permissions <code class="code">perm</code> inside the directory <code class="code">fid</code> and opens it
+        according to <code class="code">mode</code> (which is not checked against <code class="code">perm</code>).
 </div>
 </td></tr>
 <tr><td align="left"><br>D</td></tr>
@@ -66,16 +91,36 @@ Construct a <code class="code">t</code> representing a directory
 </div>
 </td></tr>
 <tr><td><a href="Server.Make.html#VALdisconnect">disconnect</a> [<a href="Server.Make.html">Server.Make</a>]</td>
-<td></td></tr>
-<tr><td><a href="Client.Make.html#VALdisconnect">disconnect</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<td><div class="info">
+<code class="code">disconnect connection</code> causes the connection <code class="code">connection</code> to
+      close after the next message is processed.
+</div>
+</td></tr>
+<tr><td><a href="Client.S.html#VALdisconnect">disconnect</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td><div class="info">
 Disconnect from the 9P server, but leave the underlying FLOW connected.
 </div>
 </td></tr>
 <tr><td align="left"><br>E</td></tr>
+<tr><td><a href="Types.Tag.html#VALequal">equal</a> [<a href="Types.Tag.html">Types.Tag</a>]</td>
+<td><div class="info">
+<code class="code">equal</code> is the equality function over tags.
+</div>
+</td></tr>
+<tr><td><a href="Response.html#VALequal">equal</a> [<a href="Response.html">Response</a>]</td>
+<td><div class="info">
+<code class="code">equal</code> is the equality function over responses.
+</div>
+</td></tr>
+<tr><td><a href="Request.html#VALequal">equal</a> [<a href="Request.html">Request</a>]</td>
+<td></td></tr>
+<tr><td><a href="Response.html#VALerror">error</a> [<a href="Response.html">Response</a>]</td>
+<td></td></tr>
 <tr><td><a href="S.LOG.html#VALerror">error</a> [<a href="S.LOG.html">S.LOG</a>]</td>
 <td></td></tr>
 <tr><td><a href="Error.html#VALerror_msg">error_msg</a> [<a href="Error.html">Error</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.OpenMode.html#VALexec">exec</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
 <td></td></tr>
 <tr><td><a href="Types.Stat.html#VALextension_of_sexp">extension_of_sexp</a> [<a href="Types.Stat.html">Types.Stat</a>]</td>
 <td></td></tr>
@@ -96,6 +141,18 @@ Return information about the current connection
 <tr><td align="left"><br>I</td></tr>
 <tr><td><a href="S.LOG.html#VALinfo">info</a> [<a href="S.LOG.html">S.LOG</a>]</td>
 <td></td></tr>
+<tr><td><a href="Types.OpenMode.html#VALio_of_sexp">io_of_sexp</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.Qid.html#VALis_any">is_any</a> [<a href="Types.Qid.html">Types.Qid</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.FileMode.html#VALis_any">is_any</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.Int64.html#VALis_any">is_any</a> [<a href="Types.Int64.html">Types.Int64</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.Int32.html#VALis_any">is_any</a> [<a href="Types.Int32.html">Types.Int32</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.Int16.html#VALis_any">is_any</a> [<a href="Types.Int16.html">Types.Int16</a>]</td>
+<td></td></tr>
 <tr><td align="left"><br>M</td></tr>
 <tr><td><a href="Types.Stat.html#VALmake">make</a> [<a href="Types.Stat.html">Types.Stat</a>]</td>
 <td></td></tr>
@@ -103,8 +160,16 @@ Return information about the current connection
 <td></td></tr>
 <tr><td><a href="Types.Stat.html#VALmake_extension">make_extension</a> [<a href="Types.Stat.html">Types.Stat</a>]</td>
 <td></td></tr>
+<tr><td><a href="Client.S.html#VALmkdir">mkdir</a> [<a href="Client.S.html">Client.S</a>]</td>
+<td><div class="info">
+<code class="code">mkdir t path name perm</code> creates a new directory <code class="code">name</code> inside <code class="code">path</code> with
+   * the given permissions.
+</div>
+</td></tr>
 <tr><td align="left"><br>N</td></tr>
 <tr><td><a href="Types.Fid.html#VALnofid">nofid</a> [<a href="Types.Fid.html">Types.Fid</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.FileMode.html#VALnonet_of_permissions">nonet_of_permissions</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
 <td></td></tr>
 <tr><td><a href="Types.Tag.html#VALnotag">notag</a> [<a href="Types.Tag.html">Types.Tag</a>]</td>
 <td><div class="info">
@@ -118,7 +183,9 @@ The special tag value used during authentication
 <td></td></tr>
 <tr><td><a href="Types.Data.html#VALof_string">of_string</a> [<a href="Types.Data.html">Types.Data</a>]</td>
 <td></td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALopenfid">openfid</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Filesystem.S.html#VALopen_">open_</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALopenfid">openfid</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">open t fid mode</code> confirms that <code class="code">fid</code> can be accessed according to
         <code class="code">mode</code>
@@ -131,20 +198,32 @@ The special tag value used during authentication
 <td></td></tr>
 <tr><td><a href="Types.FileMode.html#VALpermission_of_sexp">permission_of_sexp</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
 <td></td></tr>
+<tr><td><a href="Response.html#VALpp">pp</a> [<a href="Response.html">Response</a>]</td>
+<td><div class="info">
+<code class="code">pp</code> pretty-prints responses.
+</div>
+</td></tr>
+<tr><td><a href="Request.html#VALpp">pp</a> [<a href="Request.html">Request</a>]</td>
+<td><div class="info">
+<code class="code">pp</code> formats request.
+</div>
+</td></tr>
 <tr><td align="left"><br>R</td></tr>
+<tr><td><a href="Filesystem.S.html#VALread">read</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
 <tr><td><a href="Buffered9PReader.Make.html#VALread">read</a> [<a href="Buffered9PReader.Make.html">Buffered9PReader.Make</a>]</td>
 <td><div class="info">
 Return the unmarshalled body of the next message read
       from the flow.
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALread">read</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Client.S.LowLevel.html#VALread">read</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">read t fid offset count</code> returns <code class="code">count</code> bytes of data at <code class="code">offset</code> in
         the file referenced by <code class="code">pid</code>.
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.html#VALread">read</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<tr><td><a href="Client.S.html#VALread">read</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td><div class="info">
 <code class="code">read t path offset count</code> returns a list of buffers containing <code class="code">count</code>
       bytes from offset <code class="code">offset</code> in the file given by <code class="code">path</code>
@@ -156,11 +235,19 @@ Read a <code class="code">t</code> from the given buffer and return it, along wi
       unused remainder of the buffer.
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.html#VALreaddir">readdir</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<tr><td><a href="Request.html#VALread_header">read_header</a> [<a href="Request.html">Request</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.OpenMode.html#VALread_only">read_only</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
+<td></td></tr>
+<tr><td><a href="Types.OpenMode.html#VALread_write">read_write</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.html#VALreaddir">readdir</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td><div class="info">
 Return the contents of a named directory.
 </div>
 </td></tr>
+<tr><td><a href="Handler.Make.html#VALreceive_cb">receive_cb</a> [<a href="Handler.Make.html">Handler.Make</a>]</td>
+<td></td></tr>
 <tr><td><a href="Types.Tag.html#VALrecommended">recommended</a> [<a href="Types.Tag.html">Types.Tag</a>]</td>
 <td><div class="info">
 A list of recommended tags.
@@ -171,10 +258,17 @@ A list of recommended tags.
 A list of recommended fids.
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALremove">remove</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Filesystem.S.html#VALremove">remove</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALremove">remove</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">remove t fid</code> removes the file associated with <code class="code">fid</code> from the file
         server.
+</div>
+</td></tr>
+<tr><td><a href="Client.S.html#VALremove">remove</a> [<a href="Client.S.html">Client.S</a>]</td>
+<td><div class="info">
+<code class="code">remove t path</code> removes a file or directory from the filesystem.
 </div>
 </td></tr>
 <tr><td><a href="Error.html#VALreturn">return</a> [<a href="Error.html">Error</a>]</td>
@@ -184,7 +278,12 @@ A list of recommended fids.
 <td></td></tr>
 <tr><td><a href="Types.Qid.html#VALsexp_of_flag">sexp_of_flag</a> [<a href="Types.Qid.html">Types.Qid</a>]</td>
 <td><div class="info">
-9P2000.u: file is a symlink
+9P2000.u: file is a hard-link
+</div>
+</td></tr>
+<tr><td><a href="Types.OpenMode.html#VALsexp_of_io">sexp_of_io</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
+<td><div class="info">
+execute access
 </div>
 </td></tr>
 <tr><td><a href="Response.html#VALsexp_of_payload">sexp_of_payload</a> [<a href="Response.html">Response</a>]</td>
@@ -221,7 +320,7 @@ A 'mode' returned from a call to "Stat"
 </td></tr>
 <tr><td><a href="Types.OpenMode.html#VALsexp_of_t">sexp_of_t</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
 <td><div class="info">
-execute access
+A 'mode' passed as an argument to "Open" and "Create"
 </div>
 </td></tr>
 <tr><td><a href="Types.Fid.html#VALsexp_of_t">sexp_of_t</a> [<a href="Types.Fid.html">Types.Fid</a>]</td>
@@ -371,12 +470,14 @@ A 9P protocol request
 The size of a buffer needed to hold <code class="code">t</code>
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALstat">stat</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Filesystem.S.html#VALstat">stat</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALstat">stat</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">stat t fid</code> returns a description of the file associated with <code class="code">fid</code>
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.html#VALstat">stat</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<tr><td><a href="Client.S.html#VALstat">stat</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td><div class="info">
 Return information about a named directory or named file.
 </div>
@@ -466,10 +567,6 @@ Return information about a named directory or named file.
 <td></td></tr>
 <tr><td><a href="Types.Data.html#VALto_string">to_string</a> [<a href="Types.Data.html">Types.Data</a>]</td>
 <td></td></tr>
-<tr><td><a href="Response.html#VALto_string">to_string</a> [<a href="Response.html">Response</a>]</td>
-<td></td></tr>
-<tr><td><a href="Request.html#VALto_string">to_string</a> [<a href="Request.html">Request</a>]</td>
-<td></td></tr>
 <tr><td align="left"><br>U</td></tr>
 <tr><td><a href="Types.Version.html#VALunix">unix</a> [<a href="Types.Version.html">Types.Version</a>]</td>
 <td><div class="info">
@@ -479,13 +576,29 @@ The extension known as 9P2000.u
 <tr><td><a href="Types.Version.html#VALunknown">unknown</a> [<a href="Types.Version.html">Types.Version</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>W</td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALwalk">walk</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Filesystem.S.html#VALwalk">walk</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALwalk">walk</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">walk t fid newfid wnames</code> binds <code class="code">newfid</code> to the result of Walking
         from <code class="code">fid</code> along the path given by <code class="code">wnames</code>
 </div>
 </td></tr>
-<tr><td><a href="Client.Make.LowLevel.html#VALwrite">write</a> [<a href="Client.Make.LowLevel.html">Client.Make.LowLevel</a>]</td>
+<tr><td><a href="Client.S.html#VALwalk_from_root">walk_from_root</a> [<a href="Client.S.html">Client.S</a>]</td>
+<td><div class="info">
+<code class="code">walk_from_root t</code> is <code class="code">LowLevel.walk t root</code>, where <code class="code">root</code> is the internal Fid
+      representing the root directory (which is not exposed by the API).
+</div>
+</td></tr>
+<tr><td><a href="Client.S.html#VALwith_fid">with_fid</a> [<a href="Client.S.html">Client.S</a>]</td>
+<td><div class="info">
+<code class="code">with_fid t fn</code> is the result of running <code class="code">fn x</code> with a fresh Fid <code class="code">x</code>, which
+      is returned to the free pool when the thread finishes.
+</div>
+</td></tr>
+<tr><td><a href="Filesystem.S.html#VALwrite">write</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="Client.S.LowLevel.html#VALwrite">write</a> [<a href="Client.S.LowLevel.html">Client.S.LowLevel</a>]</td>
 <td><div class="info">
 <code class="code">write t fid offset data</code> writes <code class="code">data</code> to the file given by <code class="code">fid</code> at
         offset <code class="code">offset</code>.
@@ -496,6 +609,10 @@ The extension known as 9P2000.u
 Write a <code class="code">t</code> into the given buffer.
 </div>
 </td></tr>
+<tr><td><a href="Types.OpenMode.html#VALwrite_only">write_only</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
+<td></td></tr>
+<tr><td><a href="Filesystem.S.html#VALwstat">wstat</a> [<a href="Filesystem.S.html">Filesystem.S</a>]</td>
+<td></td></tr>
 </table>
 </body>
 </html>

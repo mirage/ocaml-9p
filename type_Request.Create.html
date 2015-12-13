@@ -13,14 +13,17 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Request.Create</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Request.Create</title>
 </head>
 <body>
 <code class="code"><span class="keyword">sig</span><br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;fid&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">Fid</span>.t;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;:&nbsp;string;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;perm&nbsp;:&nbsp;int32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;perm&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">FileMode</span>.t;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">OpenMode</span>.t;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;extension&nbsp;:&nbsp;string&nbsp;option;<br>
 &nbsp;&nbsp;}<br>

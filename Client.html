@@ -18,7 +18,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Client</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Client</title>
 </head>
 <body>
 <div class="navbar"><a class="pre" href="Types.html" title="Types">Previous</a>
@@ -28,8 +31,12 @@
 <h1>Module <a href="type_Client.html">Client</a></h1>
 
 <pre><span class="keyword">module</span> Client: <code class="code">sig</code> <a href="Client.html">..</a> <code class="code">end</code></pre><div class="info module top">
-Given a transport (a Mirage FLOW), construct a 9P client on top.<br>
+An established connection to a 9P server<br>
 </div>
 <hr width="100%">
 
-<pre><span class="keyword">module</span> <a href="Client.Make.html">Make</a>: <div class="sig_block"><code class="code">functor (</code><code class="code">Log</code><code class="code"> : </code><code class="type"><a href="S.LOG.html">S.LOG</a></code><code class="code">) -&gt; </code><div class="sig_block"><code class="code">functor (</code><code class="code">FLOW</code><code class="code"> : </code><code class="type">V1_LWT.FLOW</code><code class="code">) -&gt; </code><code class="code">sig</code> <a href="Client.Make.html">..</a> <code class="code">end</code></div></div></pre></body></html>
+<pre><span class="keyword">module type</span> <a href="Client.S.html">S</a> = <code class="code">sig</code> <a href="Client.S.html">..</a> <code class="code">end</code></pre>
+<pre><span class="keyword">module</span> <a href="Client.Make.html">Make</a>: <div class="sig_block"><code class="code">functor (</code><code class="code">Log</code><code class="code"> : </code><code class="type"><a href="S.LOG.html">S.LOG</a></code><code class="code">) -&gt; </code><div class="sig_block"><code class="code">functor (</code><code class="code">FLOW</code><code class="code"> : </code><code class="type">V1_LWT.FLOW</code><code class="code">) -&gt; </code><code class="code">sig</code> <a href="Client.Make.html">..</a> <code class="code">end</code></div></div></pre><div class="info">
+Given a transport (a Mirage FLOW), construct a 9P client on top.
+</div>
+</body></html>

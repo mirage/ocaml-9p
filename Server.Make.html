@@ -16,7 +16,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Server.Make</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Server.Make</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="Server.html" title="Server">Up</a>
@@ -46,47 +49,28 @@
 
 <pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
 <div class="info ">
-An established connection to a 9P server<br>
+An established connection to a 9P client<br>
 </div>
 
 
-<pre><code><span id="TYPEinfo"><span class="keyword">type</span> <code class="type"></code>info</span> = {</code></pre><table class="typetable">
-<tr>
-<td align="left" valign="top" >
-<code>&nbsp;&nbsp;</code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTinfo.root">root</span>&nbsp;: <code class="type"><a href="Types.Fid.html#TYPEt">Types.Fid.t</a></code>;</code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The initial fid provided by the client</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
-</tr>
-<tr>
-<td align="left" valign="top" >
-<code>&nbsp;&nbsp;</code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTinfo.version">version</span>&nbsp;: <code class="type"><a href="Types.Version.html#TYPEt">Types.Version.t</a></code>;</code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >The protocol version we negotiated</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
-</tr></table>
-}
-
-<div class="info ">
-Information about the active connection, passed to the receive callback.<br>
-</div>
-
-
-<pre><span id="TYPEreceive_cb"><span class="keyword">type</span> <code class="type"></code>receive_cb</span> = <code class="type"><a href="Server.Make.html#TYPEinfo">info</a> -> <a href="Request.html#TYPEpayload">Request.payload</a> -> <a href="Response.html#TYPEpayload">Response.payload</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code> </pre>
-<div class="info ">
-Every time a request is received, this is the type of the callback which
-      is called.<br>
-</div>
-
-
-<pre><span id="VALconnect"><span class="keyword">val</span> connect</span> : <code class="type">FLOW.flow -><br>       ?msize:int32 -><br>       receive_cb:<a href="Server.Make.html#TYPEreceive_cb">receive_cb</a> -> unit -> <a href="Server.Make.html#TYPEt">t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
+<pre><span id="VALconnect"><span class="keyword">val</span> connect</span> : <code class="type">FLOW.flow -><br>       ?msize:int32 -><br>       receive_cb:<a href="Server.html#TYPEreceive_cb">Server.receive_cb</a> -> unit -> <a href="Server.Make.html#TYPEt">t</a> <a href="Error.html#TYPEt">Error.t</a> Lwt.t</code></pre><div class="info ">
 Establish a fresh connection to a 9P client. <code class="code">msize</code> gives the maximum
       message size we support: the client may request a lower value.
       <code class="code">receive_cb</code> will be called with every 9P request.<br>
 </div>
 
-<pre><span id="VALget_info"><span class="keyword">val</span> get_info</span> : <code class="type"><a href="Server.Make.html#TYPEt">t</a> -> <a href="Server.Make.html#TYPEinfo">info</a></code></pre><div class="info ">
+<pre><span id="VALget_info"><span class="keyword">val</span> get_info</span> : <code class="type"><a href="Server.Make.html#TYPEt">t</a> -> <a href="Server.html#TYPEinfo">Server.info</a></code></pre><div class="info ">
 Return information about the current connection<br>
 </div>
 
-<pre><span id="VALdisconnect"><span class="keyword">val</span> disconnect</span> : <code class="type"><a href="Server.Make.html#TYPEt">t</a> -> unit Lwt.t</code></pre></body></html>
+<pre><span id="VALdisconnect"><span class="keyword">val</span> disconnect</span> : <code class="type"><a href="Server.Make.html#TYPEt">t</a> -> unit Lwt.t</code></pre><div class="info ">
+<code class="code">disconnect connection</code> causes the connection <code class="code">connection</code> to
+      close after the next message is processed. Once the connection
+      has been disconnected, the returned thread will resolve.<br>
+</div>
+
+<pre><span id="VALafter_disconnect"><span class="keyword">val</span> after_disconnect</span> : <code class="type"><a href="Server.Make.html#TYPEt">t</a> -> unit Lwt.t</code></pre><div class="info ">
+<code class="code">after_disconnect connection</code> resolves after <code class="code">connection</code> has
+      disconnected.<br>
+</div>
+</body></html>

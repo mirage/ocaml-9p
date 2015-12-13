@@ -14,7 +14,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Index of modules</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Index of modules</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
@@ -41,7 +44,7 @@ A buffered 9P message reader over a FLOW
 <tr><td align="left"><br>C</td></tr>
 <tr><td><a href="Client.html">Client</a> </td>
 <td><div class="info">
-Given a transport (a Mirage FLOW), construct a 9P client on top.
+An established connection to a 9P server
 </div>
 </td></tr>
 <tr><td><a href="Response.Clunk.html">Clunk</a> [<a href="Response.html">Response</a>]</td>
@@ -68,11 +71,24 @@ Common error reporting functions
 <td></td></tr>
 <tr><td><a href="Types.FileMode.html">FileMode</a> [<a href="Types.html">Types</a>]</td>
 <td></td></tr>
+<tr><td><a href="Filesystem.html">Filesystem</a> </td>
+<td><div class="info">
+A traditional protocol message handler.
+</div>
+</td></tr>
 <tr><td><a href="Response.Flush.html">Flush</a> [<a href="Response.html">Response</a>]</td>
 <td></td></tr>
 <tr><td><a href="Request.Flush.html">Flush</a> [<a href="Request.html">Request</a>]</td>
 <td></td></tr>
+<tr><td align="left"><br>H</td></tr>
+<tr><td><a href="Handler.html">Handler</a> </td>
+<td><div class="info">
+Given a traditional file system, construct a handler for 9p messages.
+</div>
+</td></tr>
 <tr><td align="left"><br>I</td></tr>
+<tr><td><a href="Infix.html">Infix</a> </td>
+<td></td></tr>
 <tr><td><a href="Types.Int16.html">Int16</a> [<a href="Types.html">Types</a>]</td>
 <td></td></tr>
 <tr><td><a href="Types.Int32.html">Int32</a> [<a href="Types.html">Types</a>]</td>
@@ -82,18 +98,23 @@ Common error reporting functions
 <tr><td><a href="Types.Int8.html">Int8</a> [<a href="Types.html">Types</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>K</td></tr>
-<tr><td><a href="Client.Make.KV_RO.html">KV_RO</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<tr><td><a href="Client.S.KV_RO.html">KV_RO</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>L</td></tr>
-<tr><td><a href="Client.Make.LowLevel.html">LowLevel</a> [<a href="Client.Make.html">Client.Make</a>]</td>
+<tr><td><a href="Client.S.LowLevel.html">LowLevel</a> [<a href="Client.S.html">Client.S</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>M</td></tr>
+<tr><td><a href="Handler.Make.html">Make</a> [<a href="Handler.html">Handler</a>]</td>
+<td></td></tr>
 <tr><td><a href="Buffered9PReader.Make.html">Make</a> [<a href="Buffered9PReader.html">Buffered9PReader</a>]</td>
 <td></td></tr>
 <tr><td><a href="Server.Make.html">Make</a> [<a href="Server.html">Server</a>]</td>
 <td></td></tr>
 <tr><td><a href="Client.Make.html">Make</a> [<a href="Client.html">Client</a>]</td>
-<td></td></tr>
+<td><div class="info">
+Given a transport (a Mirage FLOW), construct a 9P client on top.
+</div>
+</td></tr>
 <tr><td><a href="Types.Tag.Map.html">Map</a> [<a href="Types.Tag.html">Types.Tag</a>]</td>
 <td></td></tr>
 <tr><td><a href="Types.Fid.Map.html">Map</a> [<a href="Types.Fid.html">Types.Fid</a>]</td>

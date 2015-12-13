@@ -13,7 +13,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Types.Qid</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Types.Qid</title>
 </head>
 <body>
 <code class="code"><span class="keyword">sig</span><br>
@@ -24,8 +27,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Mount</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Auth</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Temporary</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Symlink</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Link</span><br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;flags&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">Qid</span>.flag&nbsp;list;&nbsp;version&nbsp;:&nbsp;int32;&nbsp;id&nbsp;:&nbsp;int64;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_any&nbsp;:&nbsp;<span class="constructor">Types</span>.<span class="constructor">Qid</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;file&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;?id:int64&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;?version:int32&nbsp;<span class="keywordsign">-&gt;</span><br>

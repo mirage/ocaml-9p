@@ -17,7 +17,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>S.LOG</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>S.LOG</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="S.html" title="S">Up</a>
@@ -29,6 +32,6 @@
 <br>
 Common logging functions<br>
 
-<pre><span id="VALdebug"><span class="keyword">val</span> debug</span> : <code class="type">('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
-<pre><span id="VALinfo"><span class="keyword">val</span> info</span> : <code class="type">('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
-<pre><span id="VALerror"><span class="keyword">val</span> error</span> : <code class="type">('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre></body></html>
+<pre><span id="VALdebug"><span class="keyword">val</span> debug</span> : <code class="type">('a, Format.formatter, unit, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALinfo"><span class="keyword">val</span> info</span> : <code class="type">('a, Format.formatter, unit, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALerror"><span class="keyword">val</span> error</span> : <code class="type">('a, Format.formatter, unit, unit) Pervasives.format4 -> 'a</code></pre></body></html>

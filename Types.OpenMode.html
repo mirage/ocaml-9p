@@ -18,7 +18,10 @@
 <link title="Types" rel="Chapter" href="Types.html">
 <link title="Client" rel="Chapter" href="Client.html">
 <link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html"><title>Types.OpenMode</title>
+<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
+<link title="Handler" rel="Chapter" href="Handler.html">
+<link title="Filesystem" rel="Chapter" href="Filesystem.html">
+<link title="Infix" rel="Chapter" href="Infix.html"><title>Types.OpenMode</title>
 </head>
 <body>
 <div class="navbar"><a class="pre" href="Types.Fid.html" title="Types.Fid">Previous</a>
@@ -29,47 +32,103 @@
 
 <pre><span class="keyword">module</span> OpenMode: <code class="code">sig</code> <a href="Types.OpenMode.html">..</a> <code class="code">end</code></pre><hr width="100%">
 
-<pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = </code></pre><table class="typetable">
+<pre><code><span id="TYPEio"><span class="keyword">type</span> <code class="type"></code>io</span> = </code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTt.Read"><span class="constructor">Read</span></span></code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >read access</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+<code><span id="TYPEELTio.Read"><span class="constructor">Read</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+read access<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
 <tr>
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTt.Write"><span class="constructor">Write</span></span></code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >write access</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+<code><span id="TYPEELTio.Write"><span class="constructor">Write</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+write access<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
 <tr>
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTt.ReadWrite"><span class="constructor">ReadWrite</span></span></code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >read and write access</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+<code><span id="TYPEELTio.ReadWrite"><span class="constructor">ReadWrite</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+read and write access<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
 <tr>
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTt.Exec"><span class="constructor">Exec</span></span></code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >execute access</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+<code><span id="TYPEELTio.Exec"><span class="constructor">Exec</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+execute access<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
+
+<div class="info ">
+The io types allowed in an open 'mode'<br>
+</div>
+
+
+<pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.io">io</span>&nbsp;: <code class="type"><a href="Types.OpenMode.html#TYPEio">io</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.truncate">truncate</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+truncate file before opening<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.rclose">rclose</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+remove file when closing<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
 
 <div class="info ">
 A 'mode' passed as an argument to "Open" and "Create"<br>
 </div>
 
 
+<pre><span id="VALread_only"><span class="keyword">val</span> read_only</span> : <code class="type"><a href="Types.OpenMode.html#TYPEt">t</a></code></pre>
+<pre><span id="VALwrite_only"><span class="keyword">val</span> write_only</span> : <code class="type"><a href="Types.OpenMode.html#TYPEt">t</a></code></pre>
+<pre><span id="VALread_write"><span class="keyword">val</span> read_write</span> : <code class="type"><a href="Types.OpenMode.html#TYPEt">t</a></code></pre>
+<pre><span id="VALexec"><span class="keyword">val</span> exec</span> : <code class="type"><a href="Types.OpenMode.html#TYPEt">t</a></code></pre>
 <pre><span class="keyword">include</span> <a href="S.SERIALISABLE.html">S.SERIALISABLE</a></pre>
 
-<pre><span id="VALt_of_sexp"><span class="keyword">val</span> t_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.OpenMode.html#TYPEt">t</a></code></pre>
-<pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Types.OpenMode.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
+<pre><span id="VALio_of_sexp"><span class="keyword">val</span> io_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.OpenMode.html#TYPEio">io</a></code></pre>
+<pre><span id="VALsexp_of_io"><span class="keyword">val</span> sexp_of_io</span> : <code class="type"><a href="Types.OpenMode.html#TYPEio">io</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
 execute access<br>
 </div>
 <br>
+The io types allowed in an open 'mode'<br>
+
+<pre><span id="VALt_of_sexp"><span class="keyword">val</span> t_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Types.OpenMode.html#TYPEt">t</a></code></pre>
+<pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Types.OpenMode.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
 A 'mode' passed as an argument to "Open" and "Create"<br>
+</div>
 </body></html>
