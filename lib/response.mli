@@ -103,6 +103,9 @@ module Read : sig
   } with sexp
   (** The payload of a Read response *)
 
+  val sizeof_header: int
+  (** The size of only the header *)
+
   include S.SERIALISABLE with type t := t
 end
 
@@ -176,5 +179,8 @@ val pp: t Fmt.t
 
 val equal: t -> t -> bool
 (** [equal] is the equality function over responses. *)
+
+val sizeof_header: int
+(** The size of the fixed response header *)
 
 val error: ?errno:int32 -> ('a, unit, string, (_, Err.t) result) format4 -> 'a
