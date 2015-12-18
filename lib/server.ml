@@ -23,6 +23,7 @@ type info = {
   root: Types.Fid.t;
   version: Types.Version.t;
   aname: string;
+  msize: int32;
 }
 
 type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
@@ -229,7 +230,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun (tag, a) ->
       let root = a.Request.Attach.fid in
       let aname = a.Request.Attach.aname in
-      let info = { root; version; aname } in
+      let info = { root; version; aname; msize } in
       let cancel, _ = Lwt.task () in
       receive_cb info ~cancel (Request.Attach a)
       >>*= fun payload ->

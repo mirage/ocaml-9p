@@ -179,7 +179,9 @@ module Read = struct
     Cstruct.blit_from_string _t 0 buf 0 len;
     { data = buf }
 
-  let sizeof t = 4 + (Cstruct.len t.data)
+  let sizeof_header = 4
+
+  let sizeof t = sizeof_header + (Cstruct.len t.data)
 
   let write t rest =
     let len = Cstruct.len t.data in
@@ -363,6 +365,8 @@ let read rest =
   return ( { tag; payload }, rest )
 
 let pp ppf t = Sexplib.Sexp.pp_hum ppf (sexp_of_t t)
+
+let sizeof_header = 4 + 1 + 2
 
 let error ?errno fmt =
   Printf.ksprintf (fun ename -> Result.Error {Err.ename; errno}) fmt

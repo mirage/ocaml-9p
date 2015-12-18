@@ -177,6 +177,9 @@ module New(Params : sig val root : string list end) = struct
     else (Types.Fid.Map.find fid !fids).Resource.path
 
   let read info ~cancel { Request.Read.fid; offset; count } =
+    (* The client can requests a count which is larger than the negotiated msize *)
+    let max_count = Int32.(sub (sub info.Server.msize (of_int Response.sizeof_header)) (of_int Response.Read.sizeof_header)) in
+    let count = min max_count count in
     match path_of_fid info fid with
     | exception Not_found -> bad_fid
     | path ->
