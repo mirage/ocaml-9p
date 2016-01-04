@@ -1,6 +1,6 @@
 OASISFormat: 0.3
 Name:        9p-protocol
-Version:     0.1
+Version:     0.2
 Synopsis:    9P filesystem protocol
 Authors:     David Scott, David Sheets, Thomas Leonard
 License:     ISC
