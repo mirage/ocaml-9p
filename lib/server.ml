@@ -193,7 +193,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun buffer ->
       Lwt.return (Request.read buffer)
       >>*= function
-      | ( { Request.payload = Request.Version v; tag }, _) ->
+      | ({ Request.payload = Request.Version v; tag } as req, _) ->
+        debug "C %a" Request.pp req;
         Lwt.return (Ok (tag, v))
       | request, _ ->
         return_error ~write_lock writer request "Expected Version message"
@@ -203,8 +204,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun buffer ->
       Lwt.return (Request.read buffer)
       >>*= function
-      | ( { Request.payload = Request.Attach a; tag }, _) ->
-        Lwt.return (Ok (tag, a))
+      | ({ Request.payload = (Request.Attach a) as payload; tag } as req, _) ->
+        debug "C %a" Request.pp req;
+        Lwt.return (Ok (tag, a, payload))
       | request, _ ->
         return_error ~write_lock writer request "Expected Attach message"
   end
