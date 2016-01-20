@@ -193,7 +193,8 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun buffer ->
       Lwt.return (Request.read buffer)
       >>*= function
-      | ( { Request.payload = Request.Version v; tag }, _) ->
+      | ({ Request.payload = Request.Version v; tag } as req, _) ->
+        debug "C %a" Request.pp req;
         Lwt.return (Ok (tag, v))
       | request, _ ->
         return_error ~write_lock writer request "Expected Version message"
@@ -203,8 +204,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= fun buffer ->
       Lwt.return (Request.read buffer)
       >>*= function
-      | ( { Request.payload = Request.Attach a; tag }, _) ->
-        Lwt.return (Ok (tag, a))
+      | ({ Request.payload = (Request.Attach a) as payload; tag } as req, _) ->
+        debug "C %a" Request.pp req;
+        Lwt.return (Ok (tag, a, payload))
       | request, _ ->
         return_error ~write_lock writer request "Expected Attach message"
   end
@@ -227,22 +229,44 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
       } >>*= fun () ->
       info "Using protocol version %s" (Sexplib.Sexp.to_string (Types.Version.sexp_of_t version));
       LowLevel.expect_attach ~write_lock reader writer
-      >>*= fun (tag, a) ->
-      let root = a.Request.Attach.fid in
-      let aname = a.Request.Attach.aname in
-      let info = { root; version; aname; msize } in
-      let cancel, _ = Lwt.task () in
-      receive_cb info ~cancel (Request.Attach a)
-      >>*= fun payload ->
-      write_one_packet ~write_lock flow {
-        Response.tag; payload
-      } >>*= fun () ->
-      let root_qid = Types.Qid.dir ~version:0l ~id:0L () in
+      >>*= fun (tag, a, payload) ->
       let cancel_buttons = Types.Tag.Map.empty in
       let please_shutdown = false in
       let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
-      let t = { reader; writer; info; root_qid; cancel_buttons; please_shutdown; shutdown_complete_t; write_lock } in
-      Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener receive_cb t);
+      let root = a.Request.Attach.fid in
+      let aname = a.Request.Attach.aname in
+      let info = { root; version; aname; msize; } in
+
+      let open Lwt in
+      let cancel_t, cancel_u = Lwt.task () in
+      receive_cb info ~cancel:cancel_t payload
+      >>= begin function
+        | Error (`Msg message) ->
+          let response = error_response tag message in
+          Lwt_mutex.with_lock write_lock
+            (fun () -> write_one_packet writer response)
+          >>*= fun () -> Lwt.return (Error (`Msg message))
+        | Ok (Response.Attach a as payload) ->
+          let response = { Response.tag; payload; } in
+          Lwt_mutex.with_lock write_lock
+            (fun () -> write_one_packet writer response)
+          >>*= fun () -> return (Ok a.Response.Attach.qid)
+        | Ok _ ->
+          let message = "expected Attach reply" in
+          let response = error_response tag message in
+          Lwt_mutex.with_lock write_lock
+            (fun () -> write_one_packet writer response)
+          >>*= fun () -> Lwt.return (Error (`Msg message))
+      end
+      >>*= fun root_qid ->
+      let t = {
+        reader; writer; info;
+        root_qid; cancel_buttons;
+        please_shutdown; shutdown_complete_t; write_lock;
+      } in
+      Lwt.async (fun () ->
+        dispatcher_t shutdown_complete_wakener receive_cb t
+      );
       Lwt.return (Ok t)
     end
 end
