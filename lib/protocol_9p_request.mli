@@ -121,6 +121,9 @@ module Write : sig
     data: Cstruct.t;
   } with sexp
 
+  val sizeof_header: int
+  (** The size of only the header *)
+
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
@@ -186,6 +189,9 @@ include Protocol_9p_s.SERIALISABLE with type t := t
 val read_header:
   Cstruct.t -> (Int32.t * Protocol_9p_types.Int8.t * Protocol_9p_types.Tag.t * Cstruct.t,
                 [ `Msg of string]) result
+
+val sizeof_header: int
+(** The size of the fixed request header *)
 
 val pp: t Fmt.t
 (** [pp] formats request. *)

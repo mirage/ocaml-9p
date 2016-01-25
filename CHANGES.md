@@ -3,6 +3,8 @@
 * Remove use of -pack, now use the index module Protocol_9p with aliases
 * Expose previously hidden Response.sizeof_header
 * Expose previously hidden Response.Read.sizeof_header
+* Add Request.sizeof_header
+* Add Request.Write.sizeof_header
 
 0.3 (2016-01-20):
 * Add version/attach mount debug messages

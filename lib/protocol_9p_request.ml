@@ -304,6 +304,8 @@ module Write = struct
   let equal a b =
     a.fid = b.fid && a.offset = b.offset && Cstruct.equal a.data b.data
 
+  let sizeof_header = 4 + 8 + 4
+
   let sizeof t = (Fid.sizeof t.fid) + 8 + 4 + (Cstruct.len t.data)
 
   let write t rest =
@@ -472,6 +474,8 @@ let read_header rest =
   Tag.read rest
   >>= fun (tag, rest) ->
   return (len, ty, tag, rest)
+
+let sizeof_header = 4 + 1 + 2
 
 let read rest =
   read_header rest
