@@ -1,4 +1,4 @@
-0.4.0 (trunk):
+0.4.0 (2016-01-25):
 * Remove OASIS from build system
 * Remove use of -pack, now use the index module Protocol_9p with aliases
 * Expose previously hidden Response.sizeof_header
