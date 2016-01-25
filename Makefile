@@ -20,13 +20,13 @@ PRODUCTS := $(addprefix $(MOD),$(TARGETS))
 
 INSTALL := $(foreach module,$(MODULES),$(addprefix $(module),$(TYPES)))
 
-INSTALL := $(INSTALL) $(PRODUCTS)
+INSTALL := $(INSTALL) $(MOD).a $(PRODUCTS)
 INSTALL := $(addprefix _build/lib/,$(INSTALL))
 
 ifeq ($(WITH_UNIX), 0)
 UNIX_PRODUCTS := $(addprefix $(UNIX_MOD),$(TARGETS))
 UNIX_INSTALL:=$(foreach module,$(UNIX_MODULES),$(addprefix $(module),$(TYPES)))
-UNIX_INSTALL := $(UNIX_INSTALL) $(UNIX_PRODUCTS)
+UNIX_INSTALL := $(UNIX_INSTALL) $(UNIX_MOD).a $(UNIX_PRODUCTS)
 UNIX_INSTALL := $(addprefix _build/unix/,$(UNIX_INSTALL))
 PRODUCTS+=$(UNIX_PRODUCTS)
 INSTALL+=$(UNIX_INSTALL)
