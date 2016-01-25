@@ -17,6 +17,6 @@
 
 (** Given a traditional file system, construct a handler for 9p messages. *)
 
-module Make(Filesystem : Filesystem.S) : sig
-  val receive_cb : Server.receive_cb
+module Make(Filesystem : Protocol_9p_filesystem.S) : sig
+  val receive_cb : Protocol_9p_server.receive_cb
 end

@@ -20,23 +20,28 @@ module type S = sig
   (** An established connection to a 9P server *)
 
   val disconnect: t -> unit Lwt.t
-  (** Disconnect from the 9P server, but leave the underlying FLOW connected. *)
+  (** Disconnect from the 9P server, but leave the underlying FLOW
+      connected. *)
 
-  val read: t -> string list -> int64 -> int32 -> Cstruct.t list Error.t Lwt.t
+  val read: t -> string list -> int64 -> int32 ->
+    Cstruct.t list Protocol_9p_error.t Lwt.t
   (** [read t path offset count] returns a list of buffers containing [count]
       bytes from offset [offset] in the file given by [path] *)
 
-  val mkdir: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
-  (** [mkdir t path name perm] creates a new directory [name] inside [path] with
-   * the given permissions. *)
+  val mkdir: t -> string list -> string ->
+    Protocol_9p_types.FileMode.t -> unit Protocol_9p_error.t Lwt.t
+  (** [mkdir t path name perm] creates a new directory [name] inside
+      [path] with * the given permissions. *)
 
-  val remove: t -> string list -> unit Error.t Lwt.t
+  val remove: t -> string list -> unit Protocol_9p_error.t Lwt.t
   (** [remove t path] removes a file or directory from the filesystem. *)
 
-  val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
+  val readdir: t -> string list ->
+    Protocol_9p_types.Stat.t list Protocol_9p_error.t Lwt.t
   (** Return the contents of a named directory. *)
 
-  val stat: t -> string list -> Types.Stat.t Error.t Lwt.t
+  val stat: t -> string list ->
+    Protocol_9p_types.Stat.t Protocol_9p_error.t Lwt.t
   (** Return information about a named directory or named file. *)
 
   module KV_RO : V1_LWT.KV_RO with type t = t
@@ -46,57 +51,73 @@ module type S = sig
         RPCs. The client must carefully respect the rules on managing fids
         and stay within the message size limits. *)
 
-    val walk: t -> Types.Fid.t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
+    val walk: t -> Protocol_9p_types.Fid.t -> Protocol_9p_types.Fid.t ->
+      string list -> Protocol_9p_response.Walk.t Protocol_9p_error.t Lwt.t
     (** [walk t fid newfid wnames] binds [newfid] to the result of Walking
         from [fid] along the path given by [wnames] *)
 
-    val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
+    val openfid: t -> Protocol_9p_types.Fid.t ->
+      Protocol_9p_types.OpenMode.t ->
+      Protocol_9p_response.Open.t Protocol_9p_error.t Lwt.t
     (** [open t fid mode] confirms that [fid] can be accessed according to
         [mode] *)
 
-    val create: t -> Types.Fid.t -> ?extension:string -> string -> Types.FileMode.t ->
-                Types.OpenMode.t -> Response.Create.t Error.t Lwt.t
-    (** [create t fid name perm mode] creates a new file or directory called
-        [name] and with permissions [perm] inside the directory [fid] and opens it
-        according to [mode] (which is not checked against [perm]). *)
+    val create: t -> Protocol_9p_types.Fid.t -> ?extension:string -> string ->
+      Protocol_9p_types.FileMode.t ->
+      Protocol_9p_types.OpenMode.t ->
+      Protocol_9p_response.Create.t Protocol_9p_error.t Lwt.t
+    (** [create t fid name perm mode] creates a new file or directory
+        called [name] and with permissions [perm] inside the directory
+        [fid] and opens it according to [mode] (which is not checked
+        against [perm]). *)
 
-    val stat: t -> Types.Fid.t -> Response.Stat.t Error.t Lwt.t
+    val stat: t -> Protocol_9p_types.Fid.t ->
+      Protocol_9p_response.Stat.t Protocol_9p_error.t Lwt.t
     (** [stat t fid] returns a description of the file associated with [fid] *)
 
-    val read: t -> Types.Fid.t -> int64 -> int32 -> Response.Read.t Error.t Lwt.t
+    val read: t -> Protocol_9p_types.Fid.t -> int64 -> int32 ->
+      Protocol_9p_response.Read.t Protocol_9p_error.t Lwt.t
     (** [read t fid offset count] returns [count] bytes of data at [offset] in
         the file referenced by [pid]. Note that [count] must be less than the
         server's negotiated maximum message size. *)
 
-    val write: t -> Types.Fid.t -> int64 -> Cstruct.t -> Response.Write.t Error.t Lwt.t
+    val write: t -> Protocol_9p_types.Fid.t -> int64 -> Cstruct.t ->
+      Protocol_9p_response.Write.t Protocol_9p_error.t Lwt.t
     (** [write t fid offset data] writes [data] to the file given by [fid] at
         offset [offset]. *)
 
-    val clunk: t -> Types.Fid.t -> Response.Clunk.t Error.t Lwt.t
+    val clunk: t -> Protocol_9p_types.Fid.t ->
+      Protocol_9p_response.Clunk.t Protocol_9p_error.t Lwt.t
     (** [clunk t fid] informs the server that the reference [fid] should be
         forgotten about. When this call returns, it is safe for the client to
         re-use the fid. *)
 
-    val remove: t -> Types.Fid.t -> Response.Remove.t Error.t Lwt.t
+    val remove: t -> Protocol_9p_types.Fid.t ->
+      Protocol_9p_response.Remove.t Protocol_9p_error.t Lwt.t
     (** [remove t fid] removes the file associated with [fid] from the file
         server. The server will "clunk" the fid whether the call succeeds or
         fails. *)
   end
 
-  val walk_from_root: t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
-  (** [walk_from_root t] is [LowLevel.walk t root], where [root] is the internal Fid
-      representing the root directory (which is not exposed by the API). *)
+  val walk_from_root: t -> Protocol_9p_types.Fid.t -> string list ->
+    Protocol_9p_response.Walk.t Protocol_9p_error.t Lwt.t
+  (** [walk_from_root t] is [LowLevel.walk t root], where [root] is
+      the internal Fid representing the root directory (which is not
+      exposed by the API). *)
 
-  val with_fid: t -> (Types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
-  (** [with_fid t fn] is the result of running [fn x] with a fresh Fid [x], which
-      is returned to the free pool when the thread finishes. *)
+  val with_fid: t -> (Protocol_9p_types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_fid t fn] is the result of running [fn x] with a fresh Fid
+      [x], which is returned to the free pool when the thread
+      finishes. *)
 end
 
 (** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
   include S
 
-  val connect: FLOW.flow -> ?msize:int32 -> ?username:string -> ?aname:string -> unit -> t Error.t Lwt.t
+  val connect:
+    FLOW.flow -> ?msize:int32 -> ?username:string -> ?aname:string -> unit ->
+    t Protocol_9p_error.t Lwt.t
   (** Establish a fresh connection to a 9P server. [msize] gives the maximum
       message size we support: the server may choose a lower value. [username]
       is the username to present to the remote server. [aname] is the name of

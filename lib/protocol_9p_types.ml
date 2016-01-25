@@ -15,7 +15,7 @@
  *
  *)
 open Sexplib.Std
-open Error
+open Protocol_9p_error
 
 let big_enough_for name buf needed =
   let length = Cstruct.len buf in
@@ -681,7 +681,7 @@ module Stat = struct
 
 end
 
-module Arr(T: S.SERIALISABLE) = struct
+module Arr(T: Protocol_9p_s.SERIALISABLE) = struct
   type t = T.t list
 
   let rec sizeof = function

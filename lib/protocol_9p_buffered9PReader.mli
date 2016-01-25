@@ -15,7 +15,7 @@
  *
  *)
 
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t
   (** A buffered 9P message reader over a FLOW *)
@@ -23,7 +23,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
   val create: FLOW.flow -> t
   (** Construct a buffered 9P message reader over a FLOW *)
 
-  val read: t -> Cstruct.t Error.t Lwt.t
+  val read: t -> Cstruct.t Protocol_9p_error.t Lwt.t
   (** Return the unmarshalled body of the next message read
       from the flow. *)
 end

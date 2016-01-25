@@ -23,137 +23,141 @@ module Version : sig
 
   type t = {
     msize: int32;    (** client's maximum message size *)
-    version: Types.Version.t;
+    version: Protocol_9p_types.Version.t;
   } with sexp
   (** The payload of a version message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Auth : sig
 
   type t = {
-    afid: Types.Fid.t;
+    afid: Protocol_9p_types.Fid.t;
     uname: string;
     aname: string;
     n_uname: int32 option; (** Numeric userid supported by 9P2000.u *)
   } with sexp
   (** The payload of a version message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Flush : sig
 
   type t = {
-    oldtag: Types.Tag.t;
+    oldtag: Protocol_9p_types.Tag.t;
   } with sexp
   (** The payload of a flush message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Attach : sig
 
   type t = {
-    fid: Types.Fid.t;
-    afid: Types.Fid.t;
+    fid: Protocol_9p_types.Fid.t;
+    afid: Protocol_9p_types.Fid.t;
     uname: string;
     aname: string;
     n_uname: int32 option; (** Numeric userid supported by 9P2000.u *)
   } with sexp
   (** The payload of an attach message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Walk : sig
 
   type t = {
-    fid: Types.Fid.t;
-    newfid: Types.Fid.t;
+    fid: Protocol_9p_types.Fid.t;
+    newfid: Protocol_9p_types.Fid.t;
     wnames: string list;
   } with sexp
   (** The payload of a walk message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Open : sig
   type t = {
-    fid: Types.Fid.t;
-    mode: Types.OpenMode.t;
+    fid: Protocol_9p_types.Fid.t;
+    mode: Protocol_9p_types.OpenMode.t;
   } with sexp
   (** The payload of an Open message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Create : sig
   type t = {
-    fid: Types.Fid.t;
+    fid: Protocol_9p_types.Fid.t;
     name: string;
-    perm: Types.FileMode.t;
-    mode: Types.OpenMode.t;
-    extension: string option; (** 9P2000.u: a symlink target, or a device description e.g. "b 1 2" *)
+    perm: Protocol_9p_types.FileMode.t;
+    mode: Protocol_9p_types.OpenMode.t;
+    extension: string option; (** 9P2000.u: a symlink target, or a device
+                                  description e.g. "b 1 2" *)
   } with sexp
   (** The payload of a Create message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Read : sig
   type t = {
-    fid: Types.Fid.t;
+    fid: Protocol_9p_types.Fid.t;
     offset: int64;
     count: int32;
   } with sexp
   (** The payload of a Read message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Write : sig
   type t = {
-    fid: Types.Fid.t;
+    fid: Protocol_9p_types.Fid.t;
     offset: int64;
     data: Cstruct.t;
   } with sexp
 
-  include S.SERIALISABLE with type t := t
+  val sizeof_header: int
+  (** The size of only the header *)
+
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Clunk : sig
   type t = {
-    fid: Types.Fid.t
+    fid: Protocol_9p_types.Fid.t
   } with sexp
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Remove : sig
   type t = {
-    fid: Types.Fid.t
+    fid: Protocol_9p_types.Fid.t
   } with sexp
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Stat : sig
   type t = {
-    fid: Types.Fid.t
+    fid: Protocol_9p_types.Fid.t
   } with sexp
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Wstat : sig
   type t = {
-    fid: Types.Fid.t;
-    stat: Types.Stat.t;
+    fid: Protocol_9p_types.Fid.t;
+    stat: Protocol_9p_types.Stat.t;
   } with sexp
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 type payload =
@@ -174,16 +178,20 @@ with sexp
 (** A variant type containing all possible request payloads *)
 
 type t = {
-  tag: Types.Tag.t; (** The tag used to match the response with the original request *)
+  tag: Protocol_9p_types.Tag.t; (** The tag used to match the response with
+                                    the original request *)
   payload: payload;
 } with sexp
 (** A 9P protocol request *)
 
-include S.SERIALISABLE with type t := t
+include Protocol_9p_s.SERIALISABLE with type t := t
 
 val read_header:
-  Cstruct.t -> (Int32.t * Types.Int8.t * Types.Tag.t * Cstruct.t,
+  Cstruct.t -> (Int32.t * Protocol_9p_types.Int8.t * Protocol_9p_types.Tag.t * Cstruct.t,
                 [ `Msg of string]) result
+
+val sizeof_header: int
+(** The size of the fixed request header *)
 
 val pp: t Fmt.t
 (** [pp] formats request. *)

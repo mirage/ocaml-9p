@@ -1,0 +1,4 @@
+<*.*>: package(result), package(cstruct), package(cstruct.lwt)
+<*.*>: package(sexplib), package(sexplib.syntax), syntax(camlp4o)
+<*.*>: package(lwt), package(mirage-types.lwt)
+<*.*>: package(stringext), package(fmt)

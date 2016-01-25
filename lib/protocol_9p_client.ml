@@ -16,8 +16,14 @@
  *)
 
 open Result
+open Protocol_9p_infix
+
+module Error = Protocol_9p_error
 open Error
-open Infix
+
+module Types = Protocol_9p_types
+module Request = Protocol_9p_request
+module Response = Protocol_9p_response
 
 module type S = sig
   type t
@@ -47,8 +53,8 @@ module type S = sig
   val with_fid: t -> (Types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
 end
 
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
-  module Reader = Buffered9PReader.Make(Log)(FLOW)
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
+  module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
 
   open Log
 

@@ -20,5 +20,5 @@ module Inet(Log: Protocol_9p.S.LOG) : sig
 
   val connect:
     string -> int -> ?msize:int32 -> ?username:string -> ?aname:string ->
-    unit -> t Error.t Lwt.t
+    unit -> t Protocol_9p.Error.t Lwt.t
 end

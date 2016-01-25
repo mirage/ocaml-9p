@@ -1,0 +1,2 @@
+<*.*>: package(result), package(cstruct), package(alcotest), package(fmt)
+<*.*>: package(lwt), package(cstruct.lwt)
