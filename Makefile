@@ -1,5 +1,5 @@
 .PHONY: build doc test install uninstall reinstall clean init-doc gh-pages \
-	release pr
+	release pr 9p
 
 NAME = protocol-9p
 MOD  = protocol_9p
@@ -36,7 +36,7 @@ build:
 	$(OCAMLBUILD) $(PRODUCTS)
 	$(MAKE) 9p
 
-9p: src/main.ml
+9p:
 	$(OCAMLBUILD) main.native
 	cp main.native 9p
 
