@@ -17,18 +17,19 @@
 
 (** Parsers and printers for 9P response messages *)
 
-open Types
+open Protocol_9p_types
 open Result
 
 module Version : sig
 
   type t = {
-    msize: int32;    (** the server's maximum message size, must be less than the client's *)
-    version: Types.Version.t;
+    msize: int32; (** the server's maximum message size, must be less than
+                      the client's *)
+    version: Protocol_9p_types.Version.t;
   } with sexp
   (** The payload of a version message *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Auth : sig
@@ -38,25 +39,26 @@ module Auth : sig
   } with sexp
   (** The payload of an authentication response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Err : sig
 
   type t = {
     ename: string;
-    errno: int32 option; (** The extended 9P2000.u protocol allows the server to return an errno *)
+    errno: int32 option; (** The extended 9P2000.u protocol allows the server
+                             to return an errno *)
   } with sexp
   (** The pauload of an error response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Flush : sig
   type t = unit with sexp
   (** The payload of a flush response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Attach : sig
@@ -65,7 +67,7 @@ module Attach : sig
   } with sexp
   (** The payload of an attach response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Walk : sig
@@ -74,7 +76,7 @@ module Walk : sig
   } with sexp
   (** The payload of a walk response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Open : sig
@@ -84,7 +86,7 @@ module Open : sig
   } with sexp
   (** The payload of an Open response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Create : sig
@@ -94,7 +96,7 @@ module Create : sig
   } with sexp
   (** The payload of a Create response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Read : sig
@@ -106,7 +108,7 @@ module Read : sig
   val sizeof_header: int
   (** The size of only the header *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Write : sig
@@ -115,21 +117,21 @@ module Write : sig
   } with sexp
   (** The payload of a Write response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Clunk : sig
   type t = unit with sexp
   (** The payload of a Clunk response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Remove : sig
   type t = unit with sexp
   (** The payload of a Remove response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Stat : sig
@@ -138,14 +140,14 @@ module Stat : sig
   } with sexp
   (** The payload of a Stat response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Wstat : sig
   type t = unit with sexp
   (** The payload of a Wstat response *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 type payload =
@@ -167,12 +169,13 @@ with sexp
 (** A variant including all possible 9P response payloads *)
 
 type t = {
-  tag: Types.Tag.t; (** The tag used to match this response with the original request *)
+  tag: Protocol_9p_types.Tag.t; (** The tag used to match this response with
+                                    the original request *)
   payload: payload;
 } with sexp
 (** A 9P protocol response *)
 
-include S.SERIALISABLE with type t := t
+include Protocol_9p_s.SERIALISABLE with type t := t
 
 val pp: t Fmt.t
 (** [pp] pretty-prints responses. *)

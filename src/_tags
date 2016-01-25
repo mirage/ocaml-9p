@@ -1,0 +1,4 @@
+<*.*>: package(stringext), package(result), package(fmt)
+<*.*>: package(cstruct), package(cstruct.lwt)
+<*.*>: package(lwt), package(unix-errno), package(unix-errno.unix)
+<*.*>: package(cmdliner)

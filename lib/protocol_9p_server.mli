@@ -18,23 +18,27 @@
 (** Given a transport (a Mirage FLOW), construct a 9P server on top. *)
 
 type info = {
-  root: Types.Fid.t;        (** The initial fid provided by the client *)
-  version: Types.Version.t; (** The protocol version we negotiated *)
-  aname: string;            (** The aname tree attached to *)
-  msize: int32;             (** Negotiated max message size *)
+  root: Protocol_9p_types.Fid.t;        (** The initial fid provided by the
+                                            client *)
+  version: Protocol_9p_types.Version.t; (** The protocol version we
+                                            negotiated *)
+  aname: string;                        (** The aname tree attached to *)
+  msize: int32;                         (** Negotiated max message size *)
 }
 (** Information about the active connection, passed to the receive callback. *)
 
-type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
+type receive_cb = info -> cancel:unit Lwt.t -> Protocol_9p_request.payload ->
+  Protocol_9p_response.payload Protocol_9p_error.t Lwt.t
 (** Every time a request is received, this is the type of the callback which
     is called. *)
 
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) : sig
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t
   (** An established connection to a 9P client *)
 
-  val connect: FLOW.flow -> ?msize:int32 -> receive_cb:receive_cb -> unit -> t Error.t Lwt.t
+  val connect: FLOW.flow -> ?msize:int32 -> receive_cb:receive_cb -> unit ->
+    t Protocol_9p_error.t Lwt.t
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
       message size we support: the client may request a lower value.
       [receive_cb] will be called with every 9P request. *)

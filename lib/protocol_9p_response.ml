@@ -15,10 +15,12 @@
  *
  *)
 open Sexplib.Std
-open Error
+open Protocol_9p_error
+
+module Types = Protocol_9p_types
 open Types
 
-module Version = Request.Version
+module Version = Protocol_9p_request.Version
 
 module Auth = struct
   type t = {

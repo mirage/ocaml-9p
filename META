@@ -1,6 +1,4 @@
-# OASIS_START
-# DO NOT EDIT (digest: 56e7c6a53284284d7affd16cf56e1a1a)
-version = "0.3"
+version = "0.4.0"
 description = "9P filesystem protocol"
 requires =
 "result cstruct sexplib sexplib mirage-types.lwt lwt stringext fmt"
@@ -9,15 +7,15 @@ archive(byte, plugin) = "protocol_9p.cma"
 archive(native) = "protocol_9p.cmxa"
 archive(native, plugin) = "protocol_9p.cmxs"
 exists_if = "protocol_9p.cma"
+
 package "unix" (
- version = "0.3"
+ version = "0.4.0"
  description = "9P filesystem protocol"
- requires = "protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt"
+ requires =
+ "result fmt stringext protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt"
  archive(byte) = "protocol_9p_unix.cma"
  archive(byte, plugin) = "protocol_9p_unix.cma"
  archive(native) = "protocol_9p_unix.cmxa"
  archive(native, plugin) = "protocol_9p_unix.cmxs"
  exists_if = "protocol_9p_unix.cma"
 )
-# OASIS_STOP
-

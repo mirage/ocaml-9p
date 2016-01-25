@@ -15,8 +15,10 @@
  *
  *)
 open Sexplib.Std
+open Protocol_9p_error
+
+module Types = Protocol_9p_types
 open Types
-open Error
 
 module Version = struct
   type t = {

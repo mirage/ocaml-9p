@@ -1,4 +1,12 @@
-# OASIS_START
-# DO NOT EDIT (digest: 04ab919154438bbd703de851695a06b9)
 Protocol_9p
-# OASIS_STOP
+Protocol_9p_s
+Protocol_9p_request
+Protocol_9p_error
+Protocol_9p_response
+Protocol_9p_types
+Protocol_9p_client
+Protocol_9p_server
+Protocol_9p_buffered9PReader
+Protocol_9p_handler
+Protocol_9p_filesystem
+Protocol_9p_infix

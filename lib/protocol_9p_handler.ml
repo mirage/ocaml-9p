@@ -20,7 +20,12 @@
 open Result
 open Lwt.Infix
 
-module Make(Filesystem : Filesystem.S) = struct
+module Server = Protocol_9p_server
+module Types = Protocol_9p_types
+module Request = Protocol_9p_request
+module Response = Protocol_9p_response
+
+module Make(Filesystem : Protocol_9p_filesystem.S) = struct
   let receive_cb info ~cancel =
     let is_unix = (info.Server.version = Types.Version.unix) in
     let adjust_errno err =

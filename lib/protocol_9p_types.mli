@@ -19,7 +19,7 @@
 
 open Sexplib
 
-val big_enough_for: string -> Cstruct.t -> int -> unit Error.t
+val big_enough_for: string -> Cstruct.t -> int -> unit Protocol_9p_error.t
 (** [big_enough_for name buf length] returns an error with a log message
     if buffer [buf] is smaller than [length]. The [name] will be included
     in the error message. *)
@@ -27,7 +27,7 @@ val big_enough_for: string -> Cstruct.t -> int -> unit Error.t
 module Int8 : sig
   type t = int with sexp
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Int16 : sig
@@ -35,7 +35,7 @@ module Int16 : sig
 
   val is_any: t -> bool
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Int32 : sig
@@ -46,7 +46,7 @@ module Int32 : sig
 
   val is_any: t -> bool
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Int64 : sig
@@ -54,7 +54,7 @@ module Int64 : sig
 
   val is_any: t -> bool
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Version : sig
@@ -64,7 +64,7 @@ module Version : sig
   val unix: t    (** The extension known as 9P2000.u *)
   val unknown: t
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Fid : sig
@@ -75,7 +75,7 @@ module Fid : sig
 
   val nofid: t
 
-  val of_int32: int32 -> t Error.t
+  val of_int32: int32 -> t Protocol_9p_error.t
 
   val recommended: Set.t
   (** A list of recommended fids. The client can allocate (on the server) up to
@@ -83,7 +83,7 @@ module Fid : sig
       Instead clients are recommended to use fids from this (much smaller) list.
   *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module OpenMode : sig
@@ -108,7 +108,7 @@ module OpenMode : sig
   val read_write: t
   val exec: t
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module FileMode : sig
@@ -148,7 +148,7 @@ module FileMode : sig
 
   val nonet_of_permissions: t -> int32
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Qid : sig
@@ -180,7 +180,7 @@ module Qid : sig
   val dir: ?id:int64 -> ?version:int32 -> unit -> t
   (** Construct a [t] representing a directory *)
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Tag : sig
@@ -200,9 +200,9 @@ module Tag : sig
       but this represents a large number of concurrent transactions. Instead clients
       are recommended to use fids drawn from this much (much smaller) list. *)
 
-  val of_int: int -> t Error.t
+  val of_int: int -> t Protocol_9p_error.t
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Data : sig
@@ -214,7 +214,7 @@ module Data : sig
 
   val to_string: t -> string
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Stat : sig
@@ -246,11 +246,11 @@ module Stat : sig
     ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string ->
     ?u:extension -> unit -> t
 
-  include S.SERIALISABLE with type t := t
+  include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
-module Arr(T: S.SERIALISABLE) : sig
+module Arr(T: Protocol_9p_s.SERIALISABLE) : sig
   (** A sequence of [T.t]s written contiguously to a buffer *)
 
-  include S.SERIALISABLE with type t = T.t list
+  include Protocol_9p_s.SERIALISABLE with type t = T.t list
 end

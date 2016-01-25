@@ -15,9 +15,15 @@
  *
  *)
 
-open Error
 open Result
-open Infix
+open Protocol_9p_infix
+
+module Error = Protocol_9p_error
+open Error
+
+module Types = Protocol_9p_types
+module Request = Protocol_9p_request
+module Response = Protocol_9p_response
 
 type info = {
   root: Types.Fid.t;
@@ -28,8 +34,8 @@ type info = {
 
 type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
 
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
-  module Reader = Buffered9PReader.Make(Log)(FLOW)
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
+  module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
   open Log
 
   type t = {
@@ -62,7 +68,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
   let after_disconnect t = t.shutdown_complete_t
 
   let write_one_packet ?write_lock writer response =
-    (* debug "S %a" Response.pp response; *)
+    debug "S %a" Response.pp response;
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
@@ -86,7 +92,7 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         | Error (`Msg ename) ->
           Error (`Parse (ename, buffer))
         | Ok (request, _) ->
-          (* debug "C %a" Request.pp request; *)
+          debug "C %a" Request.pp request;
           Ok request
       end
 
@@ -227,7 +233,9 @@ module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
         Response.tag;
         payload = Response.Version Response.Version.({ msize; version });
       } >>*= fun () ->
-      info "Using protocol version %s" (Sexplib.Sexp.to_string (Types.Version.sexp_of_t version));
+      info "Using protocol %s msize %ld"
+        (Sexplib.Sexp.to_string (Types.Version.sexp_of_t version))
+        msize;
       LowLevel.expect_attach ~write_lock reader writer
       >>*= fun (tag, a, payload) ->
       let cancel_buttons = Types.Tag.Map.empty in

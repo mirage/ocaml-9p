@@ -16,10 +16,10 @@
  *)
 
 open Result
-open Error
-open Infix
+open Protocol_9p_error
+open Protocol_9p_infix
 
-module Make(Log: S.LOG)(FLOW: V1_LWT.FLOW) = struct
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
   type t = {
     flow: FLOW.flow;
     read_m: Lwt_mutex.t;
