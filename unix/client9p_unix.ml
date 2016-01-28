@@ -56,7 +56,7 @@ module Make(Log: S.LOG) = struct
   let connect proto address ?msize ?username ?aname () =
     ( match proto with
       | "tcp" ->
-        begin match Stringext.split ~on:'/' address with
+        begin match Stringext.split ~on:':' address with
         | [ hostname; port ] -> open_tcp hostname (int_of_string port)
         | [ hostname ] -> open_tcp hostname 5640
         | _ -> Lwt.fail (Failure (Printf.sprintf "Unable to parse %s %s" proto address))
