@@ -177,28 +177,35 @@ let ls debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
+let cwd = ref []
+class read_line ~term ~history ~state = object(self)
+  inherit LTerm_read_line.read_line ~history ()
+  inherit [Zed_utf8.t] LTerm_read_line.term term
+
+  method show_box = false
+
+  initializer
+    let open React in
+    let open LTerm_text in
+    self#set_prompt (S.const (eval [ S (Printf.sprintf "9P %s> " (String.concat "/" !cwd)) ]))
+end
+
 let shell debug address username =
   Log.print_debug := debug;
   let t =
     with_client address username
       (fun t ->
-        let cwd = ref [] in
-        let unimplemented fn =
-          Printf.printf "%s is not implemented.\n" fn;
-          Lwt.return () in
-
-        let rec loop () =
-          Printf.printf "9P:%s> %!" (String.concat "/" !cwd);
-          match Stringext.split ~on:' ' (input_line stdin) with
+        let execute_command x =
+          match Stringext.split ~on:' ' x with
           | [ "ls" ] ->
             begin
               Client.readdir t !cwd >>= function
               | Result.Error (`Msg x) ->
                 print_endline x;
-                loop ()
+                return ()
               | Result.Ok stats ->
                 print_stats stats;
-                loop ()
+                return ()
             end
           | [ "cd"; dir ] ->
             let dir' = Stringext.split ~on:'/' dir in
@@ -213,14 +220,14 @@ let shell debug address username =
               | Result.Ok x ->
                 if x.Protocol_9p_types.Stat.mode.Protocol_9p_types.FileMode.is_directory then begin
                   cwd := newdir;
-                  loop ()
+                  return ()
                 end else begin
                   Printf.printf "not a directory\n";
-                  loop ()
+                  return ()
                 end
               | Result.Error (`Msg m) ->
                 print_endline m;
-                loop ()
+                return ()
             end
           | [ "create"; file ] ->
             let mode = Protocol_9p_types.FileMode.make ~is_directory:false
@@ -229,10 +236,10 @@ let shell debug address username =
             begin
               Client.create t !cwd file mode
               >>= function
-              | Result.Ok () -> loop ()
+              | Result.Ok () -> return ()
               | Result.Error (`Msg m) ->
                 print_endline m;
-                loop ()
+                return ()
             end
           | [ "read"; file ]  ->
             let rec copy ofs =
@@ -240,7 +247,7 @@ let shell debug address username =
               >>= function
               | Result.Error (`Msg m) ->
                 print_endline m;
-                loop ()
+                return ()
               | Result.Ok bufs ->
                 let len = List.fold_left (+) 0 (List.map Cstruct.len bufs) in
                 List.iter (fun x -> output_string stdout (Cstruct.to_string x)) bufs;
@@ -249,7 +256,7 @@ let shell debug address username =
                 else Lwt.return () in
             copy 0L
             >>= fun () ->
-            loop ()
+            return ()
           | "write" :: file :: rest ->
             let data = String.concat " " rest in
             let buf = Cstruct.create (String.length data) in
@@ -259,11 +266,10 @@ let shell debug address username =
               >>= function
               | Result.Error (`Msg m) ->
                 print_endline m;
-                loop ()
+                return ()
               | Result.Ok () ->
-                loop ()
+                return ()
             end
-          | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
           | [ "mkdir"; dir ] ->
             let mode = Protocol_9p_types.FileMode.make ~is_directory:true
               ~owner:[`Read; `Write; `Execute] ~group:[`Read; `Execute]
@@ -271,24 +277,53 @@ let shell debug address username =
             begin
               Client.mkdir t !cwd dir mode
               >>= function
-              | Result.Ok () -> loop ()
+              | Result.Ok () -> return ()
               | Result.Error (`Msg m) ->
                 print_endline m;
-                loop ()
+                return ()
             end
           | [ "rm"; file ]    ->
               begin
                 Client.remove t (!cwd @ [ file ])
                 >>= function
-                | Result.Ok () -> loop ()
+                | Result.Ok () -> return ()
                 | Result.Error (`Msg m) ->
                   print_endline m;
-                  loop ()
+                  return ()
               end
-          | [ "exit" ]  -> return () (* terminate loop *)
-          | [] -> loop ()
-          | cmd :: _ -> Printf.printf "Unknown command: %s\n%!" cmd; loop () in
-        loop ()
+          | [ "exit" ]  -> exit 0
+          | [] -> return ()
+          | cmd :: _ -> Printf.printf "Unknown command: %s\n%!" cmd; return () in
+
+        let rec loop term history =
+          Lwt.catch
+            (fun () ->
+              let rl = new read_line ~term ~history:(LTerm_history.contents history) ~state in
+              rl#run
+              >>= fun command ->
+              return (Some command))
+            (function
+              | Sys.Break -> return None
+              | e -> fail e)
+          >>= function
+          | Some command ->
+            execute_command command
+            >>= fun () ->
+            LTerm_history.add history command;
+            loop term history
+          | None ->
+            loop term history in
+
+      LTerm_inputrc.load ()
+      >>= fun () ->
+      Lwt.catch
+        (fun () ->
+          Lazy.force LTerm.stdout
+          >>= fun term ->
+          loop term (LTerm_history.create [])
+        ) (function
+          | LTerm_read_line.Interrupt -> return ()
+          | e -> fail e)
       ) in
   try
     Lwt_main.run t;
