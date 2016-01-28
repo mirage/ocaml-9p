@@ -99,74 +99,76 @@ let remove debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
-let do_ls t path =
-  Client.readdir t path >>= function
-   | Result.Error (`Msg x) -> failwith x
-   | Result.Ok stats ->
-     let row_of_stat x =
-       let permissions p =
-         (if List.mem `Read p then "r" else "-")
-         ^ (if List.mem `Write p then "w" else "-")
-         ^ (if List.mem `Execute p then "x" else "-") in
-       let filemode = x.Types.Stat.mode in
-       let owner = permissions filemode.Types.FileMode.owner in
-       let group = permissions filemode.Types.FileMode.group in
-       let other = permissions filemode.Types.FileMode.other in
-       let kind =
-         let open Types.FileMode in
-         if filemode.is_directory then "d"
-         else if filemode.is_symlink then "l"
-         else if filemode.is_device then "c"
-         else if filemode.is_socket then "s"
-         else "-" in
-       let perms = kind ^ owner ^ group ^ other in
-       let links = "?" in
-       let uid = x.Types.Stat.uid in
-       let gid = x.Types.Stat.gid in
-       let length = Int64.to_string x.Types.Stat.length in
-       let tm = Unix.gmtime (Int32.to_float x.Types.Stat.mtime) in
-       let month = match tm.Unix.tm_mon with
-         | 0 -> "Jan"  | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May"
-         | 5 -> "Jun"  | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct"
-         | 10 -> "Nov" | 11 -> "Dec"
-         | x -> string_of_int x
-       in
-       let day = string_of_int tm.Unix.tm_mday in
-       let year = string_of_int (1900 + tm.Unix.tm_year) in
-       let name =
-        let name = x.Types.Stat.name in
-        if filemode.Types.FileMode.is_symlink
-        then match x.Types.Stat.u with
-          | Some { Types.Stat.extension = e } ->
-            name ^ " -> " ^ e
-          | None ->
-            name
-        else name in
-       Array.of_list [
-         perms; links; uid; gid; length; month; day; year; name;
-       ] in
-     let rows = Array.of_list (List.map row_of_stat stats) in
-     let padto n x =
-       let extra = max 0 (n - (String.length x)) in
-       x ^ (String.make extra ' ') in
-     Array.iter (fun row ->
-       Array.iteri (fun i txt ->
-         let column = Array.map (fun row -> row.(i)) rows in
-         let biggest = Array.fold_left (fun acc x ->
-           max acc (String.length x)
-         ) 0 column in
-         Printf.printf "%s " (padto biggest txt)
-       ) row;
-       Printf.printf "\n";
-     ) rows;
-     Printf.printf "%!";
-     return ()
+let print_stats stats =
+  let row_of_stat x =
+    let permissions p =
+      (if List.mem `Read p then "r" else "-")
+      ^ (if List.mem `Write p then "w" else "-")
+      ^ (if List.mem `Execute p then "x" else "-") in
+    let filemode = x.Types.Stat.mode in
+    let owner = permissions filemode.Types.FileMode.owner in
+    let group = permissions filemode.Types.FileMode.group in
+    let other = permissions filemode.Types.FileMode.other in
+    let kind =
+      let open Types.FileMode in
+      if filemode.is_directory then "d"
+      else if filemode.is_symlink then "l"
+      else if filemode.is_device then "c"
+      else if filemode.is_socket then "s"
+      else "-" in
+    let perms = kind ^ owner ^ group ^ other in
+    let links = "?" in
+    let uid = x.Types.Stat.uid in
+    let gid = x.Types.Stat.gid in
+    let length = Int64.to_string x.Types.Stat.length in
+    let tm = Unix.gmtime (Int32.to_float x.Types.Stat.mtime) in
+    let month = match tm.Unix.tm_mon with
+      | 0 -> "Jan"  | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May"
+      | 5 -> "Jun"  | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct"
+      | 10 -> "Nov" | 11 -> "Dec"
+      | x -> string_of_int x
+    in
+    let day = string_of_int tm.Unix.tm_mday in
+    let year = string_of_int (1900 + tm.Unix.tm_year) in
+    let name =
+     let name = x.Types.Stat.name in
+     if filemode.Types.FileMode.is_symlink
+     then match x.Types.Stat.u with
+       | Some { Types.Stat.extension = e } ->
+         name ^ " -> " ^ e
+       | None ->
+         name
+     else name in
+    Array.of_list [
+      perms; links; uid; gid; length; month; day; year; name;
+    ] in
+  let rows = Array.of_list (List.map row_of_stat stats) in
+  let padto n x =
+    let extra = max 0 (n - (String.length x)) in
+    x ^ (String.make extra ' ') in
+  Array.iter (fun row ->
+    Array.iteri (fun i txt ->
+      let column = Array.map (fun row -> row.(i)) rows in
+      let biggest = Array.fold_left (fun acc x ->
+        max acc (String.length x)
+      ) 0 column in
+      Printf.printf "%s " (padto biggest txt)
+    ) row;
+    Printf.printf "\n";
+  ) rows;
+  Printf.printf "%!"
 
 let ls debug address path username =
   Log.print_debug := debug;
   let t =
     with_client address username
-      (fun t -> do_ls t (parse_path path)) in
+      (fun t ->
+        Client.readdir t (parse_path path) >>= function
+         | Result.Error (`Msg x) -> failwith x
+         | Result.Ok stats ->
+           print_stats stats;
+           return ()
+      ) in
   try
     Lwt_main.run t;
     `Ok ()
@@ -188,7 +190,16 @@ let shell debug address username =
         let rec loop () =
           Printf.printf "9P:%s> %!" (String.concat "/" !cwd);
           match Stringext.split ~on:' ' (input_line stdin) with
-          | [ "ls" ]      -> do_ls t !cwd           >>= fun () -> loop ()
+          | [ "ls" ] ->
+            begin
+              Client.readdir t !cwd >>= function
+              | Result.Error (`Msg x) ->
+                print_endline x;
+                loop ()
+              | Result.Ok stats ->
+                print_stats stats;
+                loop ()
+            end
           | [ "cd"; dir ] ->
             let dir' = Stringext.split ~on:'/' dir in
             let newdir =
