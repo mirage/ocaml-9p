@@ -209,7 +209,18 @@ let shell debug address username =
             end
           | [ "read" ]  -> unimplemented "read"   >>= fun () -> loop ()
           | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
-          | [ "mkdir" ] -> unimplemented "mkdir"  >>= fun () -> loop ()
+          | [ "mkdir"; dir ] ->
+            let mode = Protocol_9p_types.FileMode.make ~is_directory:true
+              ~owner:[`Read; `Write; `Execute] ~group:[`Read; `Execute]
+              ~other:[`Read; `Execute ] () in
+            begin
+              Client.mkdir t (parse_path !cwd) dir mode
+              >>= function
+              | Result.Ok () -> loop ()
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                loop ()
+            end
           | [ "rm"; file ]    ->
               begin
                 Client.remove t (parse_path (Filename.concat !cwd file))
