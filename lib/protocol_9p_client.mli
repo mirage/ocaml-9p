@@ -23,6 +23,11 @@ module type S = sig
   (** Disconnect from the 9P server, but leave the underlying FLOW
       connected. *)
 
+  val write: t -> string list -> int64 -> Cstruct.t ->
+    unit Protocol_9p_error.t Lwt.t
+  (** [write t path offset buf] writes [buf] to the file at [path] at
+      offset [offset] *)
+
   val read: t -> string list -> int64 -> int32 ->
     Cstruct.t list Protocol_9p_error.t Lwt.t
   (** [read t path offset count] returns a list of buffers containing [count]

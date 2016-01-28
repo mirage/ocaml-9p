@@ -80,6 +80,8 @@ module Make(Log: S.LOG) = struct
 
   let read { client } = Client.read client
 
+  let write { client } = Client.write client
+
   let mkdir { client } = Client.mkdir client
 
   let remove { client } = Client.remove client

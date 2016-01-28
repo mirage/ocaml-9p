@@ -29,6 +29,8 @@ module type S = sig
   type t
 
   val disconnect: t -> unit Lwt.t
+
+  val write: t -> string list -> int64 -> Cstruct.t -> unit Protocol_9p_error.t Lwt.t
   val read: t -> string list -> int64 -> int32 -> Cstruct.t list Error.t Lwt.t
   val mkdir: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
   val remove: t -> string list -> unit Error.t Lwt.t
@@ -285,6 +287,31 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     allocate_fid t
     >>= fun fid ->
     finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
+
+  let write t path offset buf =
+    let open LowLevel in
+    let fid = t.root in
+    with_fid t
+      (fun newfid ->
+        let wnames = path in
+        walk t fid newfid wnames
+        >>*= fun _ -> (* I don't need to know the qids *)
+        openfid t newfid Types.OpenMode.write_only
+        >>*= fun _ ->
+        let rec loop offset remaining =
+          let len = Cstruct.len remaining in
+          if len = 0
+          then Lwt.return (Ok ())
+          else begin
+            let to_request = min len (Int32.to_int t.maximum_payload) in
+            write t newfid offset (Cstruct.sub remaining 0 to_request)
+            >>*= fun { Response.Write.count } ->
+            let count = Int32.to_int count in
+            let remaining = Cstruct.shift remaining count in
+            loop Int64.(add offset (of_int count)) remaining
+          end in
+        loop offset buf
+      )
 
   let read t path offset count =
     let open LowLevel in
