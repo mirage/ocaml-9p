@@ -211,7 +211,22 @@ let shell debug address username =
                 print_endline m;
                 loop ()
             end
-          | [ "read" ]  -> unimplemented "read"   >>= fun () -> loop ()
+          | [ "read"; file ]  ->
+            let rec copy ofs =
+              Client.read t (!cwd @ [ file ]) ofs 1024l
+              >>= function
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                loop ()
+              | Result.Ok bufs ->
+                let len = List.fold_left (+) 0 (List.map Cstruct.len bufs) in
+                List.iter (fun x -> output_string stdout (Cstruct.to_string x)) bufs;
+                if len > 0
+                then copy Int64.(add ofs (of_int len))
+                else Lwt.return () in
+            copy 0L
+            >>= fun () ->
+            loop ()
           | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
           | [ "mkdir"; dir ] ->
             let mode = Protocol_9p_types.FileMode.make ~is_directory:true
