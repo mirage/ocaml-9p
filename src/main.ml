@@ -189,8 +189,24 @@ let shell debug address username =
         let rec loop () =
           Printf.printf "9P:%s> %!" !cwd;
           match Stringext.split ~on:' ' (input_line stdin) with
-          | [ "ls" ]    -> do_ls t !cwd           >>= fun () -> loop ()
-          | [ "cd" ]    -> unimplemented "cd"     >>= fun () -> loop ()
+          | [ "ls" ]      -> do_ls t !cwd           >>= fun () -> loop ()
+          | [ "cd"; dir ] ->
+            let newdir = Filename.concat !cwd dir in
+            begin
+              Client.stat t (parse_path newdir)
+              >>= function
+              | Result.Ok x ->
+                if x.Protocol_9p_types.Stat.mode.Protocol_9p_types.FileMode.is_directory then begin
+                  cwd := newdir;
+                  loop ()
+                end else begin
+                  Printf.printf "not a directory\n";
+                  loop ()
+                end
+              | Result.Error _ ->
+                Printf.printf "does not exist\n";
+                loop ()
+            end
           | [ "read" ]  -> unimplemented "read"   >>= fun () -> loop ()
           | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
           | [ "mkdir" ] -> unimplemented "mkdir"  >>= fun () -> loop ()
