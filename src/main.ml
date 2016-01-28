@@ -174,6 +174,39 @@ let ls debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
+let shell debug address username =
+  Log.print_debug := debug;
+  let t =
+    with_client address username
+      (fun t ->
+        let cwd = ref "/" in
+        let unimplemented fn =
+          Printf.printf "%s is not implemented.\n" fn;
+          Lwt.return () in
+
+        let rec loop () =
+          Printf.printf "9P:%s> %!" !cwd;
+          match Stringext.split ~on:' ' (input_line stdin) with
+          | [ "ls" ]    -> unimplemented "ls"     >>= fun () -> loop ()
+          | [ "cd" ]    -> unimplemented "cd"     >>= fun () -> loop ()
+          | [ "read" ]  -> unimplemented "read"   >>= fun () -> loop ()
+          | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
+          | [ "mkdir" ] -> unimplemented "mkdir"  >>= fun () -> loop ()
+          | [ "rmdir" ] -> unimplemented "rmdir"  >>= fun () -> loop ()
+          | [ "rm" ]    -> unimplemented "rm"     >>= fun () -> loop ()
+          | [ "exit" ]  -> return () (* terminate loop *)
+          | [] -> loop ()
+          | cmd :: _ -> Printf.printf "Unknown command: %s\n%!" cmd; loop () in
+        loop ()
+      ) in
+  try
+    Lwt_main.run t;
+    `Ok ()
+  with Failure e ->
+    `Error(false, e)
+  | e ->
+    `Error(false, Printexc.to_string e)
+
 let serve_local_fs_cb path =
   let module Lofs = Lofs9p.New(struct let root = path end) in
   let module Fs = Handler.Make(Lofs) in
@@ -285,13 +318,26 @@ let serve_cmd =
   Term.(ret(pure serve $ debug $ address $ path)),
   Term.info "serve" ~doc ~man
 
+let shell_cmd =
+  let doc = "Run an interactive 9P session" in
+  let man = [
+    `S "DESCRIPTION";
+    `P "Connect to a 9P server and present a shell-like interface."
+  ] @ help in
+  Term.(ret(pure shell $ debug $ address $ username)),
+  Term.info "shell" ~doc ~man
+
 let default_cmd =
   let doc = "interact with a remote machine over 9P" in
   let man = help in
   Term.(ret (pure (`Help (`Pager, None)))),
   Term.info (Sys.argv.(0)) ~version ~doc ~man
 
+let all_cmds = [
+  ls_cmd; read_cmd; remove_cmd; serve_cmd; shell_cmd;
+]
+
 let _ =
-  match Term.eval_choice default_cmd [ ls_cmd; read_cmd; remove_cmd; serve_cmd ] with
+  match Term.eval_choice default_cmd all_cmds with
   | `Error _ -> exit 1
   | _ -> exit 0
