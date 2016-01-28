@@ -212,7 +212,7 @@ let shell debug address username =
             let newdir =
               if dir <> "" && dir.[0] = '/' then dir'
               else if dir = "." then !cwd
-              else if dir = ".." then List.(rev @@ tl @@ rev !cwd)
+              else if dir = ".." then (if !cwd = [] then !cwd else List.(rev @@ tl @@ rev !cwd))
               else !cwd @ dir' in
             begin
               Client.stat t newdir
