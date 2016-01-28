@@ -251,6 +251,7 @@ let shell debug address username =
               | Result.Ok bufs ->
                 let len = List.fold_left (+) 0 (List.map Cstruct.len bufs) in
                 List.iter (fun x -> output_string stdout (Cstruct.to_string x)) bufs;
+                flush stdout;
                 if len > 0
                 then copy Int64.(add ofs (of_int len))
                 else Lwt.return () in
