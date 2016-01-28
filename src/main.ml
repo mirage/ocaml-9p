@@ -100,7 +100,6 @@ let remove debug address path username =
     `Error(false, Printexc.to_string e)
 
 let do_ls t path =
-  let path = parse_path path in
   Client.readdir t path >>= function
    | Result.Error (`Msg x) -> failwith x
    | Result.Ok stats ->
@@ -167,7 +166,7 @@ let ls debug address path username =
   Log.print_debug := debug;
   let t =
     with_client address username
-      (fun t -> do_ls t path) in
+      (fun t -> do_ls t (parse_path path)) in
   try
     Lwt_main.run t;
     `Ok ()
@@ -181,19 +180,24 @@ let shell debug address username =
   let t =
     with_client address username
       (fun t ->
-        let cwd = ref "/" in
+        let cwd = ref [] in
         let unimplemented fn =
           Printf.printf "%s is not implemented.\n" fn;
           Lwt.return () in
 
         let rec loop () =
-          Printf.printf "9P:%s> %!" !cwd;
+          Printf.printf "9P:%s> %!" (String.concat "/" !cwd);
           match Stringext.split ~on:' ' (input_line stdin) with
           | [ "ls" ]      -> do_ls t !cwd           >>= fun () -> loop ()
           | [ "cd"; dir ] ->
-            let newdir = Filename.concat !cwd dir in
+            let dir' = Stringext.split ~on:'/' dir in
+            let newdir =
+              if dir <> "" && dir.[0] = '/' then dir'
+              else if dir = "." then !cwd
+              else if dir = ".." then List.(rev @@ tl @@ rev !cwd)
+              else !cwd @ dir' in
             begin
-              Client.stat t (parse_path newdir)
+              Client.stat t newdir
               >>= function
               | Result.Ok x ->
                 if x.Protocol_9p_types.Stat.mode.Protocol_9p_types.FileMode.is_directory then begin
@@ -214,7 +218,7 @@ let shell debug address username =
               ~owner:[`Read; `Write; `Execute] ~group:[`Read; `Execute]
               ~other:[`Read; `Execute ] () in
             begin
-              Client.mkdir t (parse_path !cwd) dir mode
+              Client.mkdir t !cwd dir mode
               >>= function
               | Result.Ok () -> loop ()
               | Result.Error (`Msg m) ->
@@ -223,7 +227,7 @@ let shell debug address username =
             end
           | [ "rm"; file ]    ->
               begin
-                Client.remove t (parse_path (Filename.concat !cwd file))
+                Client.remove t (!cwd @ [ file ])
                 >>= function
                 | Result.Ok () -> loop ()
                 | Result.Error (`Msg m) ->
