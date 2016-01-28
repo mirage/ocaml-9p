@@ -203,15 +203,22 @@ let shell debug address username =
                   Printf.printf "not a directory\n";
                   loop ()
                 end
-              | Result.Error _ ->
-                Printf.printf "does not exist\n";
+              | Result.Error (`Msg m) ->
+                print_endline m;
                 loop ()
             end
           | [ "read" ]  -> unimplemented "read"   >>= fun () -> loop ()
           | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
           | [ "mkdir" ] -> unimplemented "mkdir"  >>= fun () -> loop ()
-          | [ "rmdir" ] -> unimplemented "rmdir"  >>= fun () -> loop ()
-          | [ "rm" ]    -> unimplemented "rm"     >>= fun () -> loop ()
+          | [ "rm"; file ]    ->
+              begin
+                Client.remove t (parse_path (Filename.concat !cwd file))
+                >>= function
+                | Result.Ok () -> loop ()
+                | Result.Error (`Msg m) ->
+                  print_endline m;
+                  loop ()
+              end
           | [ "exit" ]  -> return () (* terminate loop *)
           | [] -> loop ()
           | cmd :: _ -> Printf.printf "Unknown command: %s\n%!" cmd; loop () in
