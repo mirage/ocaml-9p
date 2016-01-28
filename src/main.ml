@@ -23,7 +23,7 @@ let project_url = "http://github.com/mirage/ocaml-9p"
 let version = "0.0"
 
 module Log = Log9p_unix.Stdout
-module Client = Client9p_unix.Inet(Log)
+module Client = Client9p_unix.Make(Log)
 module Server = Server9p_unix.Make(Log)
 
 let finally f g =
@@ -37,19 +37,15 @@ let finally f g =
       Lwt.fail e)
 
 let parse_address address =
-  try
-    let colon = String.index address ':' in
-    let last = String.length address - colon - 1 in
-    String.sub address 0 colon,
-    int_of_string (String.sub address (colon + 1) last)
-  with Not_found ->
-    address, 5640
+  match Stringext.split ~on:':' ~max:2 address with
+  | [ proto; address ] -> proto, address
+  | _ -> address, "5640"
 
 let parse_path x = Stringext.split x ~on:'/'
 
 let with_client address username f =
-  let hostname, port = parse_address address in
-  Client.connect hostname port ?username ()
+  let proto, address = parse_address address in
+  Client.connect proto address ?username ()
   >>= function
   | Result.Error (`Msg x) -> failwith x
   | Result.Ok t ->
@@ -103,72 +99,231 @@ let remove debug address path username =
   | e ->
     `Error(false, Printexc.to_string e)
 
+let print_stats stats =
+  let row_of_stat x =
+    let permissions p =
+      (if List.mem `Read p then "r" else "-")
+      ^ (if List.mem `Write p then "w" else "-")
+      ^ (if List.mem `Execute p then "x" else "-") in
+    let filemode = x.Types.Stat.mode in
+    let owner = permissions filemode.Types.FileMode.owner in
+    let group = permissions filemode.Types.FileMode.group in
+    let other = permissions filemode.Types.FileMode.other in
+    let kind =
+      let open Types.FileMode in
+      if filemode.is_directory then "d"
+      else if filemode.is_symlink then "l"
+      else if filemode.is_device then "c"
+      else if filemode.is_socket then "s"
+      else "-" in
+    let perms = kind ^ owner ^ group ^ other in
+    let links = "?" in
+    let uid = x.Types.Stat.uid in
+    let gid = x.Types.Stat.gid in
+    let length = Int64.to_string x.Types.Stat.length in
+    let tm = Unix.gmtime (Int32.to_float x.Types.Stat.mtime) in
+    let month = match tm.Unix.tm_mon with
+      | 0 -> "Jan"  | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May"
+      | 5 -> "Jun"  | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct"
+      | 10 -> "Nov" | 11 -> "Dec"
+      | x -> string_of_int x
+    in
+    let day = string_of_int tm.Unix.tm_mday in
+    let year = string_of_int (1900 + tm.Unix.tm_year) in
+    let name =
+     let name = x.Types.Stat.name in
+     if filemode.Types.FileMode.is_symlink
+     then match x.Types.Stat.u with
+       | Some { Types.Stat.extension = e } ->
+         name ^ " -> " ^ e
+       | None ->
+         name
+     else name in
+    Array.of_list [
+      perms; links; uid; gid; length; month; day; year; name;
+    ] in
+  let rows = Array.of_list (List.map row_of_stat stats) in
+  let padto n x =
+    let extra = max 0 (n - (String.length x)) in
+    x ^ (String.make extra ' ') in
+  Array.iter (fun row ->
+    Array.iteri (fun i txt ->
+      let column = Array.map (fun row -> row.(i)) rows in
+      let biggest = Array.fold_left (fun acc x ->
+        max acc (String.length x)
+      ) 0 column in
+      Printf.printf "%s " (padto biggest txt)
+    ) row;
+    Printf.printf "\n";
+  ) rows;
+  Printf.printf "%!"
+
 let ls debug address path username =
   Log.print_debug := debug;
-  let path = parse_path path in
   let t =
     with_client address username
-      (fun t -> Client.readdir t path >>= function
-       | Result.Error (`Msg x) -> failwith x
-       | Result.Ok stats ->
-         let row_of_stat x =
-           let permissions p =
-             (if List.mem `Read p then "r" else "-")
-             ^ (if List.mem `Write p then "w" else "-")
-             ^ (if List.mem `Execute p then "x" else "-") in
-           let filemode = x.Types.Stat.mode in
-           let owner = permissions filemode.Types.FileMode.owner in
-           let group = permissions filemode.Types.FileMode.group in
-           let other = permissions filemode.Types.FileMode.other in
-           let kind =
-             let open Types.FileMode in
-             if filemode.is_directory then "d"
-             else if filemode.is_symlink then "l"
-             else if filemode.is_device then "c"
-             else if filemode.is_socket then "s"
-             else "-" in
-           let perms = kind ^ owner ^ group ^ other in
-           let links = "?" in
-           let uid = x.Types.Stat.uid in
-           let gid = x.Types.Stat.gid in
-           let length = Int64.to_string x.Types.Stat.length in
-           let tm = Unix.gmtime (Int32.to_float x.Types.Stat.mtime) in
-           let month = match tm.Unix.tm_mon with
-             | 0 -> "Jan"  | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May"
-             | 5 -> "Jun"  | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct"
-             | 10 -> "Nov" | 11 -> "Dec"
-             | x -> string_of_int x
-           in
-           let day = string_of_int tm.Unix.tm_mday in
-           let year = string_of_int (1900 + tm.Unix.tm_year) in
-           let name =
-            let name = x.Types.Stat.name in
-            if filemode.Types.FileMode.is_symlink
-            then match x.Types.Stat.u with
-              | Some { Types.Stat.extension = e } ->
-                name ^ " -> " ^ e
-              | None ->
-                name
-            else name in
-           Array.of_list [
-             perms; links; uid; gid; length; month; day; year; name;
-           ] in
-         let rows = Array.of_list (List.map row_of_stat stats) in
-         let padto n x =
-           let extra = max 0 (n - (String.length x)) in
-           x ^ (String.make extra ' ') in
-         Array.iter (fun row ->
-           Array.iteri (fun i txt ->
-             let column = Array.map (fun row -> row.(i)) rows in
-             let biggest = Array.fold_left (fun acc x ->
-               max acc (String.length x)
-             ) 0 column in
-             Printf.printf "%s " (padto biggest txt)
-           ) row;
-           Printf.printf "\n";
-         ) rows;
-         Printf.printf "%!";
-         return ()
+      (fun t ->
+        Client.readdir t (parse_path path) >>= function
+         | Result.Error (`Msg x) -> failwith x
+         | Result.Ok stats ->
+           print_stats stats;
+           return ()
+      ) in
+  try
+    Lwt_main.run t;
+    `Ok ()
+  with Failure e ->
+    `Error(false, e)
+  | e ->
+    `Error(false, Printexc.to_string e)
+
+let cwd = ref []
+class read_line ~term ~history ~state = object(self)
+  inherit LTerm_read_line.read_line ~history ()
+  inherit [Zed_utf8.t] LTerm_read_line.term term
+
+  method show_box = false
+
+  initializer
+    let open React in
+    let open LTerm_text in
+    self#set_prompt (S.const (eval [ S (Printf.sprintf "9P %s> " (String.concat "/" !cwd)) ]))
+end
+
+let shell debug address username =
+  Log.print_debug := debug;
+  let t =
+    with_client address username
+      (fun t ->
+        let execute_command x =
+          match Stringext.split ~on:' ' x with
+          | [ "ls" ] ->
+            begin
+              Client.readdir t !cwd >>= function
+              | Result.Error (`Msg x) ->
+                print_endline x;
+                return ()
+              | Result.Ok stats ->
+                print_stats stats;
+                return ()
+            end
+          | [ "cd"; dir ] ->
+            let dir' = Stringext.split ~on:'/' dir in
+            let newdir =
+              if dir <> "" && dir.[0] = '/' then dir'
+              else if dir = "." then !cwd
+              else if dir = ".." then (if !cwd = [] then !cwd else List.(rev @@ tl @@ rev !cwd))
+              else !cwd @ dir' in
+            begin
+              Client.stat t newdir
+              >>= function
+              | Result.Ok x ->
+                if x.Protocol_9p_types.Stat.mode.Protocol_9p_types.FileMode.is_directory then begin
+                  cwd := newdir;
+                  return ()
+                end else begin
+                  Printf.printf "not a directory\n";
+                  return ()
+                end
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                return ()
+            end
+          | [ "create"; file ] ->
+            let mode = Protocol_9p_types.FileMode.make ~is_directory:false
+              ~owner:[`Read; `Write] ~group:[`Read]
+              ~other:[`Read; `Execute ] () in
+            begin
+              Client.create t !cwd file mode
+              >>= function
+              | Result.Ok () -> return ()
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                return ()
+            end
+          | [ "read"; file ]  ->
+            let rec copy ofs =
+              Client.read t (!cwd @ [ file ]) ofs 1024l
+              >>= function
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                return ()
+              | Result.Ok bufs ->
+                let len = List.fold_left (+) 0 (List.map Cstruct.len bufs) in
+                List.iter (fun x -> output_string stdout (Cstruct.to_string x)) bufs;
+                if len > 0
+                then copy Int64.(add ofs (of_int len))
+                else Lwt.return () in
+            copy 0L
+            >>= fun () ->
+            return ()
+          | "write" :: file :: rest ->
+            let data = String.concat " " rest in
+            let buf = Cstruct.create (String.length data) in
+            Cstruct.blit_from_string data 0 buf 0 (Cstruct.len buf);
+            begin
+              Client.write t (!cwd @ [ file ]) 0L buf
+              >>= function
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                return ()
+              | Result.Ok () ->
+                return ()
+            end
+          | [ "mkdir"; dir ] ->
+            let mode = Protocol_9p_types.FileMode.make ~is_directory:true
+              ~owner:[`Read; `Write; `Execute] ~group:[`Read; `Execute]
+              ~other:[`Read; `Execute ] () in
+            begin
+              Client.mkdir t !cwd dir mode
+              >>= function
+              | Result.Ok () -> return ()
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                return ()
+            end
+          | [ "rm"; file ]    ->
+              begin
+                Client.remove t (!cwd @ [ file ])
+                >>= function
+                | Result.Ok () -> return ()
+                | Result.Error (`Msg m) ->
+                  print_endline m;
+                  return ()
+              end
+          | [ "exit" ]  -> exit 0
+          | [] -> return ()
+          | cmd :: _ -> Printf.printf "Unknown command: %s\n%!" cmd; return () in
+
+        let rec loop term history =
+          Lwt.catch
+            (fun () ->
+              let rl = new read_line ~term ~history:(LTerm_history.contents history) ~state in
+              rl#run
+              >>= fun command ->
+              return (Some command))
+            (function
+              | Sys.Break -> return None
+              | e -> fail e)
+          >>= function
+          | Some command ->
+            execute_command command
+            >>= fun () ->
+            LTerm_history.add history command;
+            loop term history
+          | None ->
+            loop term history in
+
+      LTerm_inputrc.load ()
+      >>= fun () ->
+      Lwt.catch
+        (fun () ->
+          Lazy.force LTerm.stdout
+          >>= fun term ->
+          loop term (LTerm_history.create [])
+        ) (function
+          | LTerm_read_line.Interrupt -> return ()
+          | e -> fail e)
       ) in
   try
     Lwt_main.run t;
@@ -215,9 +370,12 @@ let serve_local_fs_cb path =
 let serve debug address path =
   Log.print_debug := debug;
   let path = parse_path path in
-  let ip, port = parse_address address in
-  let server = Server.create ip port (serve_local_fs_cb path) in
-  let t = Server.serve_forever server in
+  let proto, address = parse_address address in
+  let t =
+    Server.listen proto address (serve_local_fs_cb path)
+    >>= function
+    | Result.Error (`Msg m) -> Lwt.fail (Failure m)
+    | Result.Ok server -> Server.serve_forever server in
   try
     ignore (Lwt_main.run t);
     `Ok ()
@@ -240,7 +398,7 @@ let debug =
 
 let address =
   let doc = "Address of the 9P fileserver" in
-  Arg.(value & opt string "127.0.0.1:5640" & info [ "address"; "a" ] ~doc)
+  Arg.(value & opt string "tcp:127.0.0.1:5640" & info [ "address"; "a" ] ~doc)
 
 let path =
   let doc = "Path on the 9P fileserver" in
@@ -286,13 +444,26 @@ let serve_cmd =
   Term.(ret(pure serve $ debug $ address $ path)),
   Term.info "serve" ~doc ~man
 
+let shell_cmd =
+  let doc = "Run an interactive 9P session" in
+  let man = [
+    `S "DESCRIPTION";
+    `P "Connect to a 9P server and present a shell-like interface."
+  ] @ help in
+  Term.(ret(pure shell $ debug $ address $ username)),
+  Term.info "shell" ~doc ~man
+
 let default_cmd =
   let doc = "interact with a remote machine over 9P" in
   let man = help in
   Term.(ret (pure (`Help (`Pager, None)))),
   Term.info (Sys.argv.(0)) ~version ~doc ~man
 
+let all_cmds = [
+  ls_cmd; read_cmd; remove_cmd; serve_cmd; shell_cmd;
+]
+
 let _ =
-  match Term.eval_choice default_cmd [ ls_cmd; read_cmd; remove_cmd; serve_cmd ] with
+  match Term.eval_choice default_cmd all_cmds with
   | `Error _ -> exit 1
   | _ -> exit 0

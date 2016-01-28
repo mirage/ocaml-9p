@@ -20,6 +20,9 @@ open Lwt
 module Make(Log : S.LOG) = struct
   module S = Protocol_9p.Server.Make(Log)(Flow_lwt_unix)
 
+  type ip = string
+  type port = int
+
   let finally f g =
     Lwt.catch
       (fun () ->
@@ -35,55 +38,74 @@ module Make(Log : S.LOG) = struct
     shutdown_requested_u: unit Lwt.u;
     shutdown_done_t: unit Lwt.t;
     shutdown_done_u: unit Lwt.u;
-    ip: string;
-    port: int;
+    mutable fd: Lwt_unix.file_descr option;
     receive_cb: Server.receive_cb;
   }
 
-  let create ip port receive_cb =
+  let make fd receive_cb =
     let shutdown_requested_t, shutdown_requested_u = Lwt.task () in
     let shutdown_done_t, shutdown_done_u = Lwt.task () in
+    let fd = Some fd in
     { shutdown_requested_t; shutdown_requested_u;
       shutdown_done_t; shutdown_done_u;
-      ip; port; receive_cb }
+      fd; receive_cb }
+
+  let listen proto address receive_cb = match proto with
+    | "tcp" ->
+      begin match Stringext.split ~on:':' address with
+      | [ ip; port ] ->
+        let fd = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+        Lwt_unix.setsockopt fd Lwt_unix.SO_REUSEADDR true;
+        let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string ip, int_of_string port) in
+        Lwt_unix.bind fd sockaddr;
+        Lwt_unix.listen fd 5;
+        Lwt.return (Result.Ok (make fd receive_cb))
+      | _ ->
+        Lwt.return (Error.error_msg "Unable to understand protocol %s and address %s" proto address)
+      end
+    | "unix" ->
+      Lwt.catch (fun () -> Lwt_unix.unlink address) (fun _ -> Lwt.return ())
+      >>= fun () ->
+      let fd = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
+      let sockaddr = Lwt_unix.ADDR_UNIX(address) in
+      Lwt_unix.bind fd sockaddr;
+      Lwt_unix.listen fd 5;
+      Lwt.return (Result.Ok (make fd receive_cb))
+    | _ ->
+      Lwt.return (Error.error_msg "Unknown protocol %s" proto)
 
   let shutdown t =
     Lwt.wakeup_later t.shutdown_requested_u ();
     t.shutdown_done_t
 
-  let accept_forever ?listening t f =
-    Log.debug "Listening on %s port %d" t.ip t.port;
-    let s = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
-    Lwt_unix.setsockopt s Lwt_unix.SO_REUSEADDR true;
-    let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string t.ip, t.port) in
-    Lwt_unix.bind s sockaddr;
-    Lwt_unix.listen s 5;
-    (match listening with
-     | Some listening -> wakeup listening ()
-     | None -> ()
-    );
-    let rec loop_forever () =
-      Lwt_unix.accept s
-      >>= fun (client, _client_addr) ->
-      print_endline "accepted connection";
-      Lwt.async
+  let accept_forever t f =
+    match t.fd with
+    | None ->
+      Lwt.return (Error.error_msg "9P server already shutdown")
+    | Some fd ->
+      let rec loop_forever () =
+        Lwt_unix.accept fd
+        >>= fun (client, _client_addr) ->
+        print_endline "accepted connection";
+        Lwt.async
+          (fun () ->
+             finally (fun () -> f client) (fun () -> Lwt_unix.close client)
+          );
+        loop_forever ()
+      in
+      finally
         (fun () ->
-           finally (fun () -> f client) (fun () -> Lwt_unix.close client)
-        );
-      loop_forever ()
-    in
-    finally
-      (fun () ->
-        Lwt.pick [ loop_forever (); t.shutdown_requested_t ]
-      ) (fun () ->
-        Lwt_unix.close s
-      )
-    >>= fun () ->
-    Lwt.wakeup_later t.shutdown_done_u ();
-    return ()
+          Lwt.pick [ loop_forever (); t.shutdown_requested_t ]
+        ) (fun () ->
+          t.fd <- None;
+          Lwt_unix.close fd
+        )
+      >>= fun () ->
+      Lwt.wakeup_later t.shutdown_done_u ();
+      return (Result.Ok ())
 
-  let serve_forever ?listening t =
-    accept_forever ?listening t
+  let serve_forever t =
+    accept_forever t
       (fun fd ->
          let flow = Flow_lwt_unix.connect fd in
          S.connect flow ~receive_cb:t.receive_cb ()
