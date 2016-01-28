@@ -78,6 +78,8 @@ module Make(Log: S.LOG) = struct
     >>= fun () ->
     Flow_lwt_unix.close flow
 
+  let create { client } = Client.create client
+
   let read { client } = Client.read client
 
   let write { client } = Client.write client

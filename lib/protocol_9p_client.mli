@@ -23,6 +23,11 @@ module type S = sig
   (** Disconnect from the 9P server, but leave the underlying FLOW
       connected. *)
 
+  val create: t -> string list -> string ->
+    Protocol_9p_types.FileMode.t -> unit Protocol_9p_error.t Lwt.t
+  (** [create t path name perm] creates a new empty file [name] inside
+      [path] with * the given permissions. *)
+
   val write: t -> string list -> int64 -> Cstruct.t ->
     unit Protocol_9p_error.t Lwt.t
   (** [write t path offset buf] writes [buf] to the file at [path] at

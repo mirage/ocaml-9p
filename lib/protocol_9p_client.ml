@@ -30,6 +30,7 @@ module type S = sig
 
   val disconnect: t -> unit Lwt.t
 
+  val create: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
   val write: t -> string list -> int64 -> Cstruct.t -> unit Protocol_9p_error.t Lwt.t
   val read: t -> string list -> int64 -> int32 -> Cstruct.t list Error.t Lwt.t
   val mkdir: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
@@ -335,7 +336,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
          loop [] offset count
       )
 
-  let mkdir t path name perm =
+  let create t path name perm =
     let open LowLevel in
     let fid = t.root in
     with_fid t
@@ -343,10 +344,12 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         let wnames = path in
         walk t fid newfid wnames
         >>*= fun _ -> (* I don't need to know the qids *)
-        create t newfid name {perm with Types.FileMode.is_directory = true} Types.OpenMode.read_only
+        create t newfid name perm Types.OpenMode.read_only
         >>*= fun _ ->
         Lwt.return (Ok ())
       )
+
+  let mkdir t path name perm = create t path name {perm with Types.FileMode.is_directory = true}
 
   let remove t path =
     let open LowLevel in
