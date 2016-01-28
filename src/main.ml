@@ -227,6 +227,19 @@ let shell debug address username =
             copy 0L
             >>= fun () ->
             loop ()
+          | "write" :: file :: rest ->
+            let data = String.concat " " rest in
+            let buf = Cstruct.create (String.length data) in
+            Cstruct.blit_from_string data 0 buf 0 (Cstruct.len buf);
+            begin
+              Client.write t (!cwd @ [ file ]) 0L buf
+              >>= function
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                loop ()
+              | Result.Ok () ->
+                loop ()
+            end
           | [ "write" ] -> unimplemented "write"  >>= fun () -> loop ()
           | [ "mkdir"; dir ] ->
             let mode = Protocol_9p_types.FileMode.make ~is_directory:true
