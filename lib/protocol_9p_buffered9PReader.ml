@@ -39,8 +39,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
     | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
 
-  let read_exactly t n =
-    let output = Cstruct.create n in
+  let read_into t output =
     let rec fill tofill = match Cstruct.len tofill with
       | 0 -> Lwt.return (Ok ())
       | n ->
@@ -57,16 +56,15 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     Lwt.return (Ok output)
 
   let read_must_have_lock t =
-    read_exactly t 4
+    let len_size = 4 in
+    read_into t (Cstruct.create len_size)
     >>*= fun length_buffer ->
     let length = Cstruct.LE.get_uint32 length_buffer 0 in
-    read_exactly t (Int32.to_int length - 4)
-    >>*= fun packet_buffer ->
-    (* XXX: remove this data copy *)
-    let buffer = Cstruct.create (Cstruct.len length_buffer + (Cstruct.len packet_buffer)) in
-    Cstruct.blit length_buffer 0 buffer 0 (Cstruct.len length_buffer);
-    Cstruct.blit packet_buffer 0 buffer (Cstruct.len length_buffer) (Cstruct.len packet_buffer);
-    Lwt.return (Ok buffer)
+    let packet_buffer = Cstruct.create (Int32.to_int length) in
+    read_into t (Cstruct.shift packet_buffer len_size)
+    >>*= fun _packet_body ->
+    Cstruct.blit length_buffer 0 packet_buffer 0 len_size;
+    Lwt.return (Ok packet_buffer)
 
   let read t = Lwt_mutex.with_lock t.read_m (fun () -> read_must_have_lock t)
 end
