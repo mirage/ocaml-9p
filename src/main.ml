@@ -211,6 +211,18 @@ let shell debug address username =
                 print_endline m;
                 loop ()
             end
+          | [ "create"; file ] ->
+            let mode = Protocol_9p_types.FileMode.make ~is_directory:false
+              ~owner:[`Read; `Write] ~group:[`Read]
+              ~other:[`Read; `Execute ] () in
+            begin
+              Client.create t !cwd file mode
+              >>= function
+              | Result.Ok () -> loop ()
+              | Result.Error (`Msg m) ->
+                print_endline m;
+                loop ()
+            end
           | [ "read"; file ]  ->
             let rec copy ofs =
               Client.read t (!cwd @ [ file ]) ofs 1024l
