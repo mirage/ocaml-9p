@@ -24,11 +24,11 @@ module LogServer  = Log9p_unix.StdoutPrefix(struct let prefix = "S" end)
 module LogClient1 = Log9p_unix.StdoutPrefix(struct let prefix = "C1" end)
 module LogClient2 = Log9p_unix.StdoutPrefix(struct let prefix = "C2" end)
 module Server = Server9p_unix.Make(LogServer)
-module Client1 = Client9p_unix.Inet(LogClient1)
-module Client2 = Client9p_unix.Inet(LogClient2)
+module Client1 = Client9p_unix.Make(LogClient1)
+module Client2 = Client9p_unix.Make(LogClient2)
 
-let ip = "127.0.0.1"
-let port = 5749
+let proto = "unix"
+let address = "/tmp/lofs.test"
 
 let serve_local_fs_cb path =
   let module Lofs = Lofs9p.New(struct let root = path end) in
@@ -64,15 +64,18 @@ let with_server f =
   let (_: Unix.process_status) = Unix.system "chmod -R u+rw tmp/*" in
   let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
   (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
-  let server = Server.create ip port (serve_local_fs_cb path) in
-  Lwt.async (fun () -> Server.serve_forever server);
-  finally f
-    (fun () ->
-      Server.shutdown server
-    )
+  Server.listen proto address (serve_local_fs_cb path)
+  >>= function
+  | Result.Error (`Msg m) -> Lwt.fail (Failure m)
+  | Result.Ok server ->
+    Lwt.async (fun () -> Server.serve_forever server);
+    finally f
+      (fun () ->
+        Server.shutdown server
+      )
 
 let with_client1 f =
-  Client1.connect ip port ()
+  Client1.connect proto address ()
   >>= function
   | Error (`Msg err) -> Alcotest.fail ("client1: "^err)
   | Ok client ->
@@ -87,7 +90,7 @@ let with_client1 f =
     )
 
 let with_client2 f =
-  Client2.connect ip port ()
+  Client2.connect proto address ()
   >>= function
   | Error (`Msg err) -> Alcotest.fail ("client2: "^err)
   | Ok client ->

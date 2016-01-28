@@ -23,7 +23,7 @@ let project_url = "http://github.com/mirage/ocaml-9p"
 let version = "0.0"
 
 module Log = Log9p_unix.Stdout
-module Client = Client9p_unix.Inet(Log)
+module Client = Client9p_unix.Make(Log)
 module Server = Server9p_unix.Make(Log)
 
 let finally f g =
@@ -37,19 +37,15 @@ let finally f g =
       Lwt.fail e)
 
 let parse_address address =
-  try
-    let colon = String.index address ':' in
-    let last = String.length address - colon - 1 in
-    String.sub address 0 colon,
-    int_of_string (String.sub address (colon + 1) last)
-  with Not_found ->
-    address, 5640
+  match Stringext.split ~on:':' ~max:2 address with
+  | [ proto; address ] -> proto, address
+  | _ -> address, "5640"
 
 let parse_path x = Stringext.split x ~on:'/'
 
 let with_client address username f =
-  let hostname, port = parse_address address in
-  Client.connect hostname port ?username ()
+  let proto, address = parse_address address in
+  Client.connect proto address ?username ()
   >>= function
   | Result.Error (`Msg x) -> failwith x
   | Result.Ok t ->
@@ -215,9 +211,12 @@ let serve_local_fs_cb path =
 let serve debug address path =
   Log.print_debug := debug;
   let path = parse_path path in
-  let ip, port = parse_address address in
-  let server = Server.create ip port (serve_local_fs_cb path) in
-  let t = Server.serve_forever server in
+  let proto, address = parse_address address in
+  let t =
+    Server.listen proto address (serve_local_fs_cb path)
+    >>= function
+    | Result.Error (`Msg m) -> Lwt.fail (Failure m)
+    | Result.Ok server -> Server.serve_forever server in
   try
     ignore (Lwt_main.run t);
     `Ok ()
@@ -240,7 +239,7 @@ let debug =
 
 let address =
   let doc = "Address of the 9P fileserver" in
-  Arg.(value & opt string "127.0.0.1:5640" & info [ "address"; "a" ] ~doc)
+  Arg.(value & opt string "tcp:127.0.0.1:5640" & info [ "address"; "a" ] ~doc)
 
 let path =
   let doc = "Path on the 9P fileserver" in

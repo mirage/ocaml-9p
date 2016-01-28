@@ -19,7 +19,7 @@
 open Lwt
 open Protocol_9p
 
-module Inet(Log: S.LOG) = struct
+module Make(Log: S.LOG) = struct
 
   module Client = Client.Make(Log)(Flow_lwt_unix)
 
@@ -30,8 +30,7 @@ module Inet(Log: S.LOG) = struct
 
   type connection = t
 
-  let connect hostname port ?msize ?username ?aname () =
-    Log.debug "Connecting to %s port %d" hostname port;
+  let open_tcp hostname port =
     Lwt_unix.gethostbyname hostname
     >>= fun h ->
     (* This should probably be a Result error and not an Lwt error. *)
@@ -46,6 +45,26 @@ module Inet(Log: S.LOG) = struct
     let s = Lwt_unix.socket h.Lwt_unix.h_addrtype Lwt_unix.SOCK_STREAM 0 in
     Lwt_unix.connect s (Lwt_unix.ADDR_INET (inet_addr, port))
     >>= fun () ->
+    Lwt.return s
+
+  let open_unix path =
+    let s = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
+    Lwt_unix.connect s (Lwt_unix.ADDR_UNIX path)
+    >>= fun () ->
+    Lwt.return s
+
+  let connect proto address ?msize ?username ?aname () =
+    ( match proto with
+      | "tcp" ->
+        begin match Stringext.split ~on:'/' address with
+        | [ hostname; port ] -> open_tcp hostname (int_of_string port)
+        | [ hostname ] -> open_tcp hostname 5640
+        | _ -> Lwt.fail (Failure (Printf.sprintf "Unable to parse %s %s" proto address))
+        end
+      | "unix" ->
+        open_unix address
+      | _ -> Lwt.fail (Failure (Printf.sprintf "Unknown protocol %s" proto)) )
+    >>= fun s ->
     let flow = Flow_lwt_unix.connect s in
     Client.connect flow ?msize ?username ?aname ()
     >>= function

@@ -20,20 +20,17 @@ open Lwt
 module Make(Log : S.LOG) : sig
   type t
 
-  type ip = string
-  type port = int
-
-  val create: ip -> port -> Server.receive_cb -> t
-  (** [create ip port receive_cb] creates a stopped server instance
-      which will -- when started -- listen on [ip:port] and serve 9P
-      requests through the [receive_cb] callback. *)
+  val listen: string -> string -> Server.receive_cb -> t Error.t Lwt.t
+  (** [listen proto address callback] listens on the address [address] and prepares
+      to serve 9P via the [callback]. The [proto] and [address] can be either:
+      - unix /path/to/socket
+      - tcp ip:port *)
 
   val shutdown: t -> unit Lwt.t
   (** [shutdown t] requests that the running server [t] is shutdown,
       and blocks until the shutdown is complete and resources are freed. *)
 
-  val serve_forever: ?listening:(unit Lwt.u) -> t -> unit Lwt.t
-  (** [serve_forever ?listening t] starts serving 9P requests via [t].
-      The wakener [?listening] will be woken with [()] when the local ports
-      have been bound and it's safe to call [connect] *)
+  val serve_forever: t -> unit Error.t Lwt.t
+  (** [serve_forever t] starts serving 9P requests via [t]. This thread
+      only returns when the server has been shutdown. *)
 end
