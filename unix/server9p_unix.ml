@@ -20,6 +20,9 @@ open Lwt
 module Make(Log : S.LOG) = struct
   module S = Protocol_9p.Server.Make(Log)(Flow_lwt_unix)
 
+  type ip = string
+  type port = int
+
   let finally f g =
     Lwt.catch
       (fun () ->
