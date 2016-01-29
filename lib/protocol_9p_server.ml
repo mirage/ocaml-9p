@@ -25,6 +25,8 @@ module Types = Protocol_9p_types
 module Request = Protocol_9p_request
 module Response = Protocol_9p_response
 
+type exn_converter = Protocol_9p_info.t -> exn -> Protocol_9p_response.payload
+
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_filesystem.S) = struct
   module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
   open Log
@@ -43,6 +45,33 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
   }
 
   let get_info t = t.info
+
+  let default_exn_converter info exn =
+    let is_unix = (info.Protocol_9p_info.version = Types.Version.unix) in
+    match exn with
+    | Unix.Unix_error(err, _, _) ->
+      let host = match info.Protocol_9p_info.aname with
+        | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
+        | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
+        | _ -> None
+      in
+      let errno = match host with
+        | None -> None
+        | Some host -> match Errno_unix.of_unix ~host err with
+          | [] -> None
+          | errno::_ -> match Errno.to_code ~host errno with
+            | None -> None
+            | Some i -> Some (Int32.of_int i)
+      in
+      Response.Err {
+        Response.Err.ename = Unix.error_message err;
+        errno;
+      }
+    | e ->
+      Response.Err {
+        Response.Err.ename = Printexc.to_string e;
+        errno = None;
+      }
 
   (* For converting flow errors *)
   let (>>|=) m f =
@@ -95,7 +124,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
     });
   }
 
-  let rec dispatcher_t info shutdown_complete_wakener receive_cb t =
+  let rec dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t =
     if t.please_shutdown then begin
       Lwt.wakeup_later shutdown_complete_wakener ();
       Lwt.return (Ok ())
@@ -108,18 +137,18 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         debug "Disconnecting client";
         disconnect t
         >>= fun () ->
-        dispatcher_t info shutdown_complete_wakener receive_cb t
+        dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
       | Error (`Parse (ename, buffer)) -> begin
           match Request.read_header buffer with
           | Error (`Msg _) ->
             debug "C sent bad header: %s" ename;
-            dispatcher_t info shutdown_complete_wakener receive_cb t
+            dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
           | Ok (_, _, tag, _) ->
             debug "C error: %s" ename;
             let response = error_response tag ename in
             write_one_packet ~write_lock:t.write_lock t.writer response
             >>*= fun () ->
-            dispatcher_t info shutdown_complete_wakener receive_cb t
+            dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
         end
       | Ok { Request.tag; payload = Request.Flush { Request.Flush.oldtag } } ->
         Lwt_mutex.with_lock t.write_lock
@@ -134,7 +163,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
           )
           >>= begin function
           | Ok () ->
-            dispatcher_t info shutdown_complete_wakener receive_cb t
+            dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
           | Error (`Msg m) ->
             disconnect t
             >>= fun () ->
@@ -146,32 +175,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         Lwt.async (fun () ->
           Lwt.catch
             (fun () -> receive_cb ~cancel:cancel_t request.Request.payload)
-            (fun exn ->
-               let is_unix = (info.Protocol_9p_info.version = Types.Version.unix) in
-               match exn with
-               | Unix.Unix_error(err, _, _) ->
-                 let host = match info.Protocol_9p_info.aname with
-                   | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
-                   | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
-                   | _ -> None
-                 in
-                 let errno = match host with
-                   | None -> None
-                   | Some host -> match Errno_unix.of_unix ~host err with
-                     | [] -> None
-                     | errno::_ -> match Errno.to_code ~host errno with
-                       | None -> None
-                       | Some i -> Some (Int32.of_int i)
-                 in
-                 Lwt.return (Result.Ok (Response.Err {
-                   Response.Err.ename = Unix.error_message err;
-                   errno;
-                 }))
-               | e ->
-                 Lwt.return (Result.Ok (Response.Err {
-                   Response.Err.ename = Printexc.to_string e;
-                   errno = None;
-                 })))
+            (fun exn -> Lwt.return (Result.Ok (exn_converter info exn)))
           >>= begin function
             | Error (`Msg message) ->
               Lwt.return (error_response request.Request.tag message)
@@ -200,7 +204,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
             | Ok () -> Lwt.return ()
           end
         );
-        dispatcher_t info shutdown_complete_wakener receive_cb t
+        dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
     end
 
   module LowLevel = struct
@@ -235,7 +239,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         return_error ~write_lock writer request "Expected Attach message"
   end
 
-  let connect fs flow ?(msize=16384l) () =
+  let connect fs flow ?(msize=16384l) ?(exn_converter=default_exn_converter) () =
     let write_lock = Lwt_mutex.create () in
     let reader = Reader.create flow in
     let writer = flow in
@@ -320,7 +324,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         please_shutdown; shutdown_complete_t; write_lock;
       } in
       Lwt.async (fun () ->
-        dispatcher_t info shutdown_complete_wakener receive_cb t
+        dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
       );
       Lwt.return (Ok t)
     end
