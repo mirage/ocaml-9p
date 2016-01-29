@@ -50,20 +50,25 @@ let qid_of_path realpath =
 let bad_fid = Lwt.return (Response.error "bad fid")
 let fid_in_use = Lwt.return (Response.error "fid already in use")
 
-module New(Params : sig val root : string list end) = struct
+type t = {
+  root: string list;
+}
+
+let make root = { root }
+
   module Path = struct
     type t = {
       segments : string list;
     }
 
-    let mount_depth = List.length Params.root
+    let mount_depth t = List.length t.root
     let root = { segments = []; }
 
-    let realroot = match Params.root with
+    let realroot t = match t.root with
       | [] -> List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')
       | ""::path -> path
       | _::_ ->
-        (List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')) @ Params.root
+        (List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')) @ t.root
 
     (* Convert from a segmented path to real paths *)
     let realpath =
@@ -71,9 +76,9 @@ module New(Params : sig val root : string list end) = struct
         Buffer.add_char buf '/';
         Buffer.add_string buf segment
       in
-      fun { segments } ->
-        let buf = Buffer.create (8 * (mount_depth + List.length segments)) in
-        List.iter (add_segment buf) realroot;
+      fun t { segments } ->
+        let buf = Buffer.create (8 * (mount_depth t + List.length segments)) in
+        List.iter (add_segment buf) (realroot t);
         List.iter (add_segment buf) (List.rev segments);
         Buffer.contents buf
 
@@ -92,8 +97,8 @@ module New(Params : sig val root : string list end) = struct
       | 7 -> [ `Execute; `Write; `Read ]
       | _ -> []
 
-    let stat info path =
-      let realpath = realpath path in
+    let stat t info path =
+      let realpath = realpath t path in
       let open Lwt_unix in
       LargeFile.lstat realpath
       >>= fun stats ->
@@ -115,7 +120,7 @@ module New(Params : sig val root : string list end) = struct
       let mtime = Int32.of_float stats.LargeFile.st_mtime in
       let uid = string_of_int stats.LargeFile.st_uid in
       let gid = string_of_int stats.LargeFile.st_gid in
-      ( if info.Server.version = Types.Version.unix then begin
+      ( if info.Protocol_9p_info.version = Types.Version.unix then begin
           ( match stats.LargeFile.st_kind with
             | S_LNK ->
               Lwt_unix.readlink realpath
@@ -154,8 +159,8 @@ module New(Params : sig val root : string list end) = struct
 
     let of_path path = { path; handle = None; m = Lwt_mutex.create () }
     let of_fd path fd = { path; handle = Some (File fd); m = Lwt_mutex.create () }
-    let of_dir path =
-      Lwt_unix.opendir (Path.realpath path)
+    let of_dir t path =
+      Lwt_unix.opendir (Path.realpath t path)
       >>= fun h ->
       Lwt.return { path; handle = Some (Dir h); m = Lwt_mutex.create () }
 
@@ -169,22 +174,30 @@ module New(Params : sig val root : string list end) = struct
       | Some (Dir d) -> Lwt_unix.closedir d
   end
 
-  let fids : Resource.t Types.Fid.Map.t ref = ref Types.Fid.Map.empty
+  type connection = {
+    t: t;
+    info: Protocol_9p_info.t;
+    fids: Resource.t Types.Fid.Map.t ref;
+  }
 
-  let path_of_fid info fid =
-    if fid = info.Server.root
+  let connect t info  =
+    let fids = ref Types.Fid.Map.empty in
+    { t; info; fids }
+
+  let path_of_fid connection fid =
+    if fid = connection.info.Protocol_9p_info.root
     then Path.root
-    else (Types.Fid.Map.find fid !fids).Resource.path
+    else (Types.Fid.Map.find fid !(connection.fids)).Resource.path
 
-  let read info ~cancel { Request.Read.fid; offset; count } =
+  let read connection ~cancel { Request.Read.fid; offset; count } =
     (* The client can requests a count which is larger than the negotiated msize *)
-    let max_count = Int32.(sub (sub info.Server.msize (of_int Response.sizeof_header)) (of_int Response.Read.sizeof_header)) in
+    let max_count = Int32.(sub (sub connection.info.Protocol_9p_info.msize (of_int Response.sizeof_header)) (of_int Response.Read.sizeof_header)) in
     let count = min max_count count in
-    match path_of_fid info fid with
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
       let buffer = Lwt_bytes.create (Int32.to_int count) in
-      let resource = Types.Fid.Map.find fid !fids in
+      let resource = Types.Fid.Map.find fid !(connection.fids) in
       begin match resource.Resource.handle with
       | None -> bad_fid
       | Some (Resource.Dir h) ->
@@ -199,7 +212,7 @@ module New(Params : sig val root : string list end) = struct
           let rec write off rest = function
             | [] -> Lwt.return (Result.Ok off)
             | x :: xs ->
-              Path.(stat info (append path x))
+              Path.(stat connection.t connection.info (append path x))
               >>*= fun stat ->
               let n = Types.Stat.sizeof stat in
               if off < offset
@@ -238,21 +251,21 @@ module New(Params : sig val root : string list end) = struct
     (* TODO: support ORCLOSE? *)
     if mode.truncate then Lwt_unix.O_TRUNC :: flags else flags
 
-  let open_ info ~cancel { Request.Open.fid; mode } =
-    match path_of_fid info fid with
+  let open_ connection ~cancel { Request.Open.fid; mode } =
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
-      let resource = Types.Fid.Map.find fid !fids in
+      let resource = Types.Fid.Map.find fid !(connection.fids) in
       if Resource.is_open resource
       then bad_fid
       else begin
-        let realpath = Path.realpath path in
+        let realpath = Path.realpath connection.t path in
         qid_of_path realpath
         >>*= fun qid ->
         ( if List.mem Types.Qid.Directory qid.Types.Qid.flags then begin
-            Resource.of_dir resource.Resource.path
+            Resource.of_dir connection.t resource.Resource.path
             >>= fun resource ->
-            fids := Types.Fid.Map.add fid resource !fids;
+            connection.fids := Types.Fid.Map.add fid resource !(connection.fids);
             return_unit
           end else begin
             Lwt_unix.openfile realpath (flags_of_mode mode) 0
@@ -264,69 +277,69 @@ module New(Params : sig val root : string list end) = struct
               else Lwt.return 0L
             ) >>= fun _ ->
             let resource = Resource.of_fd resource.Resource.path fd in
-            fids := Types.Fid.Map.add fid resource !fids;
+            connection.fids := Types.Fid.Map.add fid resource !(connection.fids);
             return_unit
           end )
         >>= fun () ->
         Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
       end
 
-  let clunk info ~cancel { Request.Clunk.fid } =
-    if not (Types.Fid.Map.mem fid !fids)
+  let clunk connection ~cancel { Request.Clunk.fid } =
+    if not (Types.Fid.Map.mem fid !(connection.fids))
     then bad_fid
     else begin
-      let resource = Types.Fid.Map.find fid !fids in
-      fids := Types.Fid.Map.remove fid !fids;
+      let resource = Types.Fid.Map.find fid !(connection.fids) in
+      connection.fids := Types.Fid.Map.remove fid !(connection.fids);
       Resource.close resource
       >>= fun () ->
       Lwt.return (Result.Ok ())
     end
 
-  let walk info ~cancel { Request.Walk.fid; newfid; wnames } =
+  let walk connection ~cancel { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->
-        fids := Types.Fid.Map.add newfid (Resource.of_path dir) !fids;
+        connection.fids := Types.Fid.Map.add newfid (Resource.of_path dir) !(connection.fids);
         Lwt.return (Result.Ok {
           Response.Walk.wqids = List.rev qids;
         })
       | x :: xs ->
         let here = Path.append dir x in
-        let realpath = Path.realpath here in
+        let realpath = Path.realpath connection.t here in
         qid_of_path realpath
         >>*= fun qid ->
         walk here (qid :: qids) xs
     in
-    if Types.Fid.Map.mem newfid !fids && (fid <> newfid)
+    if Types.Fid.Map.mem newfid !(connection.fids) && (fid <> newfid)
     then fid_in_use
     else
-      match path_of_fid info fid with
+      match path_of_fid connection fid with
       | exception Not_found -> bad_fid
       | path ->
         walk path [] wnames
 
-  let attach info ~cancel { Request.Attach.fid } =
+  let attach connection ~cancel { Request.Attach.fid } =
     (* bind the fid as another root *)
-    fids := Types.Fid.Map.add fid (Resource.of_path Path.root) !fids;
-    let realpath = Path.realpath Path.root in
+    connection.fids := Types.Fid.Map.add fid (Resource.of_path Path.root) !(connection.fids);
+    let realpath = Path.realpath connection.t Path.root in
     qid_of_path realpath
     >>*= fun qid ->
     Lwt.return (Result.Ok { Response.Attach.qid })
 
-  let stat info ~cancel { Request.Stat.fid } =
-    match path_of_fid info fid with
+  let stat connection ~cancel { Request.Stat.fid } =
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
-      Path.stat info path
+      Path.stat connection.t connection.info path
       >>*= fun stat ->
       Lwt.return (Result.Ok { Response.Stat.stat })
 
   let bad_create msg = Lwt.return (Response.error "can't create %s" msg)
 
-  let create info ~cancel { Request.Create.fid; name; perm; mode; extension } =
-    match path_of_fid info fid with
+  let create connection ~cancel { Request.Create.fid; name; perm; mode; extension } =
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
-      let realpath = (Path.realpath path) / name in
+      let realpath = (Path.realpath connection.t path) / name in
       let perms = Int32.to_int (Types.FileMode.nonet_of_permissions perm) in
       if perm.Types.FileMode.is_directory
       then (
@@ -343,9 +356,9 @@ module New(Params : sig val root : string list end) = struct
           >>= fun () ->
           qid_of_path realpath
           >>*= fun qid ->
-          Resource.of_dir (Path.append path name)
+          Resource.of_dir connection.t (Path.append path name)
           >>= fun resource ->
-          fids := Types.Fid.Map.add fid resource !fids;
+          connection.fids := Types.Fid.Map.add fid resource !(connection.fids);
           Lwt.return (Result.Ok {
             Response.Create.qid;
             iounit = 512l;
@@ -359,7 +372,7 @@ module New(Params : sig val root : string list end) = struct
           >>= fun () ->
           qid_of_path realpath
           >>*= fun qid ->
-          fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !fids;
+          connection.fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !(connection.fids);
           Lwt.return (Result.Ok {
             Response.Create.qid;
             iounit = 512l;
@@ -374,16 +387,16 @@ module New(Params : sig val root : string list end) = struct
           (* Linux puts a newline on the end of the string for some reason *)
           let lookup_fid x =
             match Types.Fid.of_int32 @@ Int32.of_string @@ String.trim fid_string with
-            | Ok fid -> path_of_fid info fid
+            | Ok fid -> path_of_fid connection fid
             | _ -> raise Not_found in
           begin match lookup_fid fid_string with
           | exception Not_found -> bad_fid
           | target ->
-            Lwt_unix.link (Path.realpath target) realpath
+            Lwt_unix.link (Path.realpath connection.t target) realpath
             >>= fun () ->
             qid_of_path realpath
             >>*= fun qid ->
-            fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !fids;
+            connection.fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !(connection.fids);
             Lwt.return (Result.Ok {
               Response.Create.qid;
               iounit = 512l;
@@ -398,17 +411,17 @@ module New(Params : sig val root : string list end) = struct
         >>= fun fd ->
         qid_of_path realpath
         >>*= fun qid ->
-        fids := Types.Fid.Map.add fid (Resource.of_fd (Path.append path name) fd) !fids;
+        connection.fids := Types.Fid.Map.add fid (Resource.of_fd (Path.append path name) fd) !(connection.fids);
         Lwt.return (Result.Ok {
           Response.Create.qid;
           iounit = 512l;
         })
 
-  let write info ~cancel { Request.Write.fid; offset; data } =
-    match path_of_fid info fid with
+  let write connection ~cancel { Request.Write.fid; offset; data } =
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
-      let resource = Types.Fid.Map.find fid !fids in
+      let resource = Types.Fid.Map.find fid !(connection.fids) in
       begin match resource.Resource.handle with
       | None -> bad_fid
       | Some (Resource.Dir _) -> bad_fid
@@ -450,11 +463,11 @@ module New(Params : sig val root : string list end) = struct
   (* Does not guarantee atomicity of general wstat messages like plan
      9 requires! Luckily, both sides are actually POSIX so we're
      probably fine. *)
-  let wstat info ~cancel { Request.Wstat.fid; stat } =
-    match path_of_fid info fid with
+  let wstat connection ~cancel { Request.Wstat.fid; stat } =
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
-      let realpath = Path.realpath path in
+      let realpath = Path.realpath connection.t path in
       let {
         Types.Stat.ty; dev; qid;
         mode; atime; mtime; length; name;
@@ -487,13 +500,13 @@ module New(Params : sig val root : string list end) = struct
         Lwt.return (Result.Ok ())
       end
 
-  let remove info ~cancel { Request.Remove.fid } =
-    match path_of_fid info fid with
+  let remove connection ~cancel { Request.Remove.fid } =
+    match path_of_fid connection fid with
     | exception Not_found -> bad_fid
     | path ->
       (* Always clunk the fid, even if remove fails *)
-      let realpath = Path.realpath path in
-      clunk info ~cancel { Request.Clunk.fid }
+      let realpath = Path.realpath connection.t path in
+      clunk connection ~cancel { Request.Clunk.fid }
       >>*= fun () ->
       let rec loop () =
         Lwt.catch
@@ -510,4 +523,3 @@ module New(Params : sig val root : string list end) = struct
       loop ()
       >>= fun () ->
       Lwt.return (Result.Ok ())
-end

@@ -17,11 +17,11 @@
 open Protocol_9p
 open Lwt
 
-module Make(Log : S.LOG) : sig
+module Make(Log : S.LOG)(Filesystem: Filesystem.S) : sig
   type t
 
-  val listen: string -> string -> Server.receive_cb -> t Error.t Lwt.t
-  (** [listen proto address callback] listens on the address [address] and prepares
+  val listen: Filesystem.t -> string -> string -> t Error.t Lwt.t
+  (** [listen fs proto address callback] listens on the address [address] and prepares
       to serve 9P via the [callback]. The [proto] and [address] can be either:
       - unix /path/to/socket
       - tcp ip:port *)

@@ -6,7 +6,6 @@ module Types = Protocol_9p_types
 module Client = Protocol_9p_client
 module Server = Protocol_9p_server
 module Buffered9PReader = Protocol_9p_buffered9PReader
-module Handler = Protocol_9p_handler
 module Filesystem = Protocol_9p_filesystem
 module Infix = Protocol_9p_infix
 

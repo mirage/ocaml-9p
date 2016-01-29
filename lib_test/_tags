@@ -1,2 +1,2 @@
-<*.*>: package(result), package(cstruct), package(alcotest), package(fmt)
+<*.*>: package(result), package(cstruct), package(alcotest), package(fmt), package(unix-errno), package(unix-errno.unix)
 <*.*>: package(lwt), package(cstruct.lwt)

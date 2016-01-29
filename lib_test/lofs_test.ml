@@ -23,31 +23,12 @@ open Result
 module LogServer  = Log9p_unix.StdoutPrefix(struct let prefix = "S" end)
 module LogClient1 = Log9p_unix.StdoutPrefix(struct let prefix = "C1" end)
 module LogClient2 = Log9p_unix.StdoutPrefix(struct let prefix = "C2" end)
-module Server = Server9p_unix.Make(LogServer)
+module Server = Server9p_unix.Make(LogServer)(Lofs9p)
 module Client1 = Client9p_unix.Make(LogClient1)
 module Client2 = Client9p_unix.Make(LogClient2)
 
 let proto = "unix"
 let address = "/tmp/lofs.test"
-
-let serve_local_fs_cb path =
-  let module Lofs = Lofs9p.New(struct let root = path end) in
-  let module Fs = Handler.Make(Lofs) in
-  (* Translate errors, especially Unix-y ones like ENOENT *)
-  fun info ~cancel request ->
-    Lwt.catch
-      (fun () -> Fs.receive_cb info ~cancel request)
-      (function
-       | Unix.Unix_error(err, _, _) ->
-         Lwt.return (Result.Ok (Response.Err {
-           Response.Err.ename = Unix.error_message err;
-           errno = None;
-         }))
-       | e ->
-         Lwt.return (Result.Ok (Response.Err {
-           Response.Err.ename = Printexc.to_string e;
-           errno = None;
-         })))
 
 let finally f g =
  Lwt.catch
@@ -64,7 +45,8 @@ let with_server f =
   let (_: Unix.process_status) = Unix.system "chmod -R u+rw tmp/*" in
   let (_: Unix.process_status) = Unix.system "rm -rf tmp/*" in
   (try Unix.mkdir "tmp" 0o700 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
-  Server.listen proto address (serve_local_fs_cb path)
+  let fs = Lofs9p.make path in
+  Server.listen fs proto address
   >>= function
   | Result.Error (`Msg m) -> Lwt.fail (Failure m)
   | Result.Ok server ->

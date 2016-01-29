@@ -20,49 +20,69 @@ open Result
 type 'a or_error = ('a, Protocol_9p_response.Err.t) result
 
 module type S = sig
-  (** A traditional protocol message handler.
-     If an [Error] is returned, it will be reported back to the client. *)
+  (** A filesystem implementation *)
+
+  type t
+  (** A filesystem. This is likely shared amongst many connections. *)
+
+  type connection
+  (** Server state associated with a particular connection. This should contain
+      connection-local data such as cached authentication information and a
+      private space of Fids *)
+
+  val connect: t -> Protocol_9p_info.t -> connection
+  (** Called after making a connection to initialise the per-connection state *)
 
   val attach:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Attach.t ->
     Protocol_9p_response.Attach.t or_error Lwt.t
 
   val walk:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Walk.t -> Protocol_9p_response.Walk.t or_error Lwt.t
 
   val clunk:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Clunk.t -> Protocol_9p_response.Clunk.t or_error Lwt.t
 
   val open_:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Open.t -> Protocol_9p_response.Open.t or_error Lwt.t
 
   val read:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Read.t -> Protocol_9p_response.Read.t or_error Lwt.t
 
   val stat:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Stat.t -> Protocol_9p_response.Stat.t or_error Lwt.t
 
   val create:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Create.t ->
     Protocol_9p_response.Create.t or_error Lwt.t
 
   val write:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Write.t -> Protocol_9p_response.Write.t or_error Lwt.t
 
   val remove:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Remove.t ->
     Protocol_9p_response.Remove.t or_error Lwt.t
 
   val wstat:
-    Protocol_9p_server.info -> cancel:unit Lwt.t ->
+    connection ->
+    cancel:unit Lwt.t ->
     Protocol_9p_request.Wstat.t -> Protocol_9p_response.Wstat.t or_error Lwt.t
 end

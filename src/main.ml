@@ -24,7 +24,6 @@ let version = "0.0"
 
 module Log = Log9p_unix.Stdout
 module Client = Client9p_unix.Make(Log)
-module Server = Server9p_unix.Make(Log)
 
 let finally f g =
   Lwt.catch
@@ -334,46 +333,14 @@ let shell debug address username =
   | e ->
     `Error(false, Printexc.to_string e)
 
-let serve_local_fs_cb path =
-  let module Lofs = Lofs9p.New(struct let root = path end) in
-  let module Fs = Handler.Make(Lofs) in
-  (* Translate errors, especially Unix-y ones like ENOENT *)
-  fun info ~cancel request ->
-    Lwt.catch
-      (fun () -> Fs.receive_cb info ~cancel request)
-      (fun exn ->
-         let is_unix = (info.Protocol_9p.Server.version = Types.Version.unix) in
-         match exn with
-         | Unix.Unix_error(err, _, _) ->
-           let host = match info.Protocol_9p.Server.aname with
-             | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
-             | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
-             | _ -> None
-           in
-           let errno = match host with
-             | None -> None
-             | Some host -> match Errno_unix.of_unix ~host err with
-               | [] -> None
-               | errno::_ -> match Errno.to_code ~host errno with
-                 | None -> None
-                 | Some i -> Some (Int32.of_int i)
-           in
-           Lwt.return (Result.Ok (Response.Err {
-             Response.Err.ename = Unix.error_message err;
-             errno;
-           }))
-         | e ->
-           Lwt.return (Result.Ok (Response.Err {
-             Response.Err.ename = Printexc.to_string e;
-             errno = None;
-           })))
-
 let serve debug address path =
   Log.print_debug := debug;
   let path = parse_path path in
   let proto, address = parse_address address in
   let t =
-    Server.listen proto address (serve_local_fs_cb path)
+    let fs = Lofs9p.make path in
+    let module Server = Server9p_unix.Make(Log)(Lofs9p) in
+    Server.listen fs proto address
     >>= function
     | Result.Error (`Msg m) -> Lwt.fail (Failure m)
     | Result.Ok server -> Server.serve_forever server in

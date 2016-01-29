@@ -1,5 +1,5 @@
 (*
- * Copyright (C) 2015 David Sheets <david.sheets@unikernel.com>
+ * Copyright (C) 2015 David Scott <dave.scott@unikernel.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -13,10 +13,14 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- *)
+*)
 
-(** Given a traditional file system, construct a handler for 9p messages. *)
-
-module Make(Filesystem : Protocol_9p_filesystem.S) : sig
-  val receive_cb : Protocol_9p_server.receive_cb
-end
+type t = {
+  root: Protocol_9p_types.Fid.t;        (** The initial fid provided by the
+                                           client *)
+  version: Protocol_9p_types.Version.t; (** The protocol version we
+                                           negotiated *)
+  aname: string;                        (** The aname tree attached to *)
+  msize: int32;                         (** Negotiated max message size *)
+}
+(**  Information about the active connection, passed to the receive callback. *)

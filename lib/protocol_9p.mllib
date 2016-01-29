@@ -6,7 +6,7 @@ Protocol_9p_response
 Protocol_9p_types
 Protocol_9p_client
 Protocol_9p_server
+Protocol_9p_info
 Protocol_9p_buffered9PReader
-Protocol_9p_handler
 Protocol_9p_filesystem
 Protocol_9p_infix

@@ -17,8 +17,8 @@
 open Protocol_9p
 open Lwt
 
-module Make(Log : S.LOG) = struct
-  module S = Protocol_9p.Server.Make(Log)(Flow_lwt_unix)
+module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
+  module S = Protocol_9p.Server.Make(Log)(Flow_lwt_unix)(Filesystem)
 
   type ip = string
   type port = int
@@ -39,18 +39,18 @@ module Make(Log : S.LOG) = struct
     shutdown_done_t: unit Lwt.t;
     shutdown_done_u: unit Lwt.u;
     mutable fd: Lwt_unix.file_descr option;
-    receive_cb: Server.receive_cb;
+    fs: Filesystem.t;
   }
 
-  let make fd receive_cb =
+  let make fd fs =
     let shutdown_requested_t, shutdown_requested_u = Lwt.task () in
     let shutdown_done_t, shutdown_done_u = Lwt.task () in
     let fd = Some fd in
     { shutdown_requested_t; shutdown_requested_u;
       shutdown_done_t; shutdown_done_u;
-      fd; receive_cb }
+      fd; fs }
 
-  let listen proto address receive_cb = match proto with
+  let listen fs proto address = match proto with
     | "tcp" ->
       begin match Stringext.split ~on:':' address with
       | [ ip; port ] ->
@@ -59,7 +59,7 @@ module Make(Log : S.LOG) = struct
         let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string ip, int_of_string port) in
         Lwt_unix.bind fd sockaddr;
         Lwt_unix.listen fd 5;
-        Lwt.return (Result.Ok (make fd receive_cb))
+        Lwt.return (Result.Ok (make fd fs))
       | _ ->
         Lwt.return (Error.error_msg "Unable to understand protocol %s and address %s" proto address)
       end
@@ -70,7 +70,7 @@ module Make(Log : S.LOG) = struct
       let sockaddr = Lwt_unix.ADDR_UNIX(address) in
       Lwt_unix.bind fd sockaddr;
       Lwt_unix.listen fd 5;
-      Lwt.return (Result.Ok (make fd receive_cb))
+      Lwt.return (Result.Ok (make fd fs))
     | _ ->
       Lwt.return (Error.error_msg "Unknown protocol %s" proto)
 
@@ -108,7 +108,7 @@ module Make(Log : S.LOG) = struct
     accept_forever t
       (fun fd ->
          let flow = Flow_lwt_unix.connect fd in
-         S.connect flow ~receive_cb:t.receive_cb ()
+         S.connect t.fs flow ()
          >>= function
          | Result.Error (`Msg x) -> fail (Failure x)
          | Result.Ok t ->
