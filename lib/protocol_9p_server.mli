@@ -17,13 +17,16 @@
 
 (** Given a transport (a Mirage FLOW), construct a 9P server on top. *)
 
+type exn_converter = Protocol_9p_info.t -> exn -> Protocol_9p_response.payload
+
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem : Protocol_9p_filesystem.S) : sig
 
   type t
   (** An established connection to a 9P client *)
 
-  val connect: Filesystem.t -> FLOW.flow -> ?msize:int32 -> unit ->
-    t Protocol_9p_error.t Lwt.t
+  val connect: Filesystem.t -> FLOW.flow -> ?msize:int32
+    -> ?exn_converter:exn_converter -> unit
+    -> t Protocol_9p_error.t Lwt.t
   (** Establish a fresh connection to a 9P client. [msize] gives the maximum
       message size we support: the client may request a lower value.
       [receive_cb] will be called with every 9P request. *)
