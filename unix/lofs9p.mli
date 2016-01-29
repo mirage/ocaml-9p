@@ -15,5 +15,8 @@
  *
  *)
 
+include Protocol_9p.Filesystem.S
 
-module New(Params : sig val root : string list end) : Protocol_9p.Filesystem.S
+val make: string list -> t
+(** [make root] construct a filesystem which corresponds to the local Unix
+    filesystem rooted at [root] *)

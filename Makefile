@@ -6,7 +6,7 @@ MOD  = protocol_9p
 UNIX_MOD = protocol_9p_unix
 MODULES = protocol_9p protocol_9p_s protocol_9p_request protocol_9p_error \
           protocol_9p_response protocol_9p_types protocol_9p_client \
-          protocol_9p_server protocol_9p_buffered9PReader protocol_9p_handler \
+          protocol_9p_server protocol_9p_buffered9PReader \
           protocol_9p_filesystem protocol_9p_infix
 UNIX_MODULES = flow_lwt_unix client9p_unix server9p_unix log9p_unix lofs9p
 

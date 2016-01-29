@@ -17,7 +17,7 @@
 
 open Result
 open Protocol_9p_infix
-
+open Protocol_9p_info
 module Error = Protocol_9p_error
 open Error
 
@@ -25,16 +25,7 @@ module Types = Protocol_9p_types
 module Request = Protocol_9p_request
 module Response = Protocol_9p_response
 
-type info = {
-  root: Types.Fid.t;
-  version: Types.Version.t;
-  aname: string;
-  msize: int32;
-}
-
-type receive_cb = info -> cancel:unit Lwt.t -> Request.payload -> Response.payload Error.t Lwt.t
-
-module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
+module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_filesystem.S) = struct
   module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
   open Log
 
@@ -42,7 +33,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     write_lock : Lwt_mutex.t;
     reader: Reader.t;
     writer: FLOW.flow;
-    info: info;
+    info: Protocol_9p_info.t;
     root_qid: Types.Qid.t;
     (* Press the "cancel button" by setting the ref to true (if present in the
        map) *)
@@ -104,7 +95,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     });
   }
 
-  let rec dispatcher_t shutdown_complete_wakener receive_cb t =
+  let rec dispatcher_t info shutdown_complete_wakener receive_cb t =
     if t.please_shutdown then begin
       Lwt.wakeup_later shutdown_complete_wakener ();
       Lwt.return (Ok ())
@@ -117,18 +108,18 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         debug "Disconnecting client";
         disconnect t
         >>= fun () ->
-        dispatcher_t shutdown_complete_wakener receive_cb t
+        dispatcher_t info shutdown_complete_wakener receive_cb t
       | Error (`Parse (ename, buffer)) -> begin
           match Request.read_header buffer with
           | Error (`Msg _) ->
             debug "C sent bad header: %s" ename;
-            dispatcher_t shutdown_complete_wakener receive_cb t
+            dispatcher_t info shutdown_complete_wakener receive_cb t
           | Ok (_, _, tag, _) ->
             debug "C error: %s" ename;
             let response = error_response tag ename in
             write_one_packet ~write_lock:t.write_lock t.writer response
             >>*= fun () ->
-            dispatcher_t shutdown_complete_wakener receive_cb t
+            dispatcher_t info shutdown_complete_wakener receive_cb t
         end
       | Ok { Request.tag; payload = Request.Flush { Request.Flush.oldtag } } ->
         Lwt_mutex.with_lock t.write_lock
@@ -143,7 +134,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           )
           >>= begin function
           | Ok () ->
-            dispatcher_t shutdown_complete_wakener receive_cb t
+            dispatcher_t info shutdown_complete_wakener receive_cb t
           | Error (`Msg m) ->
             disconnect t
             >>= fun () ->
@@ -153,7 +144,34 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         let cancel_t, cancel_u = Lwt.task () in
         t.cancel_buttons <- Types.Tag.Map.add request.Request.tag cancel_u t.cancel_buttons;
         Lwt.async (fun () ->
-          receive_cb t.info ~cancel:cancel_t request.Request.payload
+          Lwt.catch
+            (fun () -> receive_cb ~cancel:cancel_t request.Request.payload)
+            (fun exn ->
+               let is_unix = (info.Protocol_9p_info.version = Types.Version.unix) in
+               match exn with
+               | Unix.Unix_error(err, _, _) ->
+                 let host = match info.Protocol_9p_info.aname with
+                   | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
+                   | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
+                   | _ -> None
+                 in
+                 let errno = match host with
+                   | None -> None
+                   | Some host -> match Errno_unix.of_unix ~host err with
+                     | [] -> None
+                     | errno::_ -> match Errno.to_code ~host errno with
+                       | None -> None
+                       | Some i -> Some (Int32.of_int i)
+                 in
+                 Lwt.return (Result.Ok (Response.Err {
+                   Response.Err.ename = Unix.error_message err;
+                   errno;
+                 }))
+               | e ->
+                 Lwt.return (Result.Ok (Response.Err {
+                   Response.Err.ename = Printexc.to_string e;
+                   errno = None;
+                 })))
           >>= begin function
             | Error (`Msg message) ->
               Lwt.return (error_response request.Request.tag message)
@@ -182,7 +200,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
             | Ok () -> Lwt.return ()
           end
         );
-        dispatcher_t shutdown_complete_wakener receive_cb t
+        dispatcher_t info shutdown_complete_wakener receive_cb t
     end
 
   module LowLevel = struct
@@ -217,7 +235,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         return_error ~write_lock writer request "Expected Attach message"
   end
 
-  let connect flow ?(msize=16384l) ~receive_cb () =
+  let connect fs flow ?(msize=16384l) () =
     let write_lock = Lwt_mutex.create () in
     let reader = Reader.create flow in
     let writer = flow in
@@ -243,11 +261,40 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       let shutdown_complete_t, shutdown_complete_wakener = Lwt.task () in
       let root = a.Request.Attach.fid in
       let aname = a.Request.Attach.aname in
-      let info = { root; version; aname; msize; } in
+      let info = { root; version; aname; msize } in
+      let connection = Filesystem.connect fs info in
+
+      let receive_cb ~cancel =
+        let is_unix = (info.version = Types.Version.unix) in
+        let adjust_errno err =
+          if not is_unix then { err with Response.Err.errno = None }
+          else match err.Response.Err.errno with
+          | Some _ -> err
+          | None -> {err with Response.Err.errno = Some 0l} in
+        let wrap fn x result =
+          let open Lwt.Infix in
+          fn connection ~cancel x >|= function
+          | Ok response -> Ok (result response)
+          | Error err -> Ok (Response.Err (adjust_errno err)) in
+        Request.(function
+        | Attach x -> wrap Filesystem.attach x (fun x -> Response.Attach x)
+        | Walk x   -> wrap Filesystem.walk   x (fun x -> Response.Walk x)
+        | Open x   -> wrap Filesystem.open_  x (fun x -> Response.Open x)
+        | Read x   -> wrap Filesystem.read   x (fun x -> Response.Read x)
+        | Clunk x  -> wrap Filesystem.clunk  x (fun x -> Response.Clunk x)
+        | Stat x   -> wrap Filesystem.stat   x (fun x -> Response.Stat x)
+        | Create x -> wrap Filesystem.create x (fun x -> Response.Create x)
+        | Write x  -> wrap Filesystem.write  x (fun x -> Response.Write x)
+        | Remove x -> wrap Filesystem.remove x (fun x -> Response.Remove x)
+        | Wstat x  -> wrap Filesystem.wstat  x (fun x -> Response.Wstat x)
+        | Version _ | Auth _ | Flush _ ->
+            let err = {Response.Err.ename = "Function not implemented"; errno = None} in
+            Lwt.return (Result.Ok (Response.Err (adjust_errno err)))
+      ) in
 
       let open Lwt in
       let cancel_t, cancel_u = Lwt.task () in
-      receive_cb info ~cancel:cancel_t payload
+      receive_cb ~cancel:cancel_t payload
       >>= begin function
         | Error (`Msg message) ->
           let response = error_response tag message in
@@ -273,7 +320,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         please_shutdown; shutdown_complete_t; write_lock;
       } in
       Lwt.async (fun () ->
-        dispatcher_t shutdown_complete_wakener receive_cb t
+        dispatcher_t info shutdown_complete_wakener receive_cb t
       );
       Lwt.return (Ok t)
     end
