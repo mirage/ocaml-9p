@@ -46,10 +46,14 @@ module type S = sig
     val create: t -> Types.Fid.t -> ?extension:string -> string -> Types.FileMode.t ->
                 Types.OpenMode.t -> Response.Create.t Error.t Lwt.t
     val stat: t -> Types.Fid.t -> Response.Stat.t Error.t Lwt.t
+    val wstat: t -> Types.Fid.t -> Types.Stat.t -> Response.Wstat.t Error.t Lwt.t
     val read: t -> Types.Fid.t -> int64 -> int32 -> Response.Read.t Error.t Lwt.t
     val write: t -> Types.Fid.t -> int64 -> Cstruct.t -> Response.Write.t Error.t Lwt.t
     val clunk: t -> Types.Fid.t -> Response.Clunk.t Error.t Lwt.t
     val remove: t -> Types.Fid.t -> Response.Remove.t Error.t Lwt.t
+
+    val update: t -> ?name:string -> ?length:int64 -> ?mode:Types.FileMode.t ->
+                ?mtime:int32 -> ?gid:string -> Types.Fid.t -> unit Error.t Lwt.t
   end
 
   val walk_from_root: t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
@@ -239,6 +243,30 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>*= function
       | Response.Remove x -> Lwt.return (Ok x)
       | response -> return_error response
+
+    let wstat t fid stat =
+      rpc t Request.(Wstat { Wstat.fid; stat })
+      >>*= function
+      | Response.Wstat x -> Lwt.return (Ok x)
+      | response -> return_error response
+
+    let update t ?(name="") ?(length=Types.Int64.any) ?(mode=Types.FileMode.any)
+                 ?(mtime=Types.Int32.any) ?(gid="") fid =
+      wstat t fid { Types.Stat.
+        name;
+        length;
+        mode;
+        mtime;
+        gid;
+        (* It's illegal to set these *)
+        ty = Types.Int16.any;
+        dev = Types.Int32.any;
+        qid = Types.Qid.any;
+        atime = Types.Int32.any;
+        uid = "";
+        muid = "";
+        u = None;
+      }
 
     let version reader writer msize version =
       write_one_packet writer {

@@ -123,6 +123,8 @@ module Make(Log: S.LOG) = struct
 
     let stat { client } = LowLevel.stat client
 
+    let wstat { client } = LowLevel.wstat client
+
     let read { client } = LowLevel.read client
 
     let write { client } = LowLevel.write client
@@ -130,6 +132,8 @@ module Make(Log: S.LOG) = struct
     let clunk { client } = LowLevel.clunk client
 
     let remove { client } = LowLevel.remove client
+
+    let update { client } = LowLevel.update client
   end
 
   let walk_from_root { client } = Client.walk_from_root client

@@ -33,6 +33,7 @@ end
 module Int16 : sig
   type t = int with sexp
 
+  val any: t
   val is_any: t -> bool
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -44,6 +45,7 @@ module Int32 : sig
   val t_of_sexp: Sexp.t -> t
   val sexp_of_t: t -> Sexp.t
 
+  val any: t
   val is_any: t -> bool
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -52,6 +54,7 @@ end
 module Int64 : sig
   type t = int64 with sexp
 
+  val any: t
   val is_any: t -> bool
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -144,6 +147,7 @@ module FileMode : sig
     ?is_device:bool -> ?is_symlink:bool -> ?is_hardlink:bool -> ?is_namedpipe:bool -> ?is_socket:bool -> ?is_setuid:bool ->
     ?is_setgid:bool -> unit -> t
 
+  val any: t
   val is_any: t -> bool
 
   val nonet_of_permissions: t -> int32
@@ -171,6 +175,7 @@ module Qid : sig
   (** The server's unique id for the file. Two files are the same
       if and only if the Qids are the same. *)
 
+  val any: t
   val is_any: t -> bool
 
   val file: ?id:int64 -> ?version:int32 -> ?append_only:bool -> ?exclusive:bool ->
