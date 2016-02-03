@@ -376,6 +376,12 @@ module Qid = struct
 
   let sizeof _ = needed
 
+  let any = {
+    flags = of_int Int8.any;
+    version = Int32.any;
+    id = Int64.any;
+  }
+
   let is_any_flags flags = Int8.is_any (to_int flags)
 
   let is_any { flags; version; id } =

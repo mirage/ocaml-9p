@@ -85,6 +85,10 @@ module type S = sig
       Protocol_9p_response.Stat.t Protocol_9p_error.t Lwt.t
     (** [stat t fid] returns a description of the file associated with [fid] *)
 
+    val wstat: t -> Protocol_9p_types.Fid.t -> Protocol_9p_types.Stat.t ->
+      Protocol_9p_response.Wstat.t Protocol_9p_error.t Lwt.t
+    (** [wstat t fid stat] changes the file metadata according to [stat]. *)
+
     val read: t -> Protocol_9p_types.Fid.t -> int64 -> int32 ->
       Protocol_9p_response.Read.t Protocol_9p_error.t Lwt.t
     (** [read t fid offset count] returns [count] bytes of data at [offset] in
@@ -107,6 +111,15 @@ module type S = sig
     (** [remove t fid] removes the file associated with [fid] from the file
         server. The server will "clunk" the fid whether the call succeeds or
         fails. *)
+
+    val update: t ->
+       ?name:string ->
+       ?length:int64 ->
+       ?mode:Protocol_9p_types.FileMode.t ->
+       ?mtime:int32 ->
+       ?gid:string ->
+       Protocol_9p_types.Fid.t -> unit Protocol_9p_error.t Lwt.t
+    (** Convenience wrapper around [wstat]. *)
   end
 
   val walk_from_root: t -> Protocol_9p_types.Fid.t -> string list ->
