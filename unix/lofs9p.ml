@@ -281,7 +281,7 @@ let make root = { root }
             return_unit
           end )
         >>= fun () ->
-        Lwt.return (Result.Ok { Response.Open.qid; iounit = 512l })
+        Lwt.return (Result.Ok { Response.Open.qid; iounit = 0_l })
       end
 
   let clunk connection ~cancel { Request.Clunk.fid } =
@@ -361,7 +361,7 @@ let make root = { root }
           connection.fids := Types.Fid.Map.add fid resource !(connection.fids);
           Lwt.return (Result.Ok {
             Response.Create.qid;
-            iounit = 512l;
+            iounit = 0_l;
           })
       )
       else if perm.Types.FileMode.is_symlink
@@ -375,7 +375,7 @@ let make root = { root }
           connection.fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !(connection.fids);
           Lwt.return (Result.Ok {
             Response.Create.qid;
-            iounit = 512l;
+            iounit = 0_l;
           })
         | None ->
           Lwt.return (Response.error "creating symlinks requires 9p2000.u extension")
@@ -399,7 +399,7 @@ let make root = { root }
             connection.fids := Types.Fid.Map.add fid (Resource.of_path (Path.append path name)) !(connection.fids);
             Lwt.return (Result.Ok {
               Response.Create.qid;
-              iounit = 512l;
+              iounit = 0_l;
             })
           end
         | None ->
@@ -414,7 +414,7 @@ let make root = { root }
         connection.fids := Types.Fid.Map.add fid (Resource.of_fd (Path.append path name) fd) !(connection.fids);
         Lwt.return (Result.Ok {
           Response.Create.qid;
-          iounit = 512l;
+          iounit = 0_l;
         })
 
   let write connection ~cancel { Request.Write.fid; offset; data } =
