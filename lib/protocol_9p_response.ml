@@ -366,7 +366,12 @@ let read rest =
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 
-let pp ppf t = Sexplib.Sexp.pp_hum ppf (sexp_of_t t)
+let pp ppf = function
+  | { tag; payload = Read { Read.data } } ->
+    let tag = Types.Tag.to_int tag in
+    let len = Cstruct.len data in
+    Format.fprintf ppf "tag %d Read(len(data): %d)" tag len
+  | t -> Sexplib.Sexp.pp_hum ppf (sexp_of_t t)
 
 let sizeof_header = 4 + 1 + 2
 

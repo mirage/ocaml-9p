@@ -498,4 +498,11 @@ let read rest =
   ) >>= fun (payload, rest) ->
   return ( { tag; payload }, rest )
 
-let pp ppf t = Sexplib.Sexp.pp_hum ppf (sexp_of_t t)
+let pp ppf = function
+  | { tag; payload = Write { Write.fid; offset; data } } ->
+    let tag = Types.Tag.to_int tag in
+    let fid = Types.Fid.to_int32 fid in
+    let len = Cstruct.len data in
+    Format.fprintf ppf "tag %d Write(fid: %ld, offset: %Ld, len(data): %d)"
+      tag fid offset len
+  | t -> Sexplib.Sexp.pp_hum ppf (sexp_of_t t)

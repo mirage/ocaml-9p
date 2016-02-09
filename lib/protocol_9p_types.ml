@@ -133,6 +133,8 @@ module Fid = struct
     then error_msg "%ld is an invalid fid (it is defined to be NOFID in the spec)" x
     else Result.Ok x
 
+  let to_int32 x = x
+
   let sizeof _ = 4
 
   let read = Int32.read
@@ -439,6 +441,10 @@ module Tag = struct
     if x >= 0xffff || x < 0
     then error_msg "Valid tags must be between 0 <= tag < 0xffff (not %d)" x
     else return (Some x)
+
+  let to_int = function
+    | None -> -1
+    | Some x -> x
 
   let notag = None
 
