@@ -80,6 +80,8 @@ module Fid : sig
 
   val of_int32: int32 -> t Protocol_9p_error.t
 
+  val to_int32: t -> int32
+
   val recommended: Set.t
   (** A list of recommended fids. The client can allocate (on the server) up to
       2^32 distinct fids (in theory) but this is obviously a bad thing to do.
@@ -201,11 +203,14 @@ module Tag : sig
   (** The special tag value used during authentication *)
 
   val recommended: Set.t
-  (** A list of recommended tags. The client can generate up to 2^16 distinct tags
-      but this represents a large number of concurrent transactions. Instead clients
-      are recommended to use fids drawn from this much (much smaller) list. *)
+  (** A list of recommended tags. The client can generate up to 2^16
+      distinct tags but this represents a large number of concurrent
+      transactions. Instead clients are recommended to use fids drawn
+      from this much (much smaller) list. *)
 
   val of_int: int -> t Protocol_9p_error.t
+
+  val to_int: t -> int
 
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
