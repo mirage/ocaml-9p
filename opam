@@ -21,7 +21,7 @@ remove: ["ocamlfind" "remove" "protocol-9p"]
 depends: [
   "base-bytes"
   "cstruct"
-  "sexplib"
+  "sexplib" {<= "113.00.00" }
   "result"
   "mirage-types-lwt"
   "lwt"
