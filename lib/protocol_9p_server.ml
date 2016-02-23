@@ -324,7 +324,20 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         please_shutdown; shutdown_complete_t; write_lock;
       } in
       Lwt.async (fun () ->
-        dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
+        Lwt.catch (fun () ->
+          let open Lwt.Infix in
+          dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
+          >>= function
+          | Result.Error (`Msg m) ->
+            error "dispatcher caught %s: no more requests will be handled" m;
+            Lwt.return ()
+          | Result.Ok () ->
+            Lwt.return ()
+        ) (fun e ->
+          error "dispatcher caught %s: no more requests will be handled" (Printexc.to_string e);
+          Lwt.wakeup_later shutdown_complete_wakener ();
+          Lwt.return ()
+        )
       );
       Lwt.return (Ok t)
     end
