@@ -50,7 +50,21 @@ let with_server f =
   >>= function
   | Result.Error (`Msg m) -> Lwt.fail (Failure m)
   | Result.Ok server ->
-    Lwt.async (fun () -> Server.serve_forever server);
+    Lwt.async (fun () ->
+      Lwt.catch (fun () ->
+        let open Lwt.Infix in
+        Server.serve_forever server
+        >>= function
+        | Result.Error (`Msg m) ->
+          LogServer.error "server caught %s: no more requests will be processed" m;
+          Lwt.return ()
+        | Result.Ok () ->
+          Lwt.return ()
+      ) (fun e ->
+        LogServer.error "server caught %s: no more requests will be processed" (Printexc.to_string e);
+        Lwt.return ()
+      )
+    );
     finally f
       (fun () ->
         Server.shutdown server

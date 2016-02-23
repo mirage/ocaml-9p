@@ -511,6 +511,21 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     LowLevel.attach reader writer root Types.Fid.nofid username aname None
     >>*= function { Response.Attach.qid } ->
     debug "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
-    Lwt.async (fun () -> dispatcher_t shutdown_complete_wakener t);
+    Lwt.async (fun () ->
+      Lwt.catch (fun () ->
+        let open Lwt.Infix in
+        dispatcher_t shutdown_complete_wakener t
+        >>= function
+        | Result.Error (`Msg m) ->
+          error "dispatcher caught %s: no more responses will be handled" m;
+          Lwt.return ()
+        | Result.Ok () ->
+          Lwt.return ()
+      ) (fun e ->
+        error "dispatcher caught %s: no more responses will be handled" (Printexc.to_string e);
+        Lwt.wakeup shutdown_complete_wakener ();
+        Lwt.return ()
+      )
+    );
     Lwt.return (Ok t)
 end
