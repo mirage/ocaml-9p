@@ -80,7 +80,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     mutable please_shutdown: bool;
     shutdown_m: Lwt_mutex.t;
     shutdown_complete_t: unit Lwt.t;
-    mutable wakeners: Response.payload Lwt.u Types.Tag.Map.t;
+    mutable wakeners: Response.payload Error.t Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
     mutable free_fids: Types.Fid.Set.t;
     free_fids_c: unit Lwt_condition.t;
@@ -160,10 +160,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
             write_one_packet t.writer request
           )
         >>*= fun () ->
-        (* Wait for the response to be read *)
-        let open Lwt in
-        th >>= fun response ->
-        return (Ok response)
+        (* Wait for the response (or error) to be read *)
+        th
       )
 
   (* The dispatcher thread reads responses from the FLOW and wakes up
@@ -181,7 +179,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       dispatcher_t shutdown_complete_wakener t
     end else begin
       let wakener = Types.Tag.Map.find tag t.wakeners in
-      Lwt.wakeup_later wakener response.Response.payload;
+      Lwt.wakeup_later wakener (Ok response.Response.payload);
       dispatcher_t shutdown_complete_wakener t
     end
 
@@ -423,6 +421,13 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           >>= fun _ ->
           (* Wait for the dispatcher to shutdown *)
           t.shutdown_complete_t
+          >>= fun () ->
+          (* Notify any remaining blocked threads that we're down *)
+          Types.Tag.Map.iter
+            (fun _tag wakener ->
+              Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"))
+            ) t.wakeners;
+          return ()
         | _ ->
           return ()
       )
