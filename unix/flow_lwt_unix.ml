@@ -28,33 +28,47 @@ let error_message = Unix.error_message
 type flow = {
   fd: Lwt_unix.file_descr;
   read_buffer_size: int;
+  mutable closed: bool;
 }
 
 let connect fd =
   let read_buffer_size = 1024 in
-  { fd; read_buffer_size }
+  let closed = false in
+  { fd; read_buffer_size; closed }
 
-let close t = Lwt_unix.close t.fd
+let close t =
+  match t.closed with
+  | false ->
+    t.closed <- true;
+    Lwt_unix.close t.fd
+  | true ->
+    Lwt.return ()
 
 let read flow =
-  let buffer = Lwt_bytes.create flow.read_buffer_size in
-  Lwt_bytes.read flow.fd buffer 0 (Lwt_bytes.length buffer)
-  >>= function
-  | 0 ->
-    return (`Eof)
-  | n ->
-    return (`Ok (Cstruct.(sub (of_bigarray buffer) 0 n)))
+  if flow.closed then return `Eof
+  else
+    let buffer = Lwt_bytes.create flow.read_buffer_size in
+    Lwt_bytes.read flow.fd buffer 0 (Lwt_bytes.length buffer)
+    >>= function
+    | 0 ->
+      return `Eof
+    | n ->
+      return (`Ok (Cstruct.(sub (of_bigarray buffer) 0 n)))
 
 let write flow buf =
-  Lwt_cstruct.(complete (write flow.fd) buf)
-  >>= fun () ->
-  return (`Ok ())
+  if flow.closed then return `Eof
+  else
+    Lwt_cstruct.(complete (write flow.fd) buf)
+    >>= fun () ->
+    return (`Ok ())
 
 let writev flow bufs =
   let rec loop = function
     | [] -> return (`Ok ())
     | x :: xs ->
-      Lwt_cstruct.(complete (write flow.fd) x)
-      >>= fun () ->
-      loop xs in
+      if flow.closed then return `Eof
+      else
+        Lwt_cstruct.(complete (write flow.fd) x)
+        >>= fun () ->
+        loop xs in
   loop bufs
