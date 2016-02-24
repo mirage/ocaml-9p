@@ -65,6 +65,13 @@ module type S = sig
         RPCs. The client must carefully respect the rules on managing fids
         and stay within the message size limits. *)
 
+    val allocate_fid: t -> Protocol_9p_types.Fid.t Lwt.t
+    (** [allocate_fid t] returns a free fid. Callers must call [deallocate_fid t]
+        when they are finished with it. *)
+
+    val deallocate_fid: t -> Protocol_9p_types.Fid.t -> unit Lwt.t
+    (** [deallocate_fid t fid] clunks a fid and marks it as free for re-use. *)
+
     val walk: t -> Protocol_9p_types.Fid.t -> Protocol_9p_types.Fid.t ->
       string list -> Protocol_9p_response.Walk.t Protocol_9p_error.t Lwt.t
     (** [walk t fid newfid wnames] binds [newfid] to the result of Walking

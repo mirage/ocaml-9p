@@ -117,6 +117,10 @@ module Make(Log: S.LOG) = struct
   module LowLevel = struct
     open Client
 
+    let allocate_fid { client } = LowLevel.allocate_fid client
+
+    let deallocate_fid { client } = LowLevel.deallocate_fid client
+
     let walk { client } = LowLevel.walk client
 
     let openfid { client } = LowLevel.openfid client

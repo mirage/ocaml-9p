@@ -43,6 +43,8 @@ module type S = sig
   module KV_RO : V1_LWT.KV_RO with type t = t
 
   module LowLevel : sig
+    val allocate_fid: t -> Protocol_9p_types.Fid.t Lwt.t
+    val deallocate_fid: t -> Protocol_9p_types.Fid.t -> unit Lwt.t
     val walk: t -> Types.Fid.t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
     val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
     val create: t -> Types.Fid.t -> ?extension:string -> string -> Types.FileMode.t ->
@@ -298,30 +300,31 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       | { Response.payload = Response.Attach x } ->
         Lwt.return (Ok x)
       | { Response.payload = p } -> return_error p
+
+    let rec allocate_fid t =
+      let open Lwt in
+      if t.free_fids = Types.Fid.Set.empty
+      then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+      else
+        let fid = Types.Fid.Set.min_elt t.free_fids in
+        t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
+        return fid
+    let deallocate_fid t fid =
+      let open Lwt in
+      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+      Lwt_condition.signal t.free_fids_c ();
+      clunk t fid
+      >>= fun _ -> (* the spec says to assume the fid is clunked now *)
+      Lwt.return ()
   end
 
   let walk_from_root t = LowLevel.walk t t.root
 
-  let rec allocate_fid t =
-    let open Lwt in
-    if t.free_fids = Types.Fid.Set.empty
-    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
-    else
-      let fid = Types.Fid.Set.min_elt t.free_fids in
-      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
-      return fid
-  let deallocate_fid t fid =
-    let open Lwt in
-    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
-    Lwt_condition.signal t.free_fids_c ();
-    LowLevel.clunk t fid
-    >>= fun _ -> (* the spec says to assume the fid is clunked now *)
-    Lwt.return ()
   let with_fid t f =
     let open Lwt in
-    allocate_fid t
+    LowLevel.allocate_fid t
     >>= fun fid ->
-    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
+    finally (fun () -> f fid) (fun () -> LowLevel.deallocate_fid t fid)
 
   let write t path offset buf =
     let open LowLevel in
