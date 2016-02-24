@@ -236,6 +236,17 @@ let check_directory_boundary_read () =
       )
   )
 
+let check_rpc_after_disconnect () =
+  with_client1 (fun client1 ->
+    Client1.disconnect client1
+    >>= fun () ->
+    let filemode = Types.FileMode.make ~owner:[`Read; `Execute] () in
+    Client1.mkdir client1 [] "foo" filemode
+    >>= function
+    | Error (`Msg _) -> Lwt.return ()
+    | Ok _ -> Alcotest.fail "client1: mkdir succeeded"
+  )
+
 let () = LogServer.print_debug := false
 let () = LogClient1.print_debug := false
 let () = LogClient2.print_debug := false
@@ -251,6 +262,7 @@ let test_client = [
   lwt_test "check that we can remove a directory" (fun () -> with_server create_remove_dir);
   lwt_test "failed remove should clunk the fid" (fun () -> with_server failed_remove_clunk_fid);
   lwt_test "check reading out-of-bounds on a directory doesn't fail badly" (fun () -> with_server check_directory_boundary_read);
+  lwt_test "check rpc after disconnect fails" (fun () -> with_server check_rpc_after_disconnect);
 ]
 
 let tests = [
