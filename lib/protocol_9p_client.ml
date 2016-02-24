@@ -150,7 +150,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         return (Ok (tag, th)) in
     let deallocate_tag tag =
       t.free_tags <- Types.Tag.Set.add tag t.free_tags;
-      t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
+      (* The tag will have already been removed from the wakeners map *)
       Lwt_condition.signal t.free_tags_c ();
       Lwt.return () in
     let with_tag f =
@@ -175,7 +175,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
      the thread blocked in the rpc function. *)
   let rec dispatcher_t shutdown_complete_wakener t =
     if t.please_shutdown then begin
-      Lwt.wakeup shutdown_complete_wakener ();
       Lwt.return (Ok ())
     end else read_one_packet t.reader
     >>*= fun response ->
@@ -187,6 +186,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     end else begin
       let wakener = Types.Tag.Map.find tag t.wakeners in
       Lwt.wakeup_later wakener (Ok response.Response.payload);
+      t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
       dispatcher_t shutdown_complete_wakener t
     end
 
@@ -433,15 +433,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           t.shutdown_complete_t
           >>= fun () ->
           (* Any new callers of `rpc` will fail immediately without blocking. *)
-          (* Wake up any existing `rpc` threads blocked on a free fid *)
-          Lwt_condition.broadcast t.free_fids_c ();
-          (* Notify any remaining blocked threads that we're down *)
-          Types.Tag.Map.iter
-            (fun _tag wakener ->
-              Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"))
-              (* Note existing `rpc` threads blocked waiting for a free tag will
-                 wake up one by one *)
-            ) t.wakeners;
           return ()
         end else
           return ()
@@ -546,8 +537,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= function { Response.Attach.qid } ->
     debug "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
     Lwt.async (fun () ->
+      let open Lwt.Infix in
       Lwt.catch (fun () ->
-        let open Lwt.Infix in
         dispatcher_t shutdown_complete_wakener t
         >>= function
         | Result.Error (`Msg m) ->
@@ -557,9 +548,21 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           Lwt.return ()
       ) (fun e ->
         error "dispatcher caught %s: no more responses will be handled" (Printexc.to_string e);
-        Lwt.wakeup shutdown_complete_wakener ();
         Lwt.return ()
-      )
+      ) >>= fun () ->
+      Lwt.wakeup shutdown_complete_wakener ();
+      (* Wake up any existing `rpc` threads blocked on a free fid *)
+      Lwt_condition.broadcast t.free_fids_c ();
+      (* Notify any remaining blocked threads that we're down *)
+      Types.Tag.Map.iter
+        (fun tag wakener ->
+          info "Sending disconnection to request with tag %d" (Types.Tag.to_int tag);
+          Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"));
+          t.wakeners <- Types.Tag.Map.remove tag t.wakeners
+          (* Note existing `rpc` threads blocked waiting for a free tag will
+             wake up one by one *)
+        ) t.wakeners;
+      Lwt.return ()
     );
     Lwt.return (Ok t)
 end
