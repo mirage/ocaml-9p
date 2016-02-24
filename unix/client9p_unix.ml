@@ -73,6 +73,8 @@ module Make(Log: S.LOG) = struct
       Log.debug "Successfully negotiated a connection.";
       Lwt.return (Result.Ok { client; flow; })
 
+  let on_disconnect { client } = Client.on_disconnect client
+
   let disconnect { client; flow } =
     Client.disconnect client
     >>= fun () ->

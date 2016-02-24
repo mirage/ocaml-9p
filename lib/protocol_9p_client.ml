@@ -28,6 +28,8 @@ module Response = Protocol_9p_response
 module type S = sig
   type t
 
+  val on_disconnect: t -> unit Lwt.t
+
   val disconnect: t -> unit Lwt.t
 
   val create: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
@@ -76,6 +78,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     maximum_payload: int32;
     transmit_m: Lwt_mutex.t;
     mutable please_shutdown: bool;
+    shutdown_m: Lwt_mutex.t;
     shutdown_complete_t: unit Lwt.t;
     mutable wakeners: Response.payload Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
@@ -405,15 +408,24 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt.return (Ok stat)
       )
 
+  let on_disconnect t = t.shutdown_complete_t
+
   let disconnect t =
     let open Lwt in
-    (* Mark the connection as shutting down, so the dispatcher will quit *)
-    t.please_shutdown <- true;
-    (* Send a request, to unblock the dispatcher *)
-    LowLevel.flush t Types.Tag.notag
-    >>= fun _ ->
-    (* Wait for the dispatcher to shutdown *)
-    t.shutdown_complete_t
+    Lwt_mutex.with_lock t.shutdown_m
+      (fun () ->
+        match state t.shutdown_complete_t with
+        | Sleep ->
+          (* Mark the connection as shutting down, so the dispatcher will quit *)
+          t.please_shutdown <- true;
+          (* Send a request, to unblock the dispatcher *)
+          LowLevel.flush t Types.Tag.notag
+          >>= fun _ ->
+          (* Wait for the dispatcher to shutdown *)
+          t.shutdown_complete_t
+        | _ ->
+          return ()
+      )
 
   module KV_RO = struct
     open Lwt
@@ -502,6 +514,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       reader; writer; root; msize; upgraded; maximum_payload;
       transmit_m = Lwt_mutex.create ();
       please_shutdown = false;
+      shutdown_m = Lwt_mutex.create ();
       shutdown_complete_t;
       wakeners = Types.Tag.Map.empty;
       free_tags = Types.Tag.recommended;
