@@ -128,19 +128,24 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         >>= fun _ignore_error ->
         fail e)
 
-  let rpc t request =
+  let dispatcher_is_running t = Lwt.state t.shutdown_complete_t = Lwt.Sleep
+
+  let rpc t request : Response.payload Error.t Lwt.t =
     (* Allocate a fresh tag, or wait if none are available yet *)
     let c = Lwt_condition.create () in
     let rec allocate_tag () =
       let open Lwt in
-      if t.free_tags = Types.Tag.Set.empty
+      if t.free_tags = Types.Tag.Set.empty && (dispatcher_is_running t)
       then Lwt_condition.wait c >>= fun () -> allocate_tag ()
       else
+        if not(dispatcher_is_running t)
+        then return (Error (`Msg "connection disconnected"))
+        else
         let tag = Types.Tag.Set.min_elt t.free_tags in
         t.free_tags <- Types.Tag.Set.remove tag t.free_tags;
         let th, wakener = Lwt.task () in
         t.wakeners <- Types.Tag.Map.add tag wakener t.wakeners;
-        return (tag, th) in
+        return (Ok (tag, th)) in
     let deallocate_tag tag =
       t.free_tags <- Types.Tag.Set.add tag t.free_tags;
       t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
@@ -149,7 +154,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let with_tag f =
       let open Lwt in
       allocate_tag ()
-      >>= fun (tag, th) ->
+      >>*= fun (tag, th) ->
       finally (fun () -> f (tag, th)) (fun () -> deallocate_tag tag) in
     with_tag
       (fun (tag, th) ->
@@ -412,8 +417,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let open Lwt in
     Lwt_mutex.with_lock t.shutdown_m
       (fun () ->
-        match state t.shutdown_complete_t with
-        | Sleep ->
+        if dispatcher_is_running t then begin
           (* Mark the connection as shutting down, so the dispatcher will quit *)
           t.please_shutdown <- true;
           (* Send a request, to unblock the dispatcher *)
@@ -422,13 +426,14 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           (* Wait for the dispatcher to shutdown *)
           t.shutdown_complete_t
           >>= fun () ->
+          (* Any new callers of `rpc` will fail immediately without blocking. *)
           (* Notify any remaining blocked threads that we're down *)
           Types.Tag.Map.iter
             (fun _tag wakener ->
               Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"))
             ) t.wakeners;
           return ()
-        | _ ->
+        end else
           return ()
       )
 
