@@ -82,6 +82,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     shutdown_complete_t: unit Lwt.t;
     mutable wakeners: Response.payload Error.t Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
+    free_tags_c: unit Lwt_condition.t;
     mutable free_fids: Types.Fid.Set.t;
     free_fids_c: unit Lwt_condition.t;
   }
@@ -132,11 +133,10 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let rpc t request : Response.payload Error.t Lwt.t =
     (* Allocate a fresh tag, or wait if none are available yet *)
-    let c = Lwt_condition.create () in
     let rec allocate_tag () =
       let open Lwt in
       if t.free_tags = Types.Tag.Set.empty && (dispatcher_is_running t)
-      then Lwt_condition.wait c >>= fun () -> allocate_tag ()
+      then Lwt_condition.wait t.free_tags_c >>= fun () -> allocate_tag ()
       else
         if not(dispatcher_is_running t)
         then return (Error (`Msg "connection disconnected"))
@@ -149,7 +149,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let deallocate_tag tag =
       t.free_tags <- Types.Tag.Set.add tag t.free_tags;
       t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
-      Lwt_condition.signal c ();
+      Lwt_condition.signal t.free_tags_c ();
       Lwt.return () in
     let with_tag f =
       let open Lwt in
@@ -528,6 +528,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       shutdown_complete_t;
       wakeners = Types.Tag.Map.empty;
       free_tags = Types.Tag.recommended;
+      free_tags_c = Lwt_condition.create ();
       free_fids = Types.Fid.recommended;
       free_fids_c = Lwt_condition.create ();
     } in
