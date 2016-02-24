@@ -43,7 +43,7 @@ module type S = sig
   module KV_RO : V1_LWT.KV_RO with type t = t
 
   module LowLevel : sig
-    val allocate_fid: t -> Protocol_9p_types.Fid.t Lwt.t
+    val allocate_fid: t -> Protocol_9p_types.Fid.t Error.t Lwt.t
     val deallocate_fid: t -> Protocol_9p_types.Fid.t -> unit Lwt.t
     val walk: t -> Types.Fid.t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
     val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
@@ -61,7 +61,7 @@ module type S = sig
   end
 
   val walk_from_root: t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
-  val with_fid: t -> (Types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
+  val with_fid: t -> (Types.Fid.t -> 'a Error.t Lwt.t) -> 'a Error.t Lwt.t
 end
 
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
@@ -303,12 +303,15 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     let rec allocate_fid t =
       let open Lwt in
-      if t.free_fids = Types.Fid.Set.empty
+      if t.free_fids = Types.Fid.Set.empty && (dispatcher_is_running t)
       then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
       else
-        let fid = Types.Fid.Set.min_elt t.free_fids in
-        t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
-        return fid
+        if not(dispatcher_is_running t)
+        then return (Error (`Msg "connection disconnected"))
+        else
+          let fid = Types.Fid.Set.min_elt t.free_fids in
+          t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
+          return (Ok fid)
     let deallocate_fid t fid =
       let open Lwt in
       t.free_fids <- Types.Fid.Set.add fid t.free_fids;
@@ -323,7 +326,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
   let with_fid t f =
     let open Lwt in
     LowLevel.allocate_fid t
-    >>= fun fid ->
+    >>*= fun fid ->
     finally (fun () -> f fid) (fun () -> LowLevel.deallocate_fid t fid)
 
   let write t path offset buf =
@@ -430,10 +433,14 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           t.shutdown_complete_t
           >>= fun () ->
           (* Any new callers of `rpc` will fail immediately without blocking. *)
+          (* Wake up any existing `rpc` threads blocked on a free fid *)
+          Lwt_condition.broadcast t.free_fids_c ();
           (* Notify any remaining blocked threads that we're down *)
           Types.Tag.Map.iter
             (fun _tag wakener ->
               Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"))
+              (* Note existing `rpc` threads blocked waiting for a free tag will
+                 wake up one by one *)
             ) t.wakeners;
           return ()
         end else

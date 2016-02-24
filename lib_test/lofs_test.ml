@@ -69,6 +69,9 @@ let with_server f =
       (fun () ->
         Server.shutdown server
       )
+    >>= function
+    | Ok () -> Lwt.return ()
+    | Error (`Msg m) -> fail (Failure m)
 
 let with_client1 f =
   Client1.connect proto address ()
@@ -77,8 +80,12 @@ let with_client1 f =
   | Ok client ->
     Lwt.catch (fun () ->
       f client
-      >>= fun () ->
+      >>= function
+      | Error (`Msg err) -> Alcotest.fail ("client1: "^err)
+      | Ok () ->
       Client1.disconnect client
+      >>= fun () ->
+      Lwt.return (Ok ())
     ) (fun exn ->
       Client1.disconnect client
       >>= fun () ->
@@ -92,8 +99,12 @@ let with_client2 f =
   | Ok client ->
     Lwt.catch (fun () ->
       f client
-      >>= fun () ->
+      >>= function
+      | Error (`Msg err) -> Alcotest.fail ("client2: "^err)
+      | Ok () ->
       Client2.disconnect client
+      >>= fun () ->
+      Lwt.return (Ok ())
     ) (fun exn ->
       Client2.disconnect client
       >>= fun () ->
@@ -101,11 +112,11 @@ let with_client2 f =
     )
 
 let connect1 () =
-  with_client1 (fun _client1 -> return_unit)
+  with_client1 (fun _client1 -> Lwt.return (Ok ()))
 
 let connect2 () =
   with_client1 (fun _client1 ->
-    with_client2 (fun _client2 -> return_unit)
+    with_client2 (fun _client2 -> Lwt.return (Ok ()))
   )
 
 let create_rebind_fid () =
@@ -133,7 +144,7 @@ let create_rebind_fid () =
             | Error (`Msg err) ->
              Alcotest.fail ("client1: write: " ^ err)
             | Ok _ ->
-                Lwt.return ()
+                Lwt.return (Ok ())
       )
   )
 
@@ -158,7 +169,7 @@ let create_remove_file () =
           | Error (`Msg err) ->
             Alcotest.fail ("client1: remove foo: " ^ err)
           | Ok () ->
-            Lwt.return ()
+            Lwt.return (Ok ())
       )
     )
 
@@ -173,7 +184,7 @@ let create_remove_dir () =
     >>= function
     | Error (`Msg err) -> Alcotest.fail ("client1: rm [foo]: " ^ err)
     | Ok () ->
-      Lwt.return ()
+      Lwt.return (Ok ())
   )
 
 let failed_remove_clunk_fid () =
@@ -202,7 +213,7 @@ let failed_remove_clunk_fid () =
           >>= function
           | Error (`Msg err) -> Alcotest.fail ("client1: walk_from_root after failed remove: " ^ err)
           | Ok _ ->
-            Lwt.return ()
+            Lwt.return (Ok ())
       )
   )
 
@@ -231,7 +242,7 @@ let check_directory_boundary_read () =
         | Ok { Response.Read.data } ->
           let n = Cstruct.len data in
           if n = 0
-          then Lwt.return ()
+          then Lwt.return (Ok ())
           else Alcotest.fail ("client1: read non-zero: " ^ (string_of_int n))
       )
   )
@@ -243,7 +254,7 @@ let check_rpc_after_disconnect () =
     let filemode = Types.FileMode.make ~owner:[`Read; `Execute] () in
     Client1.mkdir client1 [] "foo" filemode
     >>= function
-    | Error (`Msg _) -> Lwt.return ()
+    | Error (`Msg _) -> Lwt.return (Ok ())
     | Ok _ -> Alcotest.fail "client1: mkdir succeeded"
   )
 

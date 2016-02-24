@@ -65,7 +65,7 @@ module type S = sig
         RPCs. The client must carefully respect the rules on managing fids
         and stay within the message size limits. *)
 
-    val allocate_fid: t -> Protocol_9p_types.Fid.t Lwt.t
+    val allocate_fid: t -> Protocol_9p_types.Fid.t Protocol_9p_error.t Lwt.t
     (** [allocate_fid t] returns a free fid. Callers must call [deallocate_fid t]
         when they are finished with it. *)
 
@@ -139,7 +139,8 @@ module type S = sig
       the internal Fid representing the root directory (which is not
       exposed by the API). *)
 
-  val with_fid: t -> (Protocol_9p_types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
+  val with_fid: t -> (Protocol_9p_types.Fid.t -> 'a Protocol_9p_error.t Lwt.t)
+      -> 'a Protocol_9p_error.t Lwt.t
   (** [with_fid t fn] is the result of running [fn x] with a fresh Fid
       [x], which is returned to the free pool when the thread
       finishes. *)
