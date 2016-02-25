@@ -19,7 +19,7 @@ module type S = sig
   type t
   (** An established connection to a 9P server *)
 
-  val on_disconnect: t -> unit Lwt.t
+  val after_disconnect: t -> unit Lwt.t
   (** A thread which wakes up when the connection to the server
       has been broken *)
 

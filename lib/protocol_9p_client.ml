@@ -28,7 +28,7 @@ module Response = Protocol_9p_response
 module type S = sig
   type t
 
-  val on_disconnect: t -> unit Lwt.t
+  val after_disconnect: t -> unit Lwt.t
 
   val disconnect: t -> unit Lwt.t
 
@@ -417,7 +417,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt.return (Ok stat)
       )
 
-  let on_disconnect t = t.shutdown_complete_t
+  let after_disconnect t = t.shutdown_complete_t
 
   let disconnect t =
     let open Lwt in
