@@ -28,6 +28,8 @@ module Response = Protocol_9p_response
 module type S = sig
   type t
 
+  val on_disconnect: t -> unit Lwt.t
+
   val disconnect: t -> unit Lwt.t
 
   val create: t -> string list -> string -> Types.FileMode.t -> unit Error.t Lwt.t
@@ -41,6 +43,8 @@ module type S = sig
   module KV_RO : V1_LWT.KV_RO with type t = t
 
   module LowLevel : sig
+    val allocate_fid: t -> Protocol_9p_types.Fid.t Error.t Lwt.t
+    val deallocate_fid: t -> Protocol_9p_types.Fid.t -> unit Lwt.t
     val walk: t -> Types.Fid.t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
     val openfid: t -> Types.Fid.t -> Types.OpenMode.t -> Response.Open.t Error.t Lwt.t
     val create: t -> Types.Fid.t -> ?extension:string -> string -> Types.FileMode.t ->
@@ -57,7 +61,7 @@ module type S = sig
   end
 
   val walk_from_root: t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
-  val with_fid: t -> (Types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
+  val with_fid: t -> (Types.Fid.t -> 'a Error.t Lwt.t) -> 'a Error.t Lwt.t
 end
 
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
@@ -76,9 +80,11 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     maximum_payload: int32;
     transmit_m: Lwt_mutex.t;
     mutable please_shutdown: bool;
+    shutdown_m: Lwt_mutex.t;
     shutdown_complete_t: unit Lwt.t;
-    mutable wakeners: Response.payload Lwt.u Types.Tag.Map.t;
+    mutable wakeners: Response.payload Error.t Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
+    free_tags_c: unit Lwt_condition.t;
     mutable free_fids: Types.Fid.Set.t;
     free_fids_c: unit Lwt_condition.t;
   }
@@ -125,28 +131,32 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         >>= fun _ignore_error ->
         fail e)
 
-  let rpc t request =
+  let dispatcher_is_running t = Lwt.state t.shutdown_complete_t = Lwt.Sleep
+
+  let rpc t request : Response.payload Error.t Lwt.t =
     (* Allocate a fresh tag, or wait if none are available yet *)
-    let c = Lwt_condition.create () in
     let rec allocate_tag () =
       let open Lwt in
-      if t.free_tags = Types.Tag.Set.empty
-      then Lwt_condition.wait c >>= fun () -> allocate_tag ()
+      if t.free_tags = Types.Tag.Set.empty && (dispatcher_is_running t)
+      then Lwt_condition.wait t.free_tags_c >>= fun () -> allocate_tag ()
       else
+        if not(dispatcher_is_running t)
+        then return (Error (`Msg "connection disconnected"))
+        else
         let tag = Types.Tag.Set.min_elt t.free_tags in
         t.free_tags <- Types.Tag.Set.remove tag t.free_tags;
         let th, wakener = Lwt.task () in
         t.wakeners <- Types.Tag.Map.add tag wakener t.wakeners;
-        return (tag, th) in
+        return (Ok (tag, th)) in
     let deallocate_tag tag =
       t.free_tags <- Types.Tag.Set.add tag t.free_tags;
-      t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
-      Lwt_condition.signal c ();
+      (* The tag will have already been removed from the wakeners map *)
+      Lwt_condition.signal t.free_tags_c ();
       Lwt.return () in
     let with_tag f =
       let open Lwt in
       allocate_tag ()
-      >>= fun (tag, th) ->
+      >>*= fun (tag, th) ->
       finally (fun () -> f (tag, th)) (fun () -> deallocate_tag tag) in
     with_tag
       (fun (tag, th) ->
@@ -157,17 +167,14 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
             write_one_packet t.writer request
           )
         >>*= fun () ->
-        (* Wait for the response to be read *)
-        let open Lwt in
-        th >>= fun response ->
-        return (Ok response)
+        (* Wait for the response (or error) to be read *)
+        th
       )
 
   (* The dispatcher thread reads responses from the FLOW and wakes up
      the thread blocked in the rpc function. *)
   let rec dispatcher_t shutdown_complete_wakener t =
     if t.please_shutdown then begin
-      Lwt.wakeup shutdown_complete_wakener ();
       Lwt.return (Ok ())
     end else read_one_packet t.reader
     >>*= fun response ->
@@ -178,7 +185,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       dispatcher_t shutdown_complete_wakener t
     end else begin
       let wakener = Types.Tag.Map.find tag t.wakeners in
-      Lwt.wakeup_later wakener response.Response.payload;
+      Lwt.wakeup_later wakener (Ok response.Response.payload);
+      t.wakeners <- Types.Tag.Map.remove tag t.wakeners;
       dispatcher_t shutdown_complete_wakener t
     end
 
@@ -292,30 +300,34 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       | { Response.payload = Response.Attach x } ->
         Lwt.return (Ok x)
       | { Response.payload = p } -> return_error p
+
+    let rec allocate_fid t =
+      let open Lwt in
+      if t.free_fids = Types.Fid.Set.empty && (dispatcher_is_running t)
+      then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+      else
+        if not(dispatcher_is_running t)
+        then return (Error (`Msg "connection disconnected"))
+        else
+          let fid = Types.Fid.Set.min_elt t.free_fids in
+          t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
+          return (Ok fid)
+    let deallocate_fid t fid =
+      let open Lwt in
+      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+      Lwt_condition.signal t.free_fids_c ();
+      clunk t fid
+      >>= fun _ -> (* the spec says to assume the fid is clunked now *)
+      Lwt.return ()
   end
 
   let walk_from_root t = LowLevel.walk t t.root
 
-  let rec allocate_fid t =
-    let open Lwt in
-    if t.free_fids = Types.Fid.Set.empty
-    then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
-    else
-      let fid = Types.Fid.Set.min_elt t.free_fids in
-      t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
-      return fid
-  let deallocate_fid t fid =
-    let open Lwt in
-    t.free_fids <- Types.Fid.Set.add fid t.free_fids;
-    Lwt_condition.signal t.free_fids_c ();
-    LowLevel.clunk t fid
-    >>= fun _ -> (* the spec says to assume the fid is clunked now *)
-    Lwt.return ()
   let with_fid t f =
     let open Lwt in
-    allocate_fid t
-    >>= fun fid ->
-    finally (fun () -> f fid) (fun () -> deallocate_fid t fid)
+    LowLevel.allocate_fid t
+    >>*= fun fid ->
+    finally (fun () -> f fid) (fun () -> LowLevel.deallocate_fid t fid)
 
   let write t path offset buf =
     let open LowLevel in
@@ -405,15 +417,26 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt.return (Ok stat)
       )
 
+  let on_disconnect t = t.shutdown_complete_t
+
   let disconnect t =
     let open Lwt in
-    (* Mark the connection as shutting down, so the dispatcher will quit *)
-    t.please_shutdown <- true;
-    (* Send a request, to unblock the dispatcher *)
-    LowLevel.flush t Types.Tag.notag
-    >>= fun _ ->
-    (* Wait for the dispatcher to shutdown *)
-    t.shutdown_complete_t
+    Lwt_mutex.with_lock t.shutdown_m
+      (fun () ->
+        if dispatcher_is_running t then begin
+          (* Mark the connection as shutting down, so the dispatcher will quit *)
+          t.please_shutdown <- true;
+          (* Send a request, to unblock the dispatcher *)
+          LowLevel.flush t Types.Tag.notag
+          >>= fun _ ->
+          (* Wait for the dispatcher to shutdown *)
+          t.shutdown_complete_t
+          >>= fun () ->
+          (* Any new callers of `rpc` will fail immediately without blocking. *)
+          return ()
+        end else
+          return ()
+      )
 
   module KV_RO = struct
     open Lwt
@@ -502,9 +525,11 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       reader; writer; root; msize; upgraded; maximum_payload;
       transmit_m = Lwt_mutex.create ();
       please_shutdown = false;
+      shutdown_m = Lwt_mutex.create ();
       shutdown_complete_t;
       wakeners = Types.Tag.Map.empty;
       free_tags = Types.Tag.recommended;
+      free_tags_c = Lwt_condition.create ();
       free_fids = Types.Fid.recommended;
       free_fids_c = Lwt_condition.create ();
     } in
@@ -512,8 +537,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= function { Response.Attach.qid } ->
     debug "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
     Lwt.async (fun () ->
+      let open Lwt.Infix in
       Lwt.catch (fun () ->
-        let open Lwt.Infix in
         dispatcher_t shutdown_complete_wakener t
         >>= function
         | Result.Error (`Msg m) ->
@@ -523,9 +548,21 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           Lwt.return ()
       ) (fun e ->
         error "dispatcher caught %s: no more responses will be handled" (Printexc.to_string e);
-        Lwt.wakeup shutdown_complete_wakener ();
         Lwt.return ()
-      )
+      ) >>= fun () ->
+      Lwt.wakeup shutdown_complete_wakener ();
+      (* Wake up any existing `rpc` threads blocked on a free fid *)
+      Lwt_condition.broadcast t.free_fids_c ();
+      (* Notify any remaining blocked threads that we're down *)
+      Types.Tag.Map.iter
+        (fun tag wakener ->
+          info "Sending disconnection to request with tag %d" (Types.Tag.to_int tag);
+          Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"));
+          t.wakeners <- Types.Tag.Map.remove tag t.wakeners
+          (* Note existing `rpc` threads blocked waiting for a free tag will
+             wake up one by one *)
+        ) t.wakeners;
+      Lwt.return ()
     );
     Lwt.return (Ok t)
 end

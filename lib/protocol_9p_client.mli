@@ -19,6 +19,10 @@ module type S = sig
   type t
   (** An established connection to a 9P server *)
 
+  val on_disconnect: t -> unit Lwt.t
+  (** A thread which wakes up when the connection to the server
+      has been broken *)
+
   val disconnect: t -> unit Lwt.t
   (** Disconnect from the 9P server, but leave the underlying FLOW
       connected. *)
@@ -60,6 +64,13 @@ module type S = sig
     (** The functions in this module are mapped directly onto individual 9P
         RPCs. The client must carefully respect the rules on managing fids
         and stay within the message size limits. *)
+
+    val allocate_fid: t -> Protocol_9p_types.Fid.t Protocol_9p_error.t Lwt.t
+    (** [allocate_fid t] returns a free fid. Callers must call [deallocate_fid t]
+        when they are finished with it. *)
+
+    val deallocate_fid: t -> Protocol_9p_types.Fid.t -> unit Lwt.t
+    (** [deallocate_fid t fid] clunks a fid and marks it as free for re-use. *)
 
     val walk: t -> Protocol_9p_types.Fid.t -> Protocol_9p_types.Fid.t ->
       string list -> Protocol_9p_response.Walk.t Protocol_9p_error.t Lwt.t
@@ -128,7 +139,8 @@ module type S = sig
       the internal Fid representing the root directory (which is not
       exposed by the API). *)
 
-  val with_fid: t -> (Protocol_9p_types.Fid.t -> 'a Lwt.t) -> 'a Lwt.t
+  val with_fid: t -> (Protocol_9p_types.Fid.t -> 'a Protocol_9p_error.t Lwt.t)
+      -> 'a Protocol_9p_error.t Lwt.t
   (** [with_fid t fn] is the result of running [fn x] with a fresh Fid
       [x], which is returned to the free pool when the thread
       finishes. *)
