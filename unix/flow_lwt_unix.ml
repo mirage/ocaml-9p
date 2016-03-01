@@ -58,9 +58,14 @@ let read flow =
 let write flow buf =
   if flow.closed then return `Eof
   else
-    Lwt_cstruct.(complete (write flow.fd) buf)
-    >>= fun () ->
-    return (`Ok ())
+    Lwt.catch
+      (fun () ->
+        Lwt_cstruct.(complete (write flow.fd) buf)
+        >>= fun () ->
+        return (`Ok ())
+      ) (function
+        | Unix.Unix_error(Unix.EPIPE, _, _) -> return `Eof
+        | e -> fail e)
 
 let writev flow bufs =
   let rec loop = function
@@ -68,7 +73,12 @@ let writev flow bufs =
     | x :: xs ->
       if flow.closed then return `Eof
       else
-        Lwt_cstruct.(complete (write flow.fd) x)
-        >>= fun () ->
-        loop xs in
+        Lwt.catch
+          (fun () ->
+            Lwt_cstruct.(complete (write flow.fd) x)
+            >>= fun () ->
+            loop xs
+          ) (function
+            | Unix.Unix_error(Unix.EPIPE, _, _) -> return `Eof
+            | e -> fail e) in
   loop bufs
