@@ -1,3 +1,15 @@
+0.5.0 (2016-03-01):
+* remove an unnecessary copy in the read path
+* add documentation for Server_unix_9p
+* add a `shell` subcommand for the CLI with history and line-editing
+* server: allow per-connection state
+* unix: transform Unix.EPIPE into `Eof
+* when pretty-printing, don't print payloads
+* add wstat/update to client API
+* lofs: sequential read/write increased by 9-10x
+* server: handle errors in the dispatcher loop
+* client: allow clients to handle I/O errors and recover
+
 0.4.0 (2016-01-25):
 * Remove OASIS from build system
 * Remove use of -pack, now use the index module Protocol_9p with aliases
