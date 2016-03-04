@@ -246,6 +246,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
     LowLevel.expect_version ~write_lock reader writer
     >>*= fun (tag, v) ->
     let msize = min msize v.Request.Version.msize in
+    let msize = min msize Protocol_9p_buffered9PReader.max_message_size in
     if v.Request.Version.version = Types.Version.unknown then begin
       error "Client sent a 9P version string we couldn't understand";
       Lwt.return (Error (`Msg "Received unknown 9P version string"))

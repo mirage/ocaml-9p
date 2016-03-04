@@ -15,6 +15,9 @@
  *
  *)
 
+val max_message_size : int32
+(** Messages longer than this will be rejected. *)
+
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   type t

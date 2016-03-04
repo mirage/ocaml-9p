@@ -19,6 +19,8 @@ open Result
 open Protocol_9p_error
 open Protocol_9p_infix
 
+let max_message_size = 655360l       (* 640 KB should be enough... Linux limit is 32 KB *)
+
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
   type t = {
     flow: FLOW.flow;
@@ -59,7 +61,11 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let len_size = 4 in
     read_into t (Cstruct.create len_size)
     >>*= fun length_buffer ->
-    let length = Cstruct.LE.get_uint32 length_buffer 0 in
+    match Cstruct.LE.get_uint32 length_buffer 0 with
+    | bad_length when bad_length < Int32.of_int len_size
+                   || bad_length > max_message_size ->
+        Lwt.return (error_msg "Message size %lu out of range" bad_length)
+    | length ->
     let packet_buffer = Cstruct.create (Int32.to_int length) in
     read_into t (Cstruct.shift packet_buffer len_size)
     >>*= fun _packet_body ->
