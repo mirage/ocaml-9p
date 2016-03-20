@@ -21,7 +21,7 @@ remove: ["ocamlfind" "remove" "protocol-9p"]
 depends: [
   "base-bytes"
   "cstruct"
-  "sexplib" {<= "113.00.00" }
+  "sexplib" {> "113.00.00" }
   "result"
   "mirage-types-lwt"
   "lwt"
@@ -34,6 +34,7 @@ depends: [
   "lambda-term"
   "ocamlfind" {build}
   "ocamlbuild" {build}
+  "ppx_tools" {build}
   "alcotest" {test & >= "0.4.0"}
 ]
 available: [ocaml-version >= "4.02.0"]

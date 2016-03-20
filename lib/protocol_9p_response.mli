@@ -26,7 +26,7 @@ module Version : sig
     msize: int32; (** the server's maximum message size, must be less than
                       the client's *)
     version: Protocol_9p_types.Version.t;
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of a version message *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -36,7 +36,7 @@ module Auth : sig
 
   type t = {
     aqid: Qid.t;
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of an authentication response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -48,14 +48,14 @@ module Err : sig
     ename: string;
     errno: int32 option; (** The extended 9P2000.u protocol allows the server
                              to return an errno *)
-  } with sexp
+  } [@@deriving sexp]
   (** The pauload of an error response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Flush : sig
-  type t = unit with sexp
+  type t = unit [@@deriving sexp]
   (** The payload of a flush response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -64,7 +64,7 @@ end
 module Attach : sig
   type t = {
     qid: Qid.t
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of an attach response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -73,7 +73,7 @@ end
 module Walk : sig
   type t = {
     wqids: Qid.t list
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of a walk response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -83,7 +83,7 @@ module Open : sig
   type t = {
     qid: Qid.t;
     iounit: int32;
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of an Open response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -93,7 +93,7 @@ module Create : sig
   type t = {
     qid: Qid.t;
     iounit: int32;
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of a Create response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -102,7 +102,7 @@ end
 module Read : sig
   type t = {
     data: Cstruct.t
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of a Read response *)
 
   val sizeof_header: int
@@ -114,21 +114,21 @@ end
 module Write : sig
   type t = {
     count: int32
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of a Write response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Clunk : sig
-  type t = unit with sexp
+  type t = unit [@@deriving sexp]
   (** The payload of a Clunk response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Remove : sig
-  type t = unit with sexp
+  type t = unit [@@deriving sexp]
   (** The payload of a Remove response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -137,14 +137,14 @@ end
 module Stat : sig
   type t = {
     stat: Stat.t;
-  } with sexp
+  } [@@deriving sexp]
   (** The payload of a Stat response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Wstat : sig
-  type t = unit with sexp
+  type t = unit [@@deriving sexp]
   (** The payload of a Wstat response *)
 
   include Protocol_9p_s.SERIALISABLE with type t := t
@@ -165,14 +165,14 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
-with sexp
+[@@deriving sexp]
 (** A variant including all possible 9P response payloads *)
 
 type t = {
   tag: Protocol_9p_types.Tag.t; (** The tag used to match this response with
                                     the original request *)
   payload: payload;
-} with sexp
+} [@@deriving sexp]
 (** A 9P protocol response *)
 
 include Protocol_9p_s.SERIALISABLE with type t := t
