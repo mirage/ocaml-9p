@@ -47,10 +47,10 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
   let get_info t = t.info
 
   let default_exn_converter info exn =
-    let is_unix = (info.Protocol_9p_info.version = Types.Version.unix) in
+    let _is_unix = (info.Protocol_9p_info.version = Types.Version.unix) in
     match exn with
     | Unix.Unix_error(err, _, _) ->
-      let host = match info.Protocol_9p_info.aname with
+(*      let host = match info.Protocol_9p_info.aname with
         | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
         | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
         | _ -> None
@@ -62,7 +62,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
           | errno::_ -> match Errno.to_code ~host errno with
             | None -> None
             | Some i -> Some (Int32.of_int i)
-      in
+        in *)
+      let errno = None in
       Response.Err {
         Response.Err.ename = Unix.error_message err;
         errno;

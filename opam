@@ -25,7 +25,7 @@ depends: [
   "result"
   "mirage-types-lwt"
   "lwt"
-  "unix-errno" {>= "0.3.0"}
+#  "unix-errno" {>= "0.3.0"}
   "ctypes"
   "base-unix"
   "cmdliner"
