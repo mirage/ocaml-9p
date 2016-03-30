@@ -20,9 +20,12 @@ open Lwt
 open Infix
 open Result
 
-module LogServer  = Log9p_unix.StdoutPrefix(struct let prefix = "S" end)
-module LogClient1 = Log9p_unix.StdoutPrefix(struct let prefix = "C1" end)
-module LogClient2 = Log9p_unix.StdoutPrefix(struct let prefix = "C2" end)
+let server_src = Logs.Src.create "server" ~doc:"Server"
+let client1_src = Logs.Src.create "client1" ~doc:"Client 1"
+let client2_src = Logs.Src.create "client2" ~doc:"Client 2"
+module LogServer  = (val Logs.src_log server_src)
+module LogClient1 = (val Logs.src_log client1_src)
+module LogClient2 = (val Logs.src_log client2_src)
 module Server = Server9p_unix.Make(LogServer)(Lofs9p)
 module Client1 = Client9p_unix.Make(LogClient1)
 module Client2 = Client9p_unix.Make(LogClient2)
@@ -56,12 +59,12 @@ let with_server f =
         Server.serve_forever server
         >>= function
         | Result.Error (`Msg m) ->
-          LogServer.error "server caught %s: no more requests will be processed" m;
+          LogServer.err (fun f -> f "server caught %s: no more requests will be processed" m);
           Lwt.return ()
         | Result.Ok () ->
           Lwt.return ()
       ) (fun e ->
-        LogServer.error "server caught %s: no more requests will be processed" (Printexc.to_string e);
+        LogServer.err (fun f -> f "server caught %s: no more requests will be processed" (Printexc.to_string e));
         Lwt.return ()
       )
     );
@@ -258,9 +261,26 @@ let check_rpc_after_disconnect () =
     | Ok _ -> Alcotest.fail "client1: mkdir succeeded"
   )
 
-let () = LogServer.print_debug := false
-let () = LogClient1.print_debug := false
-let () = LogClient2.print_debug := false
+let string_of_level =
+  let open Logs in function
+  | App -> "APP"
+  | Error -> "ERR"
+  | Warning -> "WRN"
+  | Info -> "INF"
+  | Debug -> "DBG"
+
+let log_report src level ~over k msgf =
+  let lvl = string_of_level level in
+  msgf @@ fun ?header:_ ?(tags=Logs.Tag.empty) fmt ->
+  let k _ =
+    over ();
+    k () in
+  Format.kfprintf k Format.err_formatter ("%s [%s] @[" ^^ fmt ^^ "@]@.") lvl (Logs.Src.name src)
+
+let () = Logs.set_reporter { Logs.report = log_report }
+let () = Logs.Src.set_level server_src (Some Logs.Debug)
+let () = Logs.Src.set_level client1_src (Some Logs.Debug)
+let () = Logs.Src.set_level client2_src (Some Logs.Debug)
 
 let lwt_test name f =
   name, `Quick, (fun () -> Lwt_main.run (f ()))

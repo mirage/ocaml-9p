@@ -17,6 +17,9 @@
 open Protocol_9p
 open Result
 
+let () =
+  Logs.set_reporter (Logs_fmt.reporter ())
+
 let example_data =
   let data = Cstruct.create 1 in
   for i = 0 to Cstruct.len data - 1 do

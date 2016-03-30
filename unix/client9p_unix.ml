@@ -70,7 +70,7 @@ module Make(Log: S.LOG) = struct
     >>= function
     | Result.Error _ as err -> Lwt.return err
     | Result.Ok client ->
-      Log.debug "Successfully negotiated a connection.";
+      Log.debug (fun f -> f "Successfully negotiated a connection.");
       Lwt.return (Result.Ok { client; flow; })
 
   let after_disconnect { client } = Client.after_disconnect client

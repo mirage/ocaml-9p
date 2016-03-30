@@ -9,6 +9,7 @@ PKG bisect
 PKG alcotest
 PKG fmt
 PKG unix-errno.unix
+PKG logs
 
 S lib
 S src

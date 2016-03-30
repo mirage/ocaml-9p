@@ -31,6 +31,7 @@ depends: [
   "cmdliner"
   "stringext"
   "fmt"
+  "logs" {>= "0.5.0"}
   "lambda-term"
   "ocamlfind" {build}
   "ocamlbuild" {build}

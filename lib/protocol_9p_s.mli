@@ -22,9 +22,9 @@ open Result
 module type LOG = sig
   (** Common logging functions *)
 
-  val debug : ('a, Format.formatter, unit, unit) format4 -> 'a
-  val info  : ('a, Format.formatter, unit, unit) format4 -> 'a
-  val error : ('a, Format.formatter, unit, unit) format4 -> 'a
+  val debug : 'a Logs.log
+  val info  : 'a Logs.log
+  val err : 'a Logs.log
 end
 
 module type SERIALISABLE = sig
