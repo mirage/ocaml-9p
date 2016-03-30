@@ -24,7 +24,7 @@ depends: [
   "sexplib" {> "113.00.00" }
   "result"
   "mirage-types-lwt"
-  "lwt"
+  "lwt" {>= "2.4.7"}
   "unix-errno" {>= "0.3.0"}
   "ctypes"
   "base-unix"
@@ -32,6 +32,8 @@ depends: [
   "stringext"
   "fmt"
   "lambda-term"
+  "ppx_deriving" {build}
+  "ppx_sexp_conv" {build}
   "ocamlfind" {build}
   "ocamlbuild" {build}
   "ppx_tools" {build}
