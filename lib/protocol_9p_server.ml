@@ -88,7 +88,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
   let after_disconnect t = t.shutdown_complete_t
 
   let write_one_packet ?write_lock writer response =
-    (* debug "S %a" Response.pp response; *)
+    debug (fun f -> f "S %a" Response.pp response);
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
@@ -112,7 +112,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         | Error (`Msg ename) ->
           Error (`Parse (ename, buffer))
         | Ok (request, _) ->
-          (* debug "C %a" Request.pp request; *)
+          debug (fun f -> f "C %a" Request.pp request);
           Ok request
       end
 
@@ -133,18 +133,18 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
       read_one_packet t.reader
       >>= function
       | Error (`Msg message) ->
-        debug "S error reading: %s" message;
-        debug "Disconnecting client";
+        debug (fun f -> f "S error reading: %s" message);
+        debug (fun f -> f "Disconnecting client");
         disconnect t
         >>= fun () ->
         dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
       | Error (`Parse (ename, buffer)) -> begin
           match Request.read_header buffer with
           | Error (`Msg _) ->
-            debug "C sent bad header: %s" ename;
+            debug (fun f -> f "C sent bad header: %s" ename);
             dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
           | Ok (_, _, tag, _) ->
-            debug "C error: %s" ename;
+            debug (fun f -> f "C error: %s" ename);
             let response = error_response tag ename in
             write_one_packet ~write_lock:t.write_lock t.writer response
             >>*= fun () ->
@@ -156,7 +156,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
             if Types.Tag.Map.mem oldtag t.cancel_buttons then begin
               let cancel_u = Types.Tag.Map.find oldtag t.cancel_buttons in
               Lwt.wakeup_later cancel_u ();
-              debug "S will suppress response for tag %s" (Sexplib.Sexp.to_string (Types.Tag.sexp_of_t oldtag));
+              debug (fun f -> f "S will suppress response for tag %s" (Sexplib.Sexp.to_string (Types.Tag.sexp_of_t oldtag)));
               t.cancel_buttons <- Types.Tag.Map.remove oldtag t.cancel_buttons;
             end;
             write_one_packet t.writer { Response.tag; payload = Response.Flush () }
@@ -198,8 +198,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
           )
           >>= begin function
             | Error (`Msg message) ->
-              debug "S error writing: %s" message;
-              debug "Disconnecting client";
+              debug (fun f -> f "S error writing: %s" message);
+              debug (fun f -> f "Disconnecting client");
               disconnect t
             | Ok () -> Lwt.return ()
           end
@@ -222,7 +222,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
       Lwt.return (Request.read buffer)
       >>*= function
       | ({ Request.payload = Request.Version v; tag } as req, _) ->
-        debug "C %a" Request.pp req;
+        debug (fun f -> f "C %a" Request.pp req);
         Lwt.return (Ok (tag, v))
       | request, _ ->
         return_error ~write_lock writer request "Expected Version message"
@@ -233,7 +233,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
       Lwt.return (Request.read buffer)
       >>*= function
       | ({ Request.payload = (Request.Attach a) as payload; tag } as req, _) ->
-        debug "C %a" Request.pp req;
+        debug (fun f -> f "C %a" Request.pp req);
         Lwt.return (Ok (tag, a, payload))
       | request, _ ->
         return_error ~write_lock writer request "Expected Attach message"
@@ -248,7 +248,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
     let msize = min msize v.Request.Version.msize in
     let msize = min msize Protocol_9p_buffered9PReader.max_message_size in
     if v.Request.Version.version = Types.Version.unknown then begin
-      error "Client sent a 9P version string we couldn't understand";
+      err (fun f -> f "Client sent a 9P version string we couldn't understand");
       Lwt.return (Error (`Msg "Received unknown 9P version string"))
     end else begin
       let version = v.Request.Version.version in
@@ -256,9 +256,9 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
         Response.tag;
         payload = Response.Version Response.Version.({ msize; version });
       } >>*= fun () ->
-      info "Using protocol %s msize %ld"
+      info (fun f -> f "Using protocol %s msize %ld"
         (Sexplib.Sexp.to_string (Types.Version.sexp_of_t version))
-        msize;
+        msize);
       LowLevel.expect_attach ~write_lock reader writer
       >>*= fun (tag, a, payload) ->
       let cancel_buttons = Types.Tag.Map.empty in
@@ -330,12 +330,12 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
           dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
           >>= function
           | Result.Error (`Msg m) ->
-            error "dispatcher caught %s: no more requests will be handled" m;
+            err (fun f -> f "dispatcher caught %s: no more requests will be handled" m);
             Lwt.return ()
           | Result.Ok () ->
             Lwt.return ()
         ) (fun e ->
-          error "dispatcher caught %s: no more requests will be handled" (Printexc.to_string e);
+          err (fun f -> f "dispatcher caught %s: no more requests will be handled" (Printexc.to_string e));
           Lwt.wakeup_later shutdown_complete_wakener ();
           Lwt.return ()
         )

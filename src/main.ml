@@ -22,8 +22,11 @@ open Lwt
 let project_url = "http://github.com/mirage/ocaml-9p"
 let version = "0.0"
 
-module Log = Log9p_unix.Stdout
+module Log = (val Logs.src_log Logs.default)
 module Client = Client9p_unix.Make(Log)
+
+let () =
+  Logs.set_reporter (Logs_fmt.reporter ())
 
 let finally f g =
   Lwt.catch
@@ -50,8 +53,14 @@ let with_client address username f =
   | Result.Ok t ->
     finally (fun () -> f t) (fun () -> Client.disconnect t)
 
+let configure_logging debug =
+  if debug then (
+    Logs.set_level (Some Logs.Debug);
+    Log.debug (fun f -> f "Debug-level logging enabled")
+  )
+
 let read debug address path username =
-  Log.print_debug := debug;
+  configure_logging debug;
   let path = parse_path path in
   let mib = Int32.mul 1024l 1024l in
   let two_mib = Int32.mul 2l mib in
@@ -79,7 +88,7 @@ let read debug address path username =
     `Error(false, Printexc.to_string e)
 
 let remove debug address path username =
-  Log.print_debug := debug;
+  configure_logging debug;
   let path = parse_path path in
   let t =
     with_client address username
@@ -158,7 +167,7 @@ let print_stats stats =
   Printf.printf "%!"
 
 let ls debug address path username =
-  Log.print_debug := debug;
+  configure_logging debug;
   let t =
     with_client address username
       (fun t ->
@@ -190,7 +199,7 @@ class read_line ~term ~history ~state = object(self)
 end
 
 let shell debug address username =
-  Log.print_debug := debug;
+  configure_logging debug;
   let t =
     with_client address username
       (fun t ->
@@ -335,7 +344,7 @@ let shell debug address username =
     `Error(false, Printexc.to_string e)
 
 let serve debug address path =
-  Log.print_debug := debug;
+  configure_logging debug;
   let path = parse_path path in
   let proto, address = parse_address address in
   let t =

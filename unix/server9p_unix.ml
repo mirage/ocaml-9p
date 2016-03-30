@@ -86,12 +86,12 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
       let rec loop_forever () =
         Lwt_unix.accept fd
         >>= fun (client, _client_addr) ->
-        Log.debug "accepted connection";
+        Log.debug (fun f -> f "accepted connection");
         Lwt.async (fun () ->
           Lwt.catch (fun () ->
              finally (fun () -> f client) (fun () -> Lwt_unix.close client)
           ) (fun e ->
-            Log.error "server loop caught %s: no further requests will be processed" (Printexc.to_string e);
+            Log.err (fun f -> f "server loop caught %s: no further requests will be processed" (Printexc.to_string e));
             Lwt.return ()
           )
         );
@@ -116,7 +116,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
          >>= function
          | Result.Error (`Msg x) -> fail (Failure x)
          | Result.Ok t ->
-           Log.debug "Successfully negotiated a connection.";
+           Log.debug (fun f -> f "Successfully negotiated a connection.");
            S.after_disconnect t
       )
 

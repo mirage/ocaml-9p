@@ -104,11 +104,11 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun buffer ->
     Lwt.return (Response.read buffer)
     >>*= fun (response, _) ->
-    debug "S %a" Response.pp response;
+    debug (fun f -> f "S %a" Response.pp response);
     Lwt.return (Ok response)
 
   let write_one_packet flow request =
-    debug "C %a" Request.pp request;
+    debug (fun f -> f "C %a" Request.pp request);
     let sizeof = Request.sizeof request in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Request.write request buffer)
@@ -181,7 +181,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let tag = response.Response.tag in
     if not(Types.Tag.Map.mem tag t.wakeners) then begin
       let pretty_printed = Sexplib.Sexp.to_string (Response.sexp_of_t response) in
-      error "Received response with unexpected tag: %s" pretty_printed;
+      err (fun f -> f "Received response with unexpected tag: %s" pretty_printed);
       dispatcher_t shutdown_complete_wakener t
     end else begin
       let wakener = Types.Tag.Map.find tag t.wakeners in
@@ -511,12 +511,12 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let maximum_read_payload = Int32.(sub msize (of_int (Response.sizeof smallest_read_response))) in
     let smallest_write_request = { Request.tag = Types.Tag.notag; payload = Request.Write { Request.Write.data = Cstruct.create 0; fid = Types.Fid.nofid; offset = 0L } } in
     let maximum_write_payload = Int32.(sub msize (of_int (Request.sizeof smallest_write_request))) in
-    debug "Negotiated maximum message size: %ld bytes" msize;
-    debug "Maximum read payload would be: %ld bytes" maximum_read_payload;
-    debug "Maximum write payload would be: %ld bytes" maximum_write_payload;
+    debug (fun f -> f "Negotiated maximum message size: %ld bytes" msize);
+    debug (fun f -> f "Maximum read payload would be: %ld bytes" maximum_read_payload);
+    debug (fun f -> f "Maximum write payload would be: %ld bytes" maximum_write_payload);
     (* For compatibility, use the smallest of the two possible maximums *)
     let maximum_payload = min maximum_read_payload maximum_write_payload in
-    debug "We will use a global maximum payload of: %ld bytes" maximum_payload;
+    debug (fun f -> f "We will use a global maximum payload of: %ld bytes" maximum_payload);
     (* We use the convention that fid 0l is the root fid. We'll never clunk
        this one so we can always re-explore the filesystem from the root. *)
     let root = match Types.Fid.of_int32 0l with Ok x -> x | _ -> assert false in
@@ -535,19 +535,19 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     } in
     LowLevel.attach reader writer root Types.Fid.nofid username aname None
     >>*= function { Response.Attach.qid } ->
-    debug "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid));
+    debug (fun f -> f "Successfully received a root qid: %s" (Sexplib.Sexp.to_string_hum (Types.Qid.sexp_of_t qid)));
     Lwt.async (fun () ->
       let open Lwt.Infix in
       Lwt.catch (fun () ->
         dispatcher_t shutdown_complete_wakener t
         >>= function
         | Result.Error (`Msg m) ->
-          error "dispatcher caught %s: no more responses will be handled" m;
+          err (fun f -> f "dispatcher caught %s: no more responses will be handled" m);
           Lwt.return ()
         | Result.Ok () ->
           Lwt.return ()
       ) (fun e ->
-        error "dispatcher caught %s: no more responses will be handled" (Printexc.to_string e);
+        err (fun f -> f "dispatcher caught %s: no more responses will be handled" (Printexc.to_string e));
         Lwt.return ()
       ) >>= fun () ->
       Lwt.wakeup shutdown_complete_wakener ();
@@ -556,7 +556,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       (* Notify any remaining blocked threads that we're down *)
       Types.Tag.Map.iter
         (fun tag wakener ->
-          info "Sending disconnection to request with tag %d" (Types.Tag.to_int tag);
+          info (fun f -> f "Sending disconnection to request with tag %d" (Types.Tag.to_int tag));
           Lwt.wakeup_later wakener (Error (`Msg "connection disconnected"));
           t.wakeners <- Types.Tag.Map.remove tag t.wakeners
           (* Note existing `rpc` threads blocked waiting for a free tag will
