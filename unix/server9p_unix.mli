@@ -20,6 +20,10 @@ open Lwt
 module Make(Log : S.LOG)(Filesystem: Filesystem.S) : sig
   type t
 
+  val of_fd: Filesystem.t -> Lwt_unix.file_descr -> t
+  (** [of_fd fs fd] returns a server configured to accept connections on
+      listening socket [fd]. *)
+
   val listen: Filesystem.t -> string -> string -> t Error.t Lwt.t
   (** [listen fs proto address callback] listens on the address [address] and prepares
       to serve 9P via the [callback]. The [proto] and [address] can be either:

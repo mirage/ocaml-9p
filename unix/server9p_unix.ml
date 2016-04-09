@@ -42,7 +42,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
     fs: Filesystem.t;
   }
 
-  let make fd fs =
+  let of_fd fs fd =
     let shutdown_requested_t, shutdown_requested_u = Lwt.task () in
     let shutdown_done_t, shutdown_done_u = Lwt.task () in
     let fd = Some fd in
@@ -59,7 +59,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
         let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string ip, int_of_string port) in
         Lwt_unix.bind fd sockaddr;
         Lwt_unix.listen fd 5;
-        Lwt.return (Result.Ok (make fd fs))
+        Lwt.return (Result.Ok (of_fd fs fd))
       | _ ->
         Lwt.return (Error.error_msg "Unable to understand protocol %s and address %s" proto address)
       end
@@ -70,7 +70,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
       let sockaddr = Lwt_unix.ADDR_UNIX(address) in
       Lwt_unix.bind fd sockaddr;
       Lwt_unix.listen fd 5;
-      Lwt.return (Result.Ok (make fd fs))
+      Lwt.return (Result.Ok (of_fd fs fd))
     | _ ->
       Lwt.return (Error.error_msg "Unknown protocol %s" proto)
 

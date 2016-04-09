@@ -300,4 +300,9 @@ let tests = [
   "client", test_client;
 ]
 
-let () = Alcotest.run "client server" tests
+let () =
+  if Sys.os_type = "Win32" then begin
+    Printf.fprintf stderr "Skipping LOFS tests on Windows\n";
+    exit 0
+  end;
+  Alcotest.run "client server" tests
