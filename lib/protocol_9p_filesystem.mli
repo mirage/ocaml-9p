@@ -20,11 +20,18 @@ open Result
 type 'a or_error = ('a, Protocol_9p_response.Err.t) result
 
 module type S = sig
+  (** A filesystem implementation *)
 
   type t
+  (** A filesystem. This is likely shared amongst many connections. *)
+
   type connection
+  (** Server state associated with a particular connection. This should contain
+      connection-local data such as cached authentication information and a
+      private space of Fids *)
 
   val connect: t -> Protocol_9p_info.t -> connection
+  (** Called after making a connection to initialise the per-connection state *)
 
   val attach:
     connection ->

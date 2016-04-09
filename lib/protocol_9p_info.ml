@@ -16,11 +16,8 @@
 *)
 
 type t = {
-  root: Protocol_9p_types.Fid.t;        (** The initial fid provided by the
-                                           client *)
-  version: Protocol_9p_types.Version.t; (** The protocol version we
-                                           negotiated *)
-  aname: string;                        (** The aname tree attached to *)
-  msize: int32;                         (** Negotiated max message size *)
+  root: Protocol_9p_types.Fid.t;
+  version: Protocol_9p_types.Version.t;
+  aname: string;
+  msize: int32;
 }
-(**  Information about the active connection, passed to the receive callback. *)

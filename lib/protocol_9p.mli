@@ -16,6 +16,8 @@
  *
  *)
 
+(** A Mirage-friendly 9P implementation *)
+
 module S = Protocol_9p_s
 module Request = Protocol_9p_request
 module Error = Protocol_9p_error

@@ -1,6 +1,5 @@
 (*
- * Copyright (C) 2015 David Sheets <david.sheets@unikernel.com>
- * Copyright (C) 2016 David Scott <dave@recoil.org>
+ * Copyright (C) 2015 David Scott <dave.scott@unikernel.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,16 +13,14 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- *)
+*)
 
-module S = Protocol_9p_s
-module Request = Protocol_9p_request
-module Error = Protocol_9p_error
-module Info = Protocol_9p_info
-module Response = Protocol_9p_response
-module Types = Protocol_9p_types
-module Client = Protocol_9p_client
-module Server = Protocol_9p_server
-module Buffered9PReader = Protocol_9p_buffered9PReader
-module Filesystem = Protocol_9p_filesystem
-module Infix = Protocol_9p_infix
+type t = {
+  root: Protocol_9p_types.Fid.t;        (** The initial fid provided by the
+                                           client *)
+  version: Protocol_9p_types.Version.t; (** The protocol version we
+                                           negotiated *)
+  aname: string;                        (** The aname tree attached to *)
+  msize: int32;                         (** Negotiated max message size *)
+}
+(**  Information about the active connection, passed to the receive callback. *)
