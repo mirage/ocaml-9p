@@ -1,5 +1,6 @@
 0.6.0 (unreleased)
 * server: supply no exception converter by default
+* dependency on lambda-term (for the shell) is now optional
 
 0.5.0 (2016-03-01):
 * remove an unnecessary copy in the read path

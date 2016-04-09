@@ -11,6 +11,7 @@ MODULES = protocol_9p protocol_9p_s protocol_9p_request protocol_9p_error \
 UNIX_MODULES = flow_lwt_unix client9p_unix server9p_unix lofs9p
 
 WITH_UNIX=$(shell ocamlfind query unix > /dev/null 2>&1 ; echo $$?)
+WITH_TERM=$(shell ocamlfind query lambda-term > /dev/null 2>&1 ; echo $$?)
 
 OCAMLBUILD = ocamlbuild -use-ocamlfind #-classic-display
 TARGETS = .cma .cmxa
@@ -32,13 +33,12 @@ PRODUCTS+=$(UNIX_PRODUCTS)
 INSTALL+=$(UNIX_INSTALL)
 endif
 
+ifeq ($(WITH_TERM), 0)
+PRODUCTS+=main.native
+endif
+
 build:
 	$(OCAMLBUILD) $(PRODUCTS)
-	$(MAKE) 9p
-
-9p:
-	$(OCAMLBUILD) main.native
-	cp main.native 9p
 
 doc:
 	$(OCAMLBUILD) lib/protocol_9p.docdir/index.html
