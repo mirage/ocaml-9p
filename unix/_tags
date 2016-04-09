@@ -1,3 +1,3 @@
-<*.*>: package(result), package(fmt), package(stringext), package(unix-errno), package(unix-errno.unix)
+<*.*>: package(result), package(fmt), package(stringext)
 <*.*>: package(lwt), package(mirage-types.lwt)
 <*.*>: package(cstruct)

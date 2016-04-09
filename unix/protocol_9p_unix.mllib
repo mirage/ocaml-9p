@@ -2,4 +2,3 @@ Flow_lwt_unix
 Client9p_unix
 Server9p_unix
 Lofs9p
-Exn_converter_unix

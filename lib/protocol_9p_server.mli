@@ -18,6 +18,42 @@
 (** Given a transport (a Mirage FLOW), construct a 9P server on top. *)
 
 type exn_converter = Protocol_9p_info.t -> exn -> Protocol_9p_response.payload
+(**
+An exception converter transforms the given OCaml exception into a 9P error
+response. 9P clients like Linux work better if they receive 9P2000.u errno
+values which happen to match their local errno definition.
+
+Here is an example converter for Linux and OS X hosts:
+{[
+let unix_exn_converter info exn =
+  let is_unix = (info.Protocol_9p_info.version = Types.Version.unix) in
+  match exn with
+  | Unix.Unix_error(err, _, _) ->
+    let host = match info.Protocol_9p_info.aname with
+      | "linux#/" when is_unix -> Some Errno_host.Linux.v4_0_5
+      | "osx#/" when is_unix -> Some Errno_host.OSX.v10_11_1
+      | _ -> None
+    in
+    let errno = match host with
+      | None -> None
+      | Some host -> match Errno_unix.of_unix ~host err with
+        | [] -> None
+        | errno::_ -> match Errno.to_code ~host errno with
+          | None -> None
+          | Some i -> Some (Int32.of_int i)
+    in
+    Response.Err {
+      Response.Err.ename = Unix.error_message err;
+      errno;
+    }
+  | e ->
+    Response.Err {
+      Response.Err.ename = Printexc.to_string e;
+      errno = None;
+    }
+]}
+*)
+
 
 module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem : Protocol_9p_filesystem.S) : sig
 
