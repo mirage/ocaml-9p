@@ -1,4 +1,4 @@
-<*.*>: package(result), package(cstruct), package(cstruct.lwt), package(unix-errno), package(unix-errno.unix)
+<*.*>: package(result), package(cstruct), package(cstruct.lwt)
 <*.*>: package(sexplib), package(ppx_deriving), package(ppx_sexp_conv)
 <*.*>: package(lwt), package(mirage-types.lwt)
 <*.*>: package(stringext), package(fmt)
