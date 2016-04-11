@@ -33,6 +33,10 @@ module type S = sig
   val connect: t -> Protocol_9p_info.t -> connection
   (** Called after making a connection to initialise the per-connection state *)
 
+  val disconnect: connection -> Protocol_9p_info.t -> unit Lwt.t
+  (** Called when the connection is closed (potentially uncleanly). This allows
+      the implementation to clear up any state still associated with the connection. *)
+
   val attach:
     connection ->
     cancel:unit Lwt.t ->

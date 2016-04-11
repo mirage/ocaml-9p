@@ -295,6 +295,10 @@ let make root = { root }
       Lwt.return (Result.Ok ())
     end
 
+  let disconnect connection info =
+    let resources = Types.Fid.Map.fold (fun _ resource acc -> resource :: acc) !(connection.fids) [] in
+    Lwt_list.iter_s Resource.close resources
+
   let walk connection ~cancel { Request.Walk.fid; newfid; wnames } =
     let rec walk dir qids = function
       | [] ->

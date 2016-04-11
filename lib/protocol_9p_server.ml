@@ -317,7 +317,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
           err (fun f -> f "dispatcher caught %s: no more requests will be handled" (Printexc.to_string e));
           Lwt.wakeup_later shutdown_complete_wakener ();
           Lwt.return ()
-        )
+        ) >>= fun () ->
+        Filesystem.disconnect connection info
       );
       Lwt.return (Ok t)
     end

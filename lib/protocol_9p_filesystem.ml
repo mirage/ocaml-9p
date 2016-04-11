@@ -25,6 +25,7 @@ module type S = sig
   type connection
 
   val connect: t -> Protocol_9p_info.t -> connection
+  val disconnect: connection -> Protocol_9p_info.t -> unit Lwt.t
 
   val attach:
     connection ->
