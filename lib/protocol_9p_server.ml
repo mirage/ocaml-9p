@@ -114,8 +114,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
       | Error (`Msg message) ->
         debug (fun f -> f "S error reading: %s" message);
         debug (fun f -> f "Disconnecting client");
-        disconnect t
-        >>= fun () ->
+        t.please_shutdown <- true;
         dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
       | Error (`Parse (ename, buffer)) -> begin
           match Request.read_header buffer with
