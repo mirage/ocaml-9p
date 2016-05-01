@@ -1,4 +1,4 @@
-version = "0.6.0"
+version = "0.5.1"
 description = "9P filesystem protocol"
 requires =
 "result cstruct sexplib sexplib mirage-types.lwt lwt stringext fmt"
@@ -9,7 +9,7 @@ archive(native, plugin) = "protocol_9p.cmxs"
 exists_if = "protocol_9p.cma"
 
 package "unix" (
- version = "0.6.0"
+ version = "0.5.1"
  description = "9P filesystem protocol"
  requires =
  "result fmt stringext protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt"

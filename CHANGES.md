@@ -5,6 +5,14 @@
 * use logs library
 * reject messages longer than 640 KiB
 
+0.5.1 (2016-05-01):
+* OCaml 4.01, cstruct.syntax compatibility release
+* server: supply no exception converter by default
+* dependency on lambda-term (for the shell) is now optional
+* add support for Win32
+* use logs library
+* reject messages longer than 640 KiB
+
 0.5.0 (2016-03-01):
 * remove an unnecessary copy in the read path
 * add documentation for Server_unix_9p
