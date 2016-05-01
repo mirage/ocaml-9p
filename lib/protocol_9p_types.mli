@@ -25,13 +25,13 @@ val big_enough_for: string -> Cstruct.t -> int -> unit Protocol_9p_error.t
     in the error message. *)
 
 module Int8 : sig
-  type t = int [@@deriving sexp]
+  type t = int with sexp
 
   include Protocol_9p_s.SERIALISABLE with type t := t
 end
 
 module Int16 : sig
-  type t = int [@@deriving sexp]
+  type t = int with sexp
 
   val any: t
   val is_any: t -> bool
@@ -52,7 +52,7 @@ module Int32 : sig
 end
 
 module Int64 : sig
-  type t = int64 [@@deriving sexp]
+  type t = int64 with sexp
 
   val any: t
   val is_any: t -> bool
@@ -61,7 +61,7 @@ module Int64 : sig
 end
 
 module Version : sig
-  type t [@@deriving sexp]
+  type t with sexp
 
   val default: t
   val unix: t    (** The extension known as 9P2000.u *)
@@ -71,7 +71,7 @@ module Version : sig
 end
 
 module Fid : sig
-  type t [@@deriving sexp]
+  type t with sexp
 
   module Set : Set.S with type elt = t
   module Map : Map.S with type key = t
@@ -97,7 +97,7 @@ module OpenMode : sig
   | Write      (** write access *)
   | ReadWrite  (** read and write access *)
   | Exec       (** execute access *)
-  [@@deriving sexp]
+  with sexp
   (** The io types allowed in an open 'mode' *)
 
   type t = {
@@ -105,7 +105,7 @@ module OpenMode : sig
     truncate: bool;  (** truncate file before opening *)
     rclose: bool;    (** remove file when closing *)
     append: bool;    (** meaningless flag *)
-  } [@@deriving sexp]
+  } with sexp
   (** A 'mode' passed as an argument to "Open" and "Create" *)
 
   val read_only: t
@@ -121,7 +121,7 @@ module FileMode : sig
     | `Read    (** subject has read access *)
     | `Write   (** subject has write access *)
     | `Execute (** subject may execute the file as a program *)
-  ] [@@deriving sexp]
+  ] with sexp
 
   type t = {
     owner: permission list; (** file owner has these permissions *)
@@ -141,7 +141,7 @@ module FileMode : sig
     is_setuid: bool;        (** 9P2000.u: true if file is setuid *)
     is_setgid: bool;        (** 9P2000.u: true if file is setgid *)
     is_any: bool;           (** true if the mode is a wstat 'any' value *)
-  } [@@deriving sexp]
+  } with sexp
   (** A 'mode' returned from a call to "Stat" *)
 
   val make: ?owner:permission list -> ?group:permission list -> ?other:permission list ->
@@ -167,13 +167,13 @@ module Qid : sig
     | Temporary  (** file is temporary and won't be backed up *)
     | Symlink    (** 9P2000.u: file is a symlink *)
     | Link       (** 9P2000.u: file is a hard-link *)
-  [@@deriving sexp]
+  with sexp
 
   type t = {
    flags: flag list;
    version: int32;
    id: int64;
-  } [@@deriving sexp]
+  } with sexp
   (** The server's unique id for the file. Two files are the same
       if and only if the Qids are the same. *)
 
@@ -191,7 +191,7 @@ module Qid : sig
 end
 
 module Tag : sig
-  type t [@@deriving sexp]
+  type t with sexp
 
   val equal: t -> t -> bool
   (** [equal] is the equality function over tags. *)
@@ -216,7 +216,7 @@ module Tag : sig
 end
 
 module Data : sig
-  type t = Cstruct.t [@@deriving sexp]
+  type t = Cstruct.t with sexp
   (** A length-prefixed chunk of data which may include embedded NULLs, or may be
       interpreted later as UTF-8 text. *)
 
@@ -233,7 +233,7 @@ module Stat : sig
     n_uid: int32;      (** 9P2000.u: numeric id of the user who owns the file *)
     n_gid: int32;      (** 9P2000.u: numeric id of the group of the file *)
     n_muid: int32;     (** 9P2000.u: numeric id of the user who last modified the file *)
-  } [@@deriving sexp]
+  } with sexp
 
   val make_extension: ?extension:string -> ?n_uid:int32 -> ?n_gid:int32 -> ?n_muid:int32 -> unit -> extension
 
@@ -250,7 +250,7 @@ module Stat : sig
     gid: string;      (** group name *)
     muid: string;     (** name of last user who modified the file *)
     u: extension option; (** 9P2000.u extensions *)
-  } [@@deriving sexp]
+  } with sexp
 
   val make: name:string -> qid:Qid.t -> ?mode:FileMode.t -> ?length:int64 ->
     ?atime:int32 -> ?mtime:int32 -> ?uid:string -> ?gid:string -> ?muid:string ->

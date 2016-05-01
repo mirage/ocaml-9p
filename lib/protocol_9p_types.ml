@@ -24,7 +24,7 @@ let big_enough_for name buf needed =
   else return ()
 
 module Int8 = struct
-  type t = int [@@deriving sexp]
+  type t = int with sexp
 
   let sizeof _ = 1
 
@@ -45,7 +45,7 @@ module Int8 = struct
 end
 
 module Int16 = struct
-  type t = int [@@deriving sexp]
+  type t = int with sexp
 
   let sizeof _ = 2
 
@@ -68,7 +68,7 @@ end
 module Int32 = struct
   include Int32
 
-  type _t = int32 [@@deriving sexp]
+  type _t = int32 with sexp
   let sexp_of_t = sexp_of__t
   let t_of_sexp = _t_of_sexp
 
@@ -91,7 +91,7 @@ module Int32 = struct
 end
 
 module Int64 = struct
-  type t = int64 [@@deriving sexp]
+  type t = int64 with sexp
 
   let sizeof _ = 8
 
@@ -112,7 +112,7 @@ module Int64 = struct
 end
 
 module Fid = struct
-  type t = int32 [@@deriving sexp]
+  type t = int32 with sexp
 
   let compare (a: t) (b: t) = compare a b
 
@@ -147,14 +147,14 @@ module OpenMode = struct
     | Write
     | ReadWrite
     | Exec
-  [@@deriving sexp]
+  with sexp
 
   type t = {
     io: io;
     truncate: bool;
     rclose: bool;
     append: bool;
-  } [@@deriving sexp]
+  } with sexp
 
   let to_int { io; truncate; rclose; append } =
     let byte = match io with
@@ -205,7 +205,7 @@ module OpenMode = struct
 end
 
 module FileMode = struct
-  type permission = [ `Read | `Write | `Execute ] [@@deriving sexp]
+  type permission = [ `Read | `Write | `Execute ] with sexp
 
   type t = {
     owner: permission list;
@@ -225,7 +225,7 @@ module FileMode = struct
     is_setuid: bool;
     is_setgid: bool;
     is_any: bool;
-  } [@@deriving sexp]
+  } with sexp
 
   let make ?(owner=[]) ?(group=[]) ?(other=[]) ?(is_directory=false)
     ?(append_only=false) ?(exclusive=false) ?(is_mount=false) ?(is_auth=false) ?(temporary=false)
@@ -333,13 +333,13 @@ module Qid = struct
     | Temporary
     | Symlink
     | Link
-  [@@deriving sexp]
+  with sexp
 
   type t = {
    flags: flag list;
    version: int32;
    id: int64;
-  } [@@deriving sexp]
+  } with sexp
 
   let file ?(id=(-1L)) ?(version=(-1l)) ?(append_only=false) ?(exclusive=false)
     ?(mount=false) ?(auth=false) ?(temporary=false) ?(link=false) () =
@@ -414,7 +414,7 @@ module Qid = struct
 end
 
 module Tag = struct
-  type t = int option [@@deriving sexp]
+  type t = int option with sexp
 
   let equal (a: t) (b: t) = match a, b with
     | None, None -> true
@@ -474,7 +474,7 @@ end
 module Data = struct
   type t = Cstruct.t
 
-  type _t = string [@@deriving sexp]
+  type _t = string with sexp
   let sexp_of_t t = sexp_of__t (Cstruct.to_string t)
   let t_of_sexp s =
     let _t = _t_of_sexp s in
@@ -527,7 +527,7 @@ module Version = struct
     | Unknown
     | TwoThousand
     | TwoThousandU
-  [@@deriving sexp]
+  with sexp
 
   let to_string = function
     | Unknown      -> "unknown"
@@ -567,7 +567,7 @@ module Stat = struct
     n_uid: int32;
     n_gid: int32;
     n_muid: int32;
-  } [@@deriving sexp]
+  } with sexp
 
   let make_extension ?(extension="") ?(n_uid=(-1l)) ?(n_gid=(-1l)) ?(n_muid=(-1l)) () =
     { extension; n_uid; n_gid; n_muid }
@@ -585,7 +585,7 @@ module Stat = struct
     gid: string;
     muid: string;
     u: extension option;
-  } [@@deriving sexp]
+  } with sexp
 
   let make ~name ~qid ?(mode=FileMode.make ()) ?(length=0L)
     ?(atime=0l) ?(mtime=0l) ?(uid="root") ?(gid="root") ?(muid="none")

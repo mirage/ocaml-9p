@@ -24,7 +24,7 @@ module Version = struct
   type t = {
     msize: int32;
     version: Types.Version.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = 4 + (Types.Version.sizeof t.version)
 
@@ -48,7 +48,7 @@ module Auth = struct
     uname: string;
     aname: string;
     n_uname: int32 option;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t =
     (Fid.sizeof t.afid) + 2 +
@@ -90,7 +90,7 @@ end
 module Flush = struct
   type t = {
     oldtag: Types.Tag.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof _ = 2
 
@@ -110,7 +110,7 @@ module Attach = struct
     uname: string;
     aname: string;
     n_uname: int32 option;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t =
     (Fid.sizeof t.fid) + (Fid.sizeof t.afid) + 2 +
@@ -158,7 +158,7 @@ module Walk = struct
     fid: Fid.t;
     newfid: Fid.t;
     wnames: string list;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t =
     (Fid.sizeof t.fid) + (Fid.sizeof t.newfid) + 2 +
@@ -205,7 +205,7 @@ module Open = struct
   type t = {
     fid: Fid.t;
     mode: OpenMode.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof _ = 5
 
@@ -229,7 +229,7 @@ module Create = struct
     perm: FileMode.t;
     mode: OpenMode.t;
     extension: string option;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t =
     (Fid.sizeof t.fid) + 2 + (String.length t.name) + 4 + 1
@@ -272,7 +272,7 @@ module Read = struct
     fid: Fid.t;
     offset: int64;
     count: int32;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = (Fid.sizeof t.fid) + 8 + 4
 
@@ -299,7 +299,7 @@ module Write = struct
     fid: Fid.t;
     offset: int64;
     data: Cstruct.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let equal a b =
     a.fid = b.fid && a.offset = b.offset && Cstruct.equal a.data b.data
@@ -340,7 +340,7 @@ end
 module Clunk = struct
   type t = {
     fid: Fid.t
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = Fid.sizeof t.fid
 
@@ -360,7 +360,7 @@ module Wstat = struct
   type t = {
     fid: Fid.t;
     stat: Types.Stat.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = (Fid.sizeof t.fid) + 2 + (Types.Stat.sizeof t.stat)
 
@@ -395,7 +395,7 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
-[@@deriving sexp]
+with sexp
 
 let equal_payload a b = match a, b with
   | Write a, Write b -> Write.equal a b
@@ -404,7 +404,7 @@ let equal_payload a b = match a, b with
 type t = {
   tag: Types.Tag.t;
   payload: payload
-} [@@deriving sexp]
+} with sexp
 
 
 let equal a b =

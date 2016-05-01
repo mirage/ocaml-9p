@@ -25,7 +25,7 @@ module Version = Protocol_9p_request.Version
 module Auth = struct
   type t = {
     aqid: Qid.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = Qid.sizeof t.aqid
 
@@ -41,7 +41,7 @@ module Err = struct
   type t = {
     ename: string;
     errno: int32 option;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = 2 + (String.length t.ename) + (match t.errno with Some _ -> 4 | None -> 0)
 
@@ -67,7 +67,7 @@ module Err = struct
 end
 
 module Flush = struct
-  type t = unit [@@deriving sexp]
+  type t = unit with sexp
 
   let sizeof _ = 0
 
@@ -79,7 +79,7 @@ end
 module Attach = struct
   type t = {
     qid: Qid.t
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = Qid.sizeof t.qid
 
@@ -94,7 +94,7 @@ end
 module Walk = struct
   type t = {
     wqids: Qid.t list
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = 2 + (List.fold_left (+) 0 (List.map (fun q -> Qid.sizeof q) t.wqids))
 
@@ -127,7 +127,7 @@ module Open = struct
   type t = {
     qid: Qid.t;
     iounit: int32
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = Qid.sizeof t.qid + 4
 
@@ -148,7 +148,7 @@ module Create = struct
   type t = {
     qid: Qid.t;
     iounit: int32;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = Qid.sizeof t.qid + 4
 
@@ -172,7 +172,7 @@ module Read = struct
 
   let equal a b = Cstruct.equal a.data b.data
 
-  type _t = string [@@deriving sexp]
+  type _t = string with sexp
   let sexp_of_t t = sexp_of__t (Cstruct.to_string t.data)
   let t_of_sexp s =
     let _t = _t_of_sexp s in
@@ -209,7 +209,7 @@ end
 module Write = struct
   type t = {
     count: int32
-  } [@@deriving sexp]
+  } with sexp
   let sizeof _ = 4
 
   let write t rest =
@@ -222,7 +222,7 @@ module Write = struct
 end
 
 module Clunk = struct
-  type t = unit [@@deriving sexp]
+  type t = unit with sexp
   let sizeof _ = 0
   let write () rest = return rest
   let read rest = return ((), rest)
@@ -233,7 +233,7 @@ module Remove = Clunk
 module Stat = struct
   type t = {
     stat: Stat.t;
-  } [@@deriving sexp]
+  } with sexp
 
   let sizeof t = 2 + (Types.Stat.sizeof t.stat)
 
@@ -267,7 +267,7 @@ type payload =
   | Remove of Remove.t
   | Stat of Stat.t
   | Wstat of Wstat.t
-[@@deriving sexp]
+with sexp
 
 let equal_payload a b = match a, b with
   | Read a, Read b -> Read.equal a b
@@ -276,7 +276,7 @@ let equal_payload a b = match a, b with
 type t = {
   tag: Types.Tag.t;
   payload: payload;
-} [@@deriving sexp]
+} with sexp
 
 let equal a b =
   Types.Tag.equal a.tag b.tag
