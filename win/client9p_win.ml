@@ -1,5 +1,5 @@
 (*
- * Copyright (C) 2015 David Sheets <david.sheets@unikernel.com>
+ * Copyright (C) 2016 Thomas Gazagnaire <thomas@gazagnaire.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,20 +15,11 @@
  *
  *)
 
-type hooks = proto:string -> address:string -> Lwt_unix.file_descr option Lwt.t
+open Astring
+open Lwt.Infix
 
-module Make(Log: Protocol_9p.S.LOG) : sig
-  include Protocol_9p.Client.S
-
-  val connect:
-    ?hooks:hooks ->
-    string -> string -> ?msize:int32 -> ?username:string -> ?aname:string ->
-    unit -> t Protocol_9p.Error.t Lwt.t
-  (** [connect proto address ?msize ?username ?aname ()] creates a 9P connection
-      over [proto] to [address] with an optional maximum message size [?msize]
-      and optional [?username] and authentication [?aname]. Allowed combinations
-      of [proto] and [address] are:
-      - unix /path/to/file
-      - tcp ip:port
-  *)
-end
+let hook ~proto ~address =
+  if String.is_prefix ~affix:"\\\\" address then
+    (Named_pipe_lwt.openpipe address >|= fun x -> Some x)
+  else
+    Lwt.return_none

@@ -39,5 +39,6 @@ depends: [
 ]
 depopts: [
   "lambda-term"
+  "named-pipe"
 ]
 available: [ocaml-version >= "4.02.0"]
