@@ -19,6 +19,8 @@
 open Lwt
 open Protocol_9p
 
+type hooks = proto:string -> address:string -> Lwt_unix.file_descr option Lwt.t
+
 module Make(Log: S.LOG) = struct
 
   module Client = Client.Make(Log)(Flow_lwt_unix)
@@ -53,17 +55,23 @@ module Make(Log: S.LOG) = struct
     >>= fun () ->
     Lwt.return s
 
-  let connect proto address ?msize ?username ?aname () =
+  let default_hooks ~proto ~address = Lwt.return_none
+
+  let connect ?(hooks=default_hooks) proto address ?msize ?username ?aname () =
     ( match proto with
       | "tcp" ->
         begin match Stringext.split ~on:':' address with
-        | [ hostname; port ] -> open_tcp hostname (int_of_string port)
-        | [ hostname ] -> open_tcp hostname 5640
-        | _ -> Lwt.fail (Failure (Printf.sprintf "Unable to parse %s %s" proto address))
+          | [ hostname; port ] -> open_tcp hostname (int_of_string port)
+          | [ hostname ]       -> open_tcp hostname 5640
+          | _ ->
+            Lwt.fail_with (Printf.sprintf "Unable to parse %s %s" proto address)
         end
       | "unix" ->
         open_unix address
-      | _ -> Lwt.fail (Failure (Printf.sprintf "Unknown protocol %s" proto)) )
+      | _ ->
+        hooks ~proto ~address >>= function
+        | Some fd -> Lwt.return fd
+        | None    -> Lwt.fail_with (Printf.sprintf "Unknown protocol %s" proto))
     >>= fun s ->
     let flow = Flow_lwt_unix.connect s in
     Client.connect flow ?msize ?username ?aname ()

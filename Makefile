@@ -10,8 +10,12 @@ MODULES = protocol_9p protocol_9p_s protocol_9p_request protocol_9p_error \
           protocol_9p_filesystem protocol_9p_infix protocol_9p_info
 UNIX_MODULES = flow_lwt_unix client9p_unix server9p_unix lofs9p
 
+WIN_MOD      = protocol_9p_win
+WIN_MODULES  = client9p_win
+
 WITH_UNIX=$(shell ocamlfind query unix > /dev/null 2>&1 ; echo $$?)
 WITH_TERM=$(shell ocamlfind query lambda-term > /dev/null 2>&1 ; echo $$?)
+WITH_PIPE=$(shell ocamlfind query named-pipe.lwt > /dev/null 2>&1 ; echo $$?)
 
 OCAMLBUILD = ocamlbuild -use-ocamlfind #-classic-display
 TARGETS = .cma .cmxa
@@ -35,6 +39,15 @@ endif
 
 ifeq ($(WITH_TERM), 0)
 PRODUCTS+=main.native
+endif
+
+ifeq ($(WITH_PIPE), 0)
+WIN_PRODUCTS := $(addprefix $(WIN_MOD),$(TARGETS))
+WIN_INSTALL:=$(foreach module,$(WIN_MODULES),$(addprefix $(module),$(TYPES)))
+WIN_INSTALL := $(UNIX_INSTALL) $(WIN_MOD).a $(WIN_PRODUCTS)
+WIN_INSTALL := $(addprefix _build/unix/,$(WIN_INSTALL))
+PRODUCTS+=$(WIN_PRODUCTS)
+INSTALL+=$(WIN_INSTALL)
 endif
 
 build:
