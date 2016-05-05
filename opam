@@ -30,6 +30,7 @@ depends: [
   "stringext"
   "fmt"
   "logs" {>= "0.5.0"}
+  "win-error"
   "ppx_deriving" {build}
   "ppx_sexp_conv" {build}
   "ocamlfind" {build}
