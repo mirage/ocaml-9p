@@ -2,3 +2,5 @@
 <*.*>: package(cstruct), package(cstruct.lwt)
 <*.*>: package(lwt)
 <*.*>: package(cmdliner, logs.fmt)
+<*.*>: package(astring), package(named-pipe.lwt)
+<*.*>: package(win-error)
