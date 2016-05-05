@@ -19,3 +19,14 @@ package "unix" (
  archive(native, plugin) = "protocol_9p_unix.cmxs"
  exists_if = "protocol_9p_unix.cma"
 )
+
+package "win" (
+ version = "0.6.0"
+ description = "9P filesystem protocol"
+ requires = "lwt.unix astring named-pipe.lwt"
+ archive(byte) = "protocol_9p_win.cma"
+ archive(byte, plugin) = "protocol_9p_win.cma"
+ archive(native) = "protocol_9p_win.cmxa"
+ archive(native, plugin) = "protocol_9p_win.cmxs"
+ exists_if = "protocol_9p_win.cma"
+)

@@ -12,6 +12,7 @@ UNIX_MODULES = flow_lwt_unix client9p_unix server9p_unix lofs9p
 
 WITH_UNIX=$(shell ocamlfind query unix > /dev/null 2>&1 ; echo $$?)
 WITH_TERM=$(shell ocamlfind query lambda-term > /dev/null 2>&1 ; echo $$?)
+WITH_PIPE=$(shell ocamlfind query named-pipe.lwt > /dev/null 2>&1 ; echo $$?)
 
 OCAMLBUILD = ocamlbuild -use-ocamlfind #-classic-display
 TARGETS = .cma .cmxa
@@ -34,11 +35,35 @@ INSTALL+=$(UNIX_INSTALL)
 endif
 
 ifeq ($(WITH_TERM), 0)
-PRODUCTS+=main.native
+PRODUCTS+=src/main.native
 endif
 
-build:
+build: unix/client9p_unix.ml unix/_tags src/_tags
 	$(OCAMLBUILD) $(PRODUCTS)
+
+unix/client9p_unix.ml: unix/client9p_unix.ml.in
+ifeq ($(WITH_PIPE), 0)
+	cppo -D HAVE_NAMED_PIPE unix/client9p_unix.ml.in > unix/client9p_unix.ml
+else
+	cppo -U HAVE_NAMED_PIPE unix/client9p_unix.ml.in > unix/client9p_unix.ml
+endif
+
+unix/_tags: unix/_tags.in
+ifeq ($(WITH_PIPE), 0)
+	cp unix/_tags.in unix/_tags
+	echo '<*.*>: package(astring), package(named-pipe.lwt)' >> unix/_tags
+else
+	cp unix/_tags.in unix/_tags
+endif
+
+
+src/_tags: src/_tags.in
+ifeq ($(WITH_PIPE), 0)
+	cp src/_tags.in src/_tags
+	echo '<*.*>: package(astring), package(named-pipe.lwt)' >> src/_tags
+else
+	cp src/_tags.in src/_tags
+endif
 
 doc:
 	$(OCAMLBUILD) lib/protocol_9p.docdir/index.html
@@ -59,6 +84,9 @@ reinstall: uninstall install
 
 clean:
 	ocamlbuild -clean
+	rm -f unix/client9p_unix.ml
+	rm -f unix/_tags
+	rm -f src/_tags
 
 init-doc:
 	mkdir -p gh-pages

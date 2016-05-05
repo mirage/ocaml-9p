@@ -6,6 +6,8 @@ script: bash -ex .travis-opam.sh
 sudo: required
 env:
   global:
+    - PINS="named-pipe:https://github.com/djs55/ocaml-namedpipe.git win-error:https://github.com/djs55/ocaml-win-error.git"
     - PACKAGE="protocol-9p"
     - OCAML_VERSION=4.02
+    - DEPOPTS="named-pipe"
     - COV_CONF="oasis setup && ./configure --enable-tests"

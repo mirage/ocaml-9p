@@ -2,3 +2,4 @@
 <*.*>: package(cstruct), package(cstruct.lwt)
 <*.*>: package(lwt)
 <*.*>: package(cmdliner, logs.fmt)
+<*.*>: package(win-error)
