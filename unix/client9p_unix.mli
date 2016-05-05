@@ -15,13 +15,10 @@
  *
  *)
 
-type hooks = proto:string -> address:string -> Lwt_unix.file_descr option Lwt.t
-
 module Make(Log: Protocol_9p.S.LOG) : sig
   include Protocol_9p.Client.S
 
   val connect:
-    ?hooks:hooks ->
     string -> string -> ?msize:int32 -> ?username:string -> ?aname:string ->
     unit -> t Protocol_9p.Error.t Lwt.t
   (** [connect proto address ?msize ?username ?aname ()] creates a 9P connection

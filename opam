@@ -28,6 +28,8 @@ depends: [
   "base-unix"
   "cmdliner"
   "stringext"
+  "astring"
+  "named-pipe"
   "fmt"
   "logs" {>= "0.5.0"}
   "type_conv" {build}
@@ -38,6 +40,5 @@ depends: [
 ]
 depopts: [
   "lambda-term"
-  "named-pipe"
 ]
 available: [ocaml-version >= "4.02.0"]

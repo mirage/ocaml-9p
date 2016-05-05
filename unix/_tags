@@ -1,3 +1,4 @@
 <*.*>: package(result), package(fmt), package(stringext)
 <*.*>: package(lwt), package(mirage-types.lwt)
 <*.*>: package(cstruct)
+<*.*>: package(astring), package(named-pipe.lwt)

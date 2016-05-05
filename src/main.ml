@@ -66,11 +66,7 @@ let wrap_exceptions f =
   with Failure e ->
     `Error(false, e)
   | Unix.Unix_error(e, _, _) ->
-    let msg =
-      if Sys.os_type = "Win32"
-      then Win_error.error_message e
-      else Unix.error_message e in
-    `Error(false, msg)
+    `Error(false, Win_error.error_message e)
   | e ->
     `Error(false, Printexc.to_string e)
 
