@@ -59,6 +59,21 @@ let configure_logging debug =
     Log.debug (fun f -> f "Debug-level logging enabled")
   )
 
+
+let wrap_exceptions f =
+  try
+    f ()
+  with Failure e ->
+    `Error(false, e)
+  | Unix.Unix_error(e, _, _) ->
+    let msg =
+      if Sys.os_type = "Win32"
+      then Win_error.error_message e
+      else Unix.error_message e in
+    `Error(false, msg)
+  | e ->
+    `Error(false, Printexc.to_string e)
+
 let read debug address path username =
   configure_logging debug;
   let path = parse_path path in
@@ -79,13 +94,11 @@ let read debug address path username =
           end in
         loop 0L
       ) in
-  try
-    ignore (Lwt_main.run t);
-    `Ok ()
-  with Failure e ->
-    `Error(false, e)
-  | e ->
-    `Error(false, Printexc.to_string e)
+  wrap_exceptions 
+    (fun () ->
+      ignore (Lwt_main.run t);
+      `Ok ()
+    )
 
 let remove debug address path username =
   configure_logging debug;
@@ -97,15 +110,13 @@ let remove debug address path username =
         >>*= fun () ->
         return (Result.Ok ())
       ) in
-  try
-    Result.(match Lwt_main.run t with
-      | Ok () -> `Ok ()
-      | Error (`Msg m) -> `Error(false, m)
+  wrap_exceptions
+    (fun () ->
+      Result.(match Lwt_main.run t with
+        | Ok () -> `Ok ()
+        | Error (`Msg m) -> `Error(false, m)
+      )
     )
-  with Failure e ->
-    `Error(false, e)
-  | e ->
-    `Error(false, Printexc.to_string e)
 
 let print_stats stats =
   let row_of_stat x =
@@ -177,13 +188,11 @@ let ls debug address path username =
            print_stats stats;
            return ()
       ) in
-  try
-    Lwt_main.run t;
-    `Ok ()
-  with Failure e ->
-    `Error(false, e)
-  | e ->
-    `Error(false, Printexc.to_string e)
+  wrap_exceptions
+    (fun () ->
+      Lwt_main.run t;
+      `Ok ()
+    )
 
 let cwd = ref []
 class read_line ~term ~history ~state = object(self)
@@ -335,13 +344,11 @@ let shell debug address username =
           | LTerm_read_line.Interrupt -> return ()
           | e -> fail e)
       ) in
-  try
-    Lwt_main.run t;
-    `Ok ()
-  with Failure e ->
-    `Error(false, e)
-  | e ->
-    `Error(false, Printexc.to_string e)
+  wrap_exceptions
+    (fun () ->
+      Lwt_main.run t;
+      `Ok ()
+    )
 
 let serve debug address path =
   configure_logging debug;
@@ -354,13 +361,11 @@ let serve debug address path =
     >>= function
     | Result.Error (`Msg m) -> Lwt.fail (Failure m)
     | Result.Ok server -> Server.serve_forever server in
-  try
-    ignore (Lwt_main.run t);
-    `Ok ()
-  with Failure e ->
-    `Error(false, e)
-  | e ->
-    `Error(false, Printexc.to_string e)
+  wrap_exceptions
+    (fun () ->
+      ignore (Lwt_main.run t);
+      `Ok ()
+    )
 
 open Cmdliner
 
