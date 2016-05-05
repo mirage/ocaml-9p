@@ -12,21 +12,10 @@ package "unix" (
  version = "0.6.0"
  description = "9P filesystem protocol"
  requires =
- "result fmt stringext protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt"
+ "result fmt stringext protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt named-pipe.lwt astring win-error"
  archive(byte) = "protocol_9p_unix.cma"
  archive(byte, plugin) = "protocol_9p_unix.cma"
  archive(native) = "protocol_9p_unix.cmxa"
  archive(native, plugin) = "protocol_9p_unix.cmxs"
  exists_if = "protocol_9p_unix.cma"
-)
-
-package "win" (
- version = "0.6.0"
- description = "9P filesystem protocol"
- requires = "lwt.unix astring named-pipe.lwt"
- archive(byte) = "protocol_9p_win.cma"
- archive(byte, plugin) = "protocol_9p_win.cma"
- archive(native) = "protocol_9p_win.cmxa"
- archive(native, plugin) = "protocol_9p_win.cmxs"
- exists_if = "protocol_9p_win.cma"
 )
