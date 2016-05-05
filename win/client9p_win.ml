@@ -18,8 +18,8 @@
 open Astring
 open Lwt.Infix
 
-let hook ~proto ~address =
+let hooks ~proto ~address =
   if String.is_prefix ~affix:"\\\\" address then
-    (Named_pipe_lwt.openpipe address >|= fun x -> Some x)
+    (Named_pipe_lwt.Client.openpipe address >|= fun x -> Some (Named_pipe_lwt.Client.to_fd x))
   else
     Lwt.return_none
