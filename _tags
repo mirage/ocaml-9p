@@ -4,5 +4,4 @@ true: package(logs)
 "lib": include
 "unix": include
 "win": include
-"src": include
 "lib_test": include
