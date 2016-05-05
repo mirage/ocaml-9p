@@ -44,8 +44,8 @@ endif
 ifeq ($(WITH_PIPE), 0)
 WIN_PRODUCTS := $(addprefix $(WIN_MOD),$(TARGETS))
 WIN_INSTALL:=$(foreach module,$(WIN_MODULES),$(addprefix $(module),$(TYPES)))
-WIN_INSTALL := $(UNIX_INSTALL) $(WIN_MOD).a $(WIN_PRODUCTS)
-WIN_INSTALL := $(addprefix _build/unix/,$(WIN_INSTALL))
+WIN_INSTALL := $(WIN_INSTALL) $(WIN_MOD).a $(WIN_PRODUCTS)
+WIN_INSTALL := $(addprefix _build/win/,$(WIN_INSTALL))
 PRODUCTS+=$(WIN_PRODUCTS)
 INSTALL+=$(WIN_INSTALL)
 endif

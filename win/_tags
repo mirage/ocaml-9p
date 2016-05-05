@@ -1,1 +1,1 @@
-<*.*>: package(astring), package(lwt.unix)
+<*.*>: package(astring), package(lwt.unix), package(named-pipe.lwt)
