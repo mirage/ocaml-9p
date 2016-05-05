@@ -38,7 +38,7 @@ ifeq ($(WITH_TERM), 0)
 PRODUCTS+=src/main.native
 endif
 
-build: unix/client9p_unix.ml unix/_tags
+build: unix/client9p_unix.ml unix/_tags src/_tags
 	$(OCAMLBUILD) $(PRODUCTS)
 
 unix/client9p_unix.ml: unix/client9p_unix.ml.in
@@ -51,11 +51,19 @@ endif
 unix/_tags: unix/_tags.in
 ifeq ($(WITH_PIPE), 0)
 	cp unix/_tags.in unix/_tags
-	echo '<*.*>: package<astring>, package<named-pipe.lwt>' >> unix/_tags
+	echo '<*.*>: package(astring), package(named-pipe.lwt)' >> unix/_tags
 else
 	cp unix/_tags.in unix/_tags
 endif
 
+
+src/_tags: src/_tags.in
+ifeq ($(WITH_PIPE), 0)
+	cp src/_tags.in src/_tags
+	echo '<*.*>: package(astring), package(named-pipe.lwt)' >> src/_tags
+else
+	cp src/_tags.in src/_tags
+endif
 
 doc:
 	$(OCAMLBUILD) lib/protocol_9p.docdir/index.html
@@ -78,6 +86,7 @@ clean:
 	ocamlbuild -clean
 	rm -f unix/client9p_unix.ml
 	rm -f unix/_tags
+	rm -f src/_tags
 
 init-doc:
 	mkdir -p gh-pages
