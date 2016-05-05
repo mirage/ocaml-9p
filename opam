@@ -35,6 +35,7 @@ depends: [
   "ppx_sexp_conv" {build}
   "ocamlfind" {build}
   "ocamlbuild" {build}
+  "cppo" {build}
   "ppx_tools" {build}
   "alcotest" {test & >= "0.4.0"}
 ]

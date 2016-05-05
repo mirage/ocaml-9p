@@ -47,7 +47,7 @@ let parse_path x = Stringext.split x ~on:'/'
 
 let with_client address username f =
   let proto, address = parse_address address in
-  Client.connect ~hooks:Client9p_win.hooks proto address ?username ()
+  Client.connect proto address ?username ()
   >>= function
   | Result.Error (`Msg x) -> failwith x
   | Result.Ok t ->
@@ -94,7 +94,7 @@ let read debug address path username =
           end in
         loop 0L
       ) in
-  wrap_exceptions 
+  wrap_exceptions
     (fun () ->
       ignore (Lwt_main.run t);
       `Ok ()

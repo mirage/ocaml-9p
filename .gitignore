@@ -16,3 +16,5 @@ setup.log
 *~
 9p
 _tests
+unix/client9p_unix.ml
+unix/_tags
