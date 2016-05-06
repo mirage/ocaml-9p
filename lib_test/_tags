@@ -2,3 +2,4 @@
 <*.*>: package(lwt), package(cstruct.lwt)
 <*.*>: package(stringext)
 <*.*>: package(logs.fmt)
+<*.*>: package(astring), package(named-pipe.lwt)
