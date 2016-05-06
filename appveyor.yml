@@ -4,7 +4,7 @@ platform:
 environment:
   CYG_ROOT: "C:\\cygwin"
   CYG_BASH: "%CYG_ROOT%\\bin\\bash -lc"
-  PINS: "win-error:https://github.com/djs55/ocaml-win-error.git named-pipe:https://github.com/djs55/ocaml-namedpipe.git"
+  PINS: "win-error:https://github.com/djs55/ocaml-win-error.git named-pipe:https://github.com/djs55/ocaml-named-pipe.git"
 
 install:
   - appveyor DownloadFile https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/appveyor-opam.sh
