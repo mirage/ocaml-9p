@@ -3,5 +3,4 @@ true: package(logs)
 
 "lib": include
 "unix": include
-"src": include
 "lib_test": include

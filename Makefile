@@ -34,7 +34,7 @@ INSTALL+=$(UNIX_INSTALL)
 endif
 
 ifeq ($(WITH_TERM), 0)
-PRODUCTS+=main.native
+PRODUCTS+=src/main.native
 endif
 
 build:

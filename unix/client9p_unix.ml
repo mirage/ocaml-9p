@@ -54,17 +54,23 @@ module Make(Log: S.LOG) = struct
     Lwt.return s
 
   let connect proto address ?msize ?username ?aname () =
-    ( match proto with
-      | "tcp" ->
+    ( match proto, address with
+      | "tcp", _ ->
         begin match Stringext.split ~on:':' address with
-        | [ hostname; port ] -> open_tcp hostname (int_of_string port)
-        | [ hostname ] -> open_tcp hostname 5640
-        | _ -> Lwt.fail (Failure (Printf.sprintf "Unable to parse %s %s" proto address))
+          | [ hostname; port ] -> open_tcp hostname (int_of_string port)
+          | [ hostname ]       -> open_tcp hostname 5640
+          | _ ->
+            Lwt.fail_with (Printf.sprintf "Unable to parse %s %s" proto address)
         end
-      | "unix" ->
+      | "unix", _ ->
         open_unix address
-      | _ -> Lwt.fail (Failure (Printf.sprintf "Unknown protocol %s" proto)) )
-    >>= fun s ->
+      | _, address when Astring.String.is_prefix ~affix:"\\\\" address ->
+        Named_pipe_lwt.Client.openpipe address
+        >>= fun pipe ->
+        Lwt.return (Named_pipe_lwt.Client.to_fd pipe)
+      | _ ->
+        Lwt.fail_with (Printf.sprintf "Unknown protocol %s" proto)
+    ) >>= fun s ->
     let flow = Flow_lwt_unix.connect s in
     Client.connect flow ?msize ?username ?aname ()
     >>= function
