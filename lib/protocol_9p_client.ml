@@ -43,6 +43,7 @@ module type S = sig
   module KV_RO : V1_LWT.KV_RO with type t = t
 
   module LowLevel : sig
+    val maximum_write_payload: t -> int32
     val allocate_fid: t -> Protocol_9p_types.Fid.t Error.t Lwt.t
     val deallocate_fid: t -> Protocol_9p_types.Fid.t -> unit Lwt.t
     val walk: t -> Types.Fid.t -> Types.Fid.t -> string list -> Response.Walk.t Error.t Lwt.t
@@ -197,6 +198,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       Lwt.return (error_msg "Server sent unexpected reply: %s" (Sexplib.Sexp.to_string (Response.sexp_of_payload  payload)))
 
   module LowLevel = struct
+    let maximum_write_payload t = t.maximum_payload
 
     let flush t oldtag =
       rpc t Request.(Flush { Flush.oldtag })

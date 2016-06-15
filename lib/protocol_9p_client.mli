@@ -65,6 +65,9 @@ module type S = sig
         RPCs. The client must carefully respect the rules on managing fids
         and stay within the message size limits. *)
 
+    val maximum_write_payload: t -> int32
+    (** The largest payload that can be written in one go. *)
+
     val allocate_fid: t -> Protocol_9p_types.Fid.t Protocol_9p_error.t Lwt.t
     (** [allocate_fid t] returns a free fid. Callers must call [deallocate_fid t]
         when they are finished with it. *)
@@ -109,7 +112,7 @@ module type S = sig
     val write: t -> Protocol_9p_types.Fid.t -> int64 -> Cstruct.t ->
       Protocol_9p_response.Write.t Protocol_9p_error.t Lwt.t
     (** [write t fid offset data] writes [data] to the file given by [fid] at
-        offset [offset]. *)
+        offset [offset]. [data] must not exceed [maximum_write_payload t]. *)
 
     val clunk: t -> Protocol_9p_types.Fid.t ->
       Protocol_9p_response.Clunk.t Protocol_9p_error.t Lwt.t
