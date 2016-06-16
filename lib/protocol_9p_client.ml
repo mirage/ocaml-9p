@@ -406,13 +406,15 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     | Error e ->
       (* We must clunk the fid ourselves *)
       clunk t newfid
-      >>*= fun _ ->
+      >>= fun _ -> (* ignore cascade error *)
+      mark_fid_as_free t newfid;
       Lwt.return (Error e)
     | Ok _ ->
       remove t newfid
-      >>*= fun _ ->
-      (* Fid has been clunked by the remove call *)
-      Lwt.return (Ok ())
+      >>= fun result ->
+      (* Fid has been clunked by the remove call even on failure *)
+      mark_fid_as_free t newfid;
+      Lwt.return result
 
   let stat t path =
     let open LowLevel in
