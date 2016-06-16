@@ -123,6 +123,8 @@ module Make(Log: S.LOG) = struct
   module LowLevel = struct
     open Client
 
+    let maximum_write_payload { client } = LowLevel.maximum_write_payload client
+
     let allocate_fid { client } = LowLevel.allocate_fid client
 
     let deallocate_fid { client } = LowLevel.deallocate_fid client
