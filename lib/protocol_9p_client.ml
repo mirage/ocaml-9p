@@ -395,16 +395,22 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let remove t path =
     let open LowLevel in
+    let open Lwt.Infix in
     let fid = t.root in
-    with_fid t
-      (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
-        remove t newfid
-        >>*= fun _ ->
-        Lwt.return (Ok ())
-      )
+    LowLevel.allocate_fid t
+    >>*= fun newfid ->
+    walk t fid newfid path
+    >>= function
+    | Error e ->
+      (* We must clunk the fid ourselves *)
+      clunk t newfid
+      >>*= fun _ ->
+      Lwt.return (Error e)
+    | Ok _ ->
+      remove t newfid
+      >>*= fun _ ->
+      (* Fid has been clunked by the remove call *)
+      Lwt.return (Ok ())
 
   let stat t path =
     let open LowLevel in
