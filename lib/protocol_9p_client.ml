@@ -314,12 +314,14 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           let fid = Types.Fid.Set.min_elt t.free_fids in
           t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
           return (Ok fid)
+    let mark_fid_as_free t fid =
+      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+      Lwt_condition.signal t.free_fids_c ()
     let deallocate_fid t fid =
       let open Lwt in
-      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
-      Lwt_condition.signal t.free_fids_c ();
       clunk t fid
       >>= fun _ -> (* the spec says to assume the fid is clunked now *)
+      mark_fid_as_free t fid;
       Lwt.return ()
   end
 
