@@ -314,12 +314,14 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
           let fid = Types.Fid.Set.min_elt t.free_fids in
           t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
           return (Ok fid)
+    let mark_fid_as_free t fid =
+      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+      Lwt_condition.signal t.free_fids_c ()
     let deallocate_fid t fid =
       let open Lwt in
-      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
-      Lwt_condition.signal t.free_fids_c ();
       clunk t fid
       >>= fun _ -> (* the spec says to assume the fid is clunked now *)
+      mark_fid_as_free t fid;
       Lwt.return ()
   end
 
@@ -395,16 +397,24 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let remove t path =
     let open LowLevel in
+    let open Lwt.Infix in
     let fid = t.root in
-    with_fid t
-      (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
-        remove t newfid
-        >>*= fun _ ->
-        Lwt.return (Ok ())
-      )
+    LowLevel.allocate_fid t
+    >>*= fun newfid ->
+    walk t fid newfid path
+    >>= function
+    | Error e ->
+      (* We must clunk the fid ourselves *)
+      clunk t newfid
+      >>= fun _ -> (* ignore cascade error *)
+      mark_fid_as_free t newfid;
+      Lwt.return (Error e)
+    | Ok _ ->
+      remove t newfid
+      >>= fun result ->
+      (* Fid has been clunked by the remove call even on failure *)
+      mark_fid_as_free t newfid;
+      Lwt.return result
 
   let stat t path =
     let open LowLevel in
