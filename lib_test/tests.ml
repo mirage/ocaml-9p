@@ -116,6 +116,8 @@ let expect_ok = function
 let request: Request.t Alcotest.testable = (module Request)
 let response: Response.t Alcotest.testable = (module Response)
 
+let len_size = 4
+
 let print_parse_request r () =
   let open Error in
   expect_ok (
@@ -123,8 +125,9 @@ let print_parse_request r () =
     let buf = Cstruct.create needed in
     Request.write r buf
     >>= fun remaining ->
+    Cstruct.hexdump buf;
     Alcotest.(check int) "write request" 0 (Cstruct.len remaining);
-    Request.read buf
+    Request.read (Cstruct.shift buf len_size)
     >>= fun (r', remaining) ->
     Alcotest.(check int) "read request" 0 (Cstruct.len remaining);
     Alcotest.(check request) "request" r r';
@@ -139,7 +142,7 @@ let print_parse_response r () =
     Response.write r buf
     >>= fun remaining ->
     Alcotest.(check int) "write response" 0 (Cstruct.len remaining);
-    Response.read buf
+    Response.read (Cstruct.shift buf len_size)
     >>= fun (r', remaining) ->
     Alcotest.(check int) "read respsonse" 0 (Cstruct.len remaining);
     Alcotest.(check response) "response" r r';

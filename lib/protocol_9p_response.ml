@@ -341,8 +341,7 @@ let write t rest =
     | Wstat x -> Wstat.write x rest
 
 let read rest =
-  Int32.read rest
-  >>= fun (len, rest) ->
+  (* We assume the int32 length field has already been read *)
   Int8.read rest
   >>= fun (ty, rest) ->
   Tag.read rest

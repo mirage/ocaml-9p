@@ -57,7 +57,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         | length ->
         read_exactly ~len:(Int32.to_int length - len_size) t.channel
         >>= fun packet_buffer ->
-        Lwt.return (Ok (Cstruct.concat [ length_buffer; packet_buffer ]))
+        Lwt.return (Ok packet_buffer)
       ) (function
         | End_of_file -> Lwt.return (error_msg "Caught EOF on underlying FLOW")
         | C.Read_error e -> Lwt.return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))

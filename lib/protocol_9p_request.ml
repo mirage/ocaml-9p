@@ -467,19 +467,18 @@ let write t rest =
     | Wstat x -> Wstat.write x rest
 
 let read_header rest =
-  Int32.read rest
-  >>= fun (len, rest) ->
+  (* We assume the int32 length field has already been read *)
   Int8.read rest
   >>= fun (ty, rest) ->
   Tag.read rest
   >>= fun (tag, rest) ->
-  return (len, ty, tag, rest)
+  return (ty, tag, rest)
 
 let sizeof_header = 4 + 1 + 2
 
 let read rest =
   read_header rest
-  >>= fun (len, ty, tag, rest) ->
+  >>= fun (ty, tag, rest) ->
   ( match ty with
     | 100 -> Version.read rest >>= fun (x, rest) -> return ((Version x), rest)
     | 102 -> Auth.read rest    >>= fun (x, rest) -> return ((Auth x), rest)
