@@ -33,7 +33,7 @@ type flow = {
 }
 
 let connect fd =
-  let read_buffer_size = 1024 in
+  let read_buffer_size = 32768 in
   let read_buffer = Cstruct.create read_buffer_size in
   let closed = false in
   { fd; read_buffer_size; read_buffer; closed }
