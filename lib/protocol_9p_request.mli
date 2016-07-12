@@ -187,7 +187,7 @@ type t = {
 include Protocol_9p_s.SERIALISABLE with type t := t
 
 val read_header:
-  Cstruct.t -> (Int32.t * Protocol_9p_types.Int8.t * Protocol_9p_types.Tag.t * Cstruct.t,
+  Cstruct.t -> (Protocol_9p_types.Int8.t * Protocol_9p_types.Tag.t * Cstruct.t,
                 [ `Msg of string]) result
 
 val sizeof_header: int

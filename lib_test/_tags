@@ -3,3 +3,4 @@
 <*.*>: package(stringext)
 <*.*>: package(logs.fmt)
 <*.*>: package(astring), package(named-pipe.lwt)
+<*.*>: package(channel), package(io-page.unix)

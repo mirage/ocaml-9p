@@ -28,5 +28,5 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
 
   val read: t -> Cstruct.t Protocol_9p_error.t Lwt.t
   (** Return the unmarshalled body of the next message read
-      from the flow. *)
+      from the flow, without the initial length field. *)
 end

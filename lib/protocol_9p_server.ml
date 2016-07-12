@@ -121,7 +121,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
           | Error (`Msg _) ->
             debug (fun f -> f "C sent bad header: %s" ename);
             dispatcher_t info exn_converter shutdown_complete_wakener receive_cb t
-          | Ok (_, _, tag, _) ->
+          | Ok (_, tag, _) ->
             debug (fun f -> f "C error: %s" ename);
             let response = error_response tag ename in
             write_one_packet ~write_lock:t.write_lock t.writer response
