@@ -1,3 +1,14 @@
+0.7.0 (2016-07-17):
+* remove dependency on ctypes
+* support named pipes on Win32
+* report Win32 errors
+* client: don't clunk the fid after remove
+* client: deallocate_fid should clunk before markind fid as free
+* client: remove: always mark the fid as free
+* server: fix deadlock on Eof which prevents connection cleanup
+* use the channel module for buffered packet reading
+* unix: don't allocate per request, use a per-connection 32KiB buffer
+
 0.6.0 (2016-04-10):
 * server: supply no exception converter by default
 * dependency on lambda-term (for the shell) is now optional
