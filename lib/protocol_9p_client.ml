@@ -333,14 +333,23 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     >>*= fun fid ->
     finally (fun () -> f fid) (fun () -> LowLevel.deallocate_fid t fid)
 
+  let with_walk_from_root t path f =
+    let open Lwt in
+    LowLevel.allocate_fid t
+    >>*= fun newfid ->
+    LowLevel.walk t t.root newfid path
+    >>= function
+    | Error e ->
+      (* No need to clunk the fid as it's not bound *)
+      LowLevel.mark_fid_as_free t newfid;
+      Lwt.return (Error e)
+    | Ok _ -> (* I don't need to know the qids *)
+      finally (fun () -> f newfid) (fun () -> LowLevel.deallocate_fid t newfid)
+
   let write t path offset buf =
     let open LowLevel in
-    let fid = t.root in
-    with_fid t
+    with_walk_from_root t path
       (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
         openfid t newfid Types.OpenMode.write_only
         >>*= fun _ ->
         let rec loop offset remaining =
@@ -360,12 +369,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let read t path offset count =
     let open LowLevel in
-    let fid = t.root in
-    with_fid t
+    with_walk_from_root t path
       (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
         openfid t newfid Types.OpenMode.read_only
         >>*= fun _ ->
         let rec loop acc offset remaining =
@@ -382,12 +387,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let create t path name perm =
     let open LowLevel in
-    let fid = t.root in
-    with_fid t
+    with_walk_from_root t path
       (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
         create t newfid name perm Types.OpenMode.read_only
         >>*= fun _ ->
         Lwt.return (Ok ())
@@ -418,12 +419,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let stat t path =
     let open LowLevel in
-    let fid = t.root in
-    with_fid t
+    with_walk_from_root t path
       (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
         stat t newfid
         >>*= fun { Response.Stat.stat } ->
         Lwt.return (Ok stat)
@@ -487,12 +484,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
   let readdir t path =
     let open LowLevel in
-    let fid = t.root in
-    with_fid t
+    with_walk_from_root t path
       (fun newfid ->
-        let wnames = path in
-        walk t fid newfid wnames
-        >>*= fun _ -> (* I don't need to know the qids *)
         openfid t newfid Types.OpenMode.read_only
         >>*= fun _ ->
         let rec loop acc offset =
