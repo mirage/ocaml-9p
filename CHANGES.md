@@ -5,6 +5,7 @@
 * client: don't clunk the fid after remove
 * client: deallocate_fid should clunk before markind fid as free
 * client: remove: always mark the fid as free
+* client: don't clunk a fid if walk fails
 * server: fix deadlock on Eof which prevents connection cleanup
 * use the channel module for buffered packet reading
 * unix: don't allocate per request, use a per-connection 32KiB buffer
