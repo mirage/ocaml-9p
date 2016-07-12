@@ -22,7 +22,7 @@ depends: [
   "sexplib" {> "113.00.00" }
   "result"
   "mirage-types-lwt"
-  "channel"
+  "channel" {>= "1.1.0" }
   "lwt" {>= "2.4.7"}
   "base-unix"
   "cmdliner"
