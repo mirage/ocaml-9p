@@ -4,3 +4,6 @@
 <*.*>: package(cmdliner, logs.fmt)
 <*.*>: package(astring), package(named-pipe.lwt)
 <*.*>: package(win-error)
+<*.*>: package(channel)
+<*.*>: package(io-page.unix)
+<*.*>: package(lwt.unix)
