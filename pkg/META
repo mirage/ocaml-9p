@@ -11,7 +11,7 @@ package "unix" (
  version = "%%VERSION%%"
  description = "9P filesystem protocol, using Lwt-unix"
  requires =
- "result fmt stringext protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt named-pipe.lwt astring win-error"
+ "result fmt stringext protocol-9p mirage-types.lwt lwt cstruct cstruct.lwt named-pipe.lwt astring win-error io-page.unix"
  archive(byte) = "protocol-9p-unix.cma"
  archive(native) = "protocol-9p-unix.cmxa"
  plugin(byte) = "protocol-9p-unix.cma"
