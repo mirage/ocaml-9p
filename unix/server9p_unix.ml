@@ -16,6 +16,7 @@
  *)
 open Protocol_9p
 open Lwt
+open Astring
 
 module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
   module S = Protocol_9p.Server.Make(Log)(Flow_lwt_unix)(Filesystem)
@@ -52,7 +53,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
 
   let listen fs proto address = match proto with
     | "tcp" ->
-      begin match Stringext.split ~on:':' address with
+      begin match String.cuts ~sep:":" address with
       | [ ip; port ] ->
         let fd = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
         Lwt_unix.setsockopt fd Lwt_unix.SO_REUSEADDR true;

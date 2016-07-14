@@ -17,6 +17,7 @@
 
 open Result
 open Protocol_9p_infix
+open Astring
 
 module Error = Protocol_9p_error
 open Error
@@ -461,7 +462,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     type page_aligned_buffer = Cstruct.t
 
-    let parse_path x = Stringext.split x ~on:'/'
+    let parse_path x = String.cuts x ~sep:"/"
 
     let read t key offset length =
       let path = parse_path key in

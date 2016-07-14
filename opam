@@ -25,7 +25,6 @@ depends: [
   "lwt" {>= "2.4.7"}
   "base-unix"
   "cmdliner"
-  "stringext"
   "astring"
   "named-pipe"
   "fmt"

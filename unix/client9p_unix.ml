@@ -18,6 +18,7 @@
 
 open Lwt
 open Protocol_9p
+open Astring
 
 module Make(Log: S.LOG) = struct
 
@@ -56,7 +57,7 @@ module Make(Log: S.LOG) = struct
   let connect proto address ?msize ?username ?aname () =
     ( match proto, address with
       | "tcp", _ ->
-        begin match Stringext.split ~on:':' address with
+        begin match String.cuts ~sep:":" address with
           | [ hostname; port ] -> open_tcp hostname (int_of_string port)
           | [ hostname ]       -> open_tcp hostname 5640
           | _ ->
