@@ -1,4 +1,9 @@
-0.7.0 (2016-07-17):
+0.7.1 (2016-07-12):
+* switch to topkg
+* make protocol-9p.unix depends on io-page.unix to workaround an issue
+  the channel implementation
+
+0.7.0 (2016-07-12):
 * remove dependency on ctypes
 * support named pipes on Win32
 * report Win32 errors
