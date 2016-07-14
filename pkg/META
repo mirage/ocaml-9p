@@ -1,7 +1,6 @@
 description = "9P filesystem protocol"
 version = "%%VERSION%%"
-requires =
-"result cstruct sexplib sexplib mirage-types.lwt lwt stringext fmt channel"
+requires = "result cstruct sexplib mirage-types.lwt lwt stringext fmt channel"
 archive(byte) = "protocol-9p.cma"
 archive(native) = "protocol-9p.cmxa"
 plugin(byte) = "protocol-9p.cma"
