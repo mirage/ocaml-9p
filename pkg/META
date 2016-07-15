@@ -1,0 +1,17 @@
+description = "9P filesystem protocol"
+version = "%%VERSION%%"
+requires = "result cstruct sexplib mirage-types.lwt lwt astring fmt channel"
+archive(byte) = "protocol-9p.cma"
+archive(native) = "protocol-9p.cmxa"
+plugin(byte) = "protocol-9p.cma"
+plugin(native) = "protocol-9p.cmxs"
+
+package "unix" (
+ version = "%%VERSION%%"
+ description = "9P filesystem protocol, using Lwt-unix"
+ requires = "result fmt lwt mirage-types.lwt cstruct astring protocol-9p lwt.unix named-pipe.lwt io-page.unix"
+ archive(byte) = "protocol-9p-unix.cma"
+ archive(native) = "protocol-9p-unix.cmxa"
+ plugin(byte) = "protocol-9p-unix.cma"
+ plugin(native) = "protocol-9p-unix.cmxs"
+)

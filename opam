@@ -6,15 +6,14 @@ homepage: "https://github.com/mirage/ocaml-9p"
 dev-repo: "https://github.com/mirage/ocaml-9p.git"
 bug-reports: "https://github.com/mirage/ocaml-9p/issues"
 
-build: [
-  [make]
-]
+build: ["ocaml" "pkg/pkg.ml" "build" "--pinned" pinned
+          "--with-lambda-term" lambda-term:installed]
 
-build-test:[
-  [make "test"]
+build-test: [
+  ["ocaml" "pkg/pkg.ml" "build" "--tests" "true"
+     "--with-lambda-term" lambda-term:installed]
+  ["ocaml" "pkg/pkg.ml" "test"]
 ]
-install: [make "install"]
-remove: ["ocamlfind" "remove" "protocol-9p"]
 
 depends: [
   "base-bytes"
@@ -26,7 +25,6 @@ depends: [
   "lwt" {>= "2.4.7"}
   "base-unix"
   "cmdliner"
-  "stringext"
   "astring"
   "named-pipe"
   "fmt"
@@ -37,9 +35,8 @@ depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
   "ppx_tools" {build}
+  "topkg" {>= "0.7.3"}
   "alcotest" {test & >= "0.4.0"}
 ]
-depopts: [
-  "lambda-term"
-]
+depopts: ["lambda-term"]
 available: [ocaml-version >= "4.02.0"]

@@ -4,12 +4,13 @@ PKG result
 PKG mirage-types.lwt
 PKG lwt
 PKG cmdliner
-PKG stringext
+PKG astring
 PKG bisect
 PKG alcotest
 PKG fmt
 PKG unix-errno.unix
 PKG logs
+PKG named-pipe.lwt
 
 S lib
 S src

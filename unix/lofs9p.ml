@@ -23,6 +23,7 @@ open Protocol_9p
 open Infix
 open Lwt
 open Result
+open Astring
 
 let (/) = Filename.concat
 
@@ -65,10 +66,10 @@ let make root = { root }
     let root = { segments = []; }
 
     let realroot t = match t.root with
-      | [] -> List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')
+      | [] -> List.tl (String.cuts (Unix.getcwd ()) ~sep:"/")
       | ""::path -> path
       | _::_ ->
-        (List.tl (Stringext.split (Unix.getcwd ()) ~on:'/')) @ t.root
+        (List.tl (String.cuts (Unix.getcwd ()) ~sep:"/")) @ t.root
 
     (* Convert from a segmented path to real paths *)
     let realpath =
