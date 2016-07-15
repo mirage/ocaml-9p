@@ -2,6 +2,8 @@
 * switch to topkg
 * make protocol-9p.unix depends on io-page.unix to workaround an issue
   the channel implementation
+* remove the dependency to stringext
+* fix missing dependencies causing a compilation issue on 4.03
 
 0.7.0 (2016-07-12):
 * remove dependency on ctypes
