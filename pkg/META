@@ -9,7 +9,7 @@ plugin(native) = "protocol-9p.cmxs"
 package "unix" (
  version = "%%VERSION%%"
  description = "9P filesystem protocol, using Lwt-unix"
- requires = "result fmt lwt mirage-types.lwt cstruct astring protocol-9p lwt.unix named-pipe.lwt io-page.unix"
+ requires = "result fmt lwt mirage-types.lwt cstruct.lwt astring protocol-9p lwt.unix named-pipe.lwt io-page.unix"
  archive(byte) = "protocol-9p-unix.cma"
  archive(native) = "protocol-9p-unix.cmxa"
  plugin(byte) = "protocol-9p-unix.cma"
