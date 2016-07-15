@@ -20,7 +20,7 @@ open Infix
 open Lwt
 
 let project_url = "http://github.com/mirage/ocaml-9p"
-let version = "0.0"
+let version = "%%VERSION%%"
 
 module Log = (val Logs.src_log Logs.default)
 module Client = Client9p_unix.Make(Log)
@@ -90,7 +90,7 @@ let read debug address path username =
           end in
         loop 0L
       ) in
-  wrap_exceptions 
+  wrap_exceptions
     (fun () ->
       ignore (Lwt_main.run t);
       `Ok ()
