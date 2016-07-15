@@ -1,4 +1,4 @@
-## 0.7.1 (2016-07-12)
+## 0.7.1 (2016-07-15)
 
 * switch to topkg
 * make protocol-9p.unix depends on io-page.unix to workaround an issue
