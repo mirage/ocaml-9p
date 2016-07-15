@@ -1,16 +1,15 @@
-OCaml-9P
-========
+## OCaml-9P -- An implementation of the 9p protocol in pure OCaml
 
 [![Build Status](https://travis-ci.org/mirage/ocaml-9p.png?branch=master)](https://travis-ci.org/mirage/ocaml-9p) [![Coverage Status](https://coveralls.io/repos/mirage/ocaml-9p/badge.png?branch=master)](https://coveralls.io/r/mirage/ocaml-9p?branch=master)
 
-This is a work-in-progress implementation of the 9P protocol, written in
+ocaml-9p is an implementation of the 9P protocol, written in
 a Mirage-friendly style.
 
 Please read the [API documentation](https://mirage.github.io/ocaml-9p).
 
 Example of the CLI example program:
 ```
-./main.native ls --username vagrant   /var
+o9p ls --username vagrant   /var
 drwxr-xr-x ? root root 4096 Feb 2  2015 lib
 drwxr-xr-x ? root root 4096 Mar 15 2015 cache
 -rwxrwxrwx ? root root 9    May 10 2014 lock
