@@ -1,9 +1,13 @@
-0.7.1 (2016-07-12):
+## 0.7.1 (2016-07-15)
+
 * switch to topkg
 * make protocol-9p.unix depends on io-page.unix to workaround an issue
   the channel implementation
+* remove the dependency to stringext
+* fix missing dependencies causing a compilation issue on 4.03
 
-0.7.0 (2016-07-12):
+## 0.7.0 (2016-07-12)
+
 * remove dependency on ctypes
 * support named pipes on Win32
 * report Win32 errors
@@ -15,14 +19,16 @@
 * use the channel module for buffered packet reading
 * unix: don't allocate per request, use a per-connection 32KiB buffer
 
-0.6.0 (2016-04-10):
+## 0.6.0 (2016-04-10)
+
 * server: supply no exception converter by default
 * dependency on lambda-term (for the shell) is now optional
 * add support for Win32
 * use logs library
 * reject messages longer than 640 KiB
 
-0.5.0 (2016-03-01):
+## 0.5.0 (2016-03-01)
+
 * remove an unnecessary copy in the read path
 * add documentation for Server_unix_9p
 * add a `shell` subcommand for the CLI with history and line-editing
@@ -34,7 +40,8 @@
 * server: handle errors in the dispatcher loop
 * client: allow clients to handle I/O errors and recover
 
-0.4.0 (2016-01-25):
+## 0.4.0 (2016-01-25)
+
 * Remove OASIS from build system
 * Remove use of -pack, now use the index module Protocol_9p with aliases
 * Expose previously hidden Response.sizeof_header
@@ -42,13 +49,16 @@
 * Add Request.sizeof_header
 * Add Request.Write.sizeof_header
 
-0.3 (2016-01-20):
+## 0.3 (2016-01-20)
+
 * Add version/attach mount debug messages
 * Pass initial connection attach to receive callback handler
 
-0.2 (2016-01-04):
+## 0.2 (2016-01-04)
+
 * Respect negotiated msize in read
 * Add LICENSE file
 
-0.1 (2015-12-13):
+## 0.1 (2015-12-13)
+
 * Initial version
