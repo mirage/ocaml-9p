@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Protocol_9p_request.Auth.html">
+<link rel="next" href="Protocol_9p_request.Attach.html">
+<link rel="Up" href="Protocol_9p_request.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Protocol_9p" rel="Chapter" href="Protocol_9p.html">
+<link title="Protocol_9p_s" rel="Chapter" href="Protocol_9p_s.html">
+<link title="Protocol_9p_request" rel="Chapter" href="Protocol_9p_request.html">
+<link title="Protocol_9p_error" rel="Chapter" href="Protocol_9p_error.html">
+<link title="Protocol_9p_response" rel="Chapter" href="Protocol_9p_response.html">
+<link title="Protocol_9p_types" rel="Chapter" href="Protocol_9p_types.html">
+<link title="Protocol_9p_client" rel="Chapter" href="Protocol_9p_client.html">
+<link title="Protocol_9p_server" rel="Chapter" href="Protocol_9p_server.html">
+<link title="Protocol_9p_info" rel="Chapter" href="Protocol_9p_info.html">
+<link title="Protocol_9p_buffered9PReader" rel="Chapter" href="Protocol_9p_buffered9PReader.html">
+<link title="Protocol_9p_filesystem" rel="Chapter" href="Protocol_9p_filesystem.html">
+<link title="Protocol_9p_infix" rel="Chapter" href="Protocol_9p_infix.html"><title>Protocol_9p_request.Flush</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Protocol_9p_request.Auth.html" title="Protocol_9p_request.Auth">Previous</a>
+&nbsp;<a class="up" href="Protocol_9p_request.html" title="Protocol_9p_request">Up</a>
+&nbsp;<a class="post" href="Protocol_9p_request.Attach.html" title="Protocol_9p_request.Attach">Next</a>
+</div>
+<h1>Module <a href="type_Protocol_9p_request.Flush.html">Protocol_9p_request.Flush</a></h1>
+
+<pre><span class="keyword">module</span> Flush: <code class="code"><span class="keyword">sig</span></code> <a href="Protocol_9p_request.Flush.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+
+<pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.oldtag">oldtag</span>&nbsp;: <code class="type"><a href="Protocol_9p_types.Tag.html#TYPEt">Protocol_9p_types.Tag.t</a></code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALt_of_sexp"><span class="keyword">val</span> t_of_sexp</span> : <code class="type">Sexplib.Sexp.t -> <a href="Protocol_9p_request.Flush.html#TYPEt">t</a></code></pre>
+<pre><span id="VALsexp_of_t"><span class="keyword">val</span> sexp_of_t</span> : <code class="type"><a href="Protocol_9p_request.Flush.html#TYPEt">t</a> -> Sexplib.Sexp.t</code></pre><div class="info ">
+The payload of a flush message<br>
+</div>
+
+<pre><span class="keyword">include</span> <a href="Protocol_9p_s.SERIALISABLE.html">Protocol_9p_s.SERIALISABLE</a></pre>
+</body></html>

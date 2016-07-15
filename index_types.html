@@ -1,249 +1,172 @@
 <html>
 <head>
 <link rel="stylesheet" href="style.css" type="text/css">
-<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
 <link rel="Start" href="index.html">
 <link title="Index of types" rel=Appendix href="index_types.html">
 <link title="Index of values" rel=Appendix href="index_values.html">
 <link title="Index of modules" rel=Appendix href="index_modules.html">
 <link title="Index of module types" rel=Appendix href="index_module_types.html">
-<link title="S" rel="Chapter" href="S.html">
-<link title="Request" rel="Chapter" href="Request.html">
-<link title="Error" rel="Chapter" href="Error.html">
-<link title="Response" rel="Chapter" href="Response.html">
-<link title="Types" rel="Chapter" href="Types.html">
-<link title="Client" rel="Chapter" href="Client.html">
-<link title="Server" rel="Chapter" href="Server.html">
-<link title="Buffered9PReader" rel="Chapter" href="Buffered9PReader.html">
-<link title="Handler" rel="Chapter" href="Handler.html">
-<link title="Filesystem" rel="Chapter" href="Filesystem.html">
-<link title="Infix" rel="Chapter" href="Infix.html"><title>Index of types</title>
+<link title="Protocol_9p" rel="Chapter" href="Protocol_9p.html">
+<link title="Protocol_9p_s" rel="Chapter" href="Protocol_9p_s.html">
+<link title="Protocol_9p_request" rel="Chapter" href="Protocol_9p_request.html">
+<link title="Protocol_9p_error" rel="Chapter" href="Protocol_9p_error.html">
+<link title="Protocol_9p_response" rel="Chapter" href="Protocol_9p_response.html">
+<link title="Protocol_9p_types" rel="Chapter" href="Protocol_9p_types.html">
+<link title="Protocol_9p_client" rel="Chapter" href="Protocol_9p_client.html">
+<link title="Protocol_9p_server" rel="Chapter" href="Protocol_9p_server.html">
+<link title="Protocol_9p_info" rel="Chapter" href="Protocol_9p_info.html">
+<link title="Protocol_9p_buffered9PReader" rel="Chapter" href="Protocol_9p_buffered9PReader.html">
+<link title="Protocol_9p_filesystem" rel="Chapter" href="Protocol_9p_filesystem.html">
+<link title="Protocol_9p_infix" rel="Chapter" href="Protocol_9p_infix.html"><title>Index of types</title>
 </head>
 <body>
 <div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
 &nbsp;</div>
 <h1>Index of types</h1>
 <table>
+<tr><td align="left"><br>C</td></tr>
+<tr><td><a href="Protocol_9p_filesystem.S.html#TYPEconnection">connection</a> [<a href="Protocol_9p_filesystem.S.html">Protocol_9p_filesystem.S</a>]</td>
+<td><div class="info">
+Server state associated with a particular connection.
+</div>
+</td></tr>
 <tr><td align="left"><br>E</td></tr>
-<tr><td><a href="Error.html#TYPEerror">error</a> [<a href="Error.html">Error</a>]</td>
+<tr><td><a href="Protocol_9p_error.html#TYPEerror">error</a> [<a href="Protocol_9p_error.html">Protocol_9p_error</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Stat.html#TYPEextension">extension</a> [<a href="Types.Stat.html">Types.Stat</a>]</td>
+<tr><td><a href="Protocol_9p_server.html#TYPEexn_converter">exn_converter</a> [<a href="Protocol_9p_server.html">Protocol_9p_server</a>]</td>
+<td><div class="info">
+An exception converter transforms the given OCaml exception into a 9P error
+response.
+</div>
+</td></tr>
+<tr><td><a href="Protocol_9p_types.Stat.html#TYPEextension">extension</a> [<a href="Protocol_9p_types.Stat.html">Protocol_9p_types.Stat</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>F</td></tr>
-<tr><td><a href="Types.Qid.html#TYPEflag">flag</a> [<a href="Types.Qid.html">Types.Qid</a>]</td>
+<tr><td><a href="Protocol_9p_types.Qid.html#TYPEflag">flag</a> [<a href="Protocol_9p_types.Qid.html">Protocol_9p_types.Qid</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>I</td></tr>
-<tr><td><a href="Server.html#TYPEinfo">info</a> [<a href="Server.html">Server</a>]</td>
-<td><div class="info">
-Information about the active connection, passed to the receive callback.
-</div>
-</td></tr>
-<tr><td><a href="Types.OpenMode.html#TYPEio">io</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
-<td><div class="info">
-The io types allowed in an open 'mode'
-</div>
-</td></tr>
+<tr><td><a href="Protocol_9p_types.OpenMode.html#TYPEio">io</a> [<a href="Protocol_9p_types.OpenMode.html">Protocol_9p_types.OpenMode</a>]</td>
+<td></td></tr>
 <tr><td align="left"><br>O</td></tr>
-<tr><td><a href="Filesystem.html#TYPEor_error">or_error</a> [<a href="Filesystem.html">Filesystem</a>]</td>
+<tr><td><a href="Protocol_9p_filesystem.html#TYPEor_error">or_error</a> [<a href="Protocol_9p_filesystem.html">Protocol_9p_filesystem</a>]</td>
 <td></td></tr>
 <tr><td align="left"><br>P</td></tr>
-<tr><td><a href="Response.html#TYPEpayload">payload</a> [<a href="Response.html">Response</a>]</td>
+<tr><td><a href="Protocol_9p_response.html#TYPEpayload">payload</a> [<a href="Protocol_9p_response.html">Protocol_9p_response</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.html#TYPEpayload">payload</a> [<a href="Request.html">Request</a>]</td>
+<tr><td><a href="Protocol_9p_request.html#TYPEpayload">payload</a> [<a href="Protocol_9p_request.html">Protocol_9p_request</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.FileMode.html#TYPEpermission">permission</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
+<tr><td><a href="Protocol_9p_types.FileMode.html#TYPEpermission">permission</a> [<a href="Protocol_9p_types.FileMode.html">Protocol_9p_types.FileMode</a>]</td>
 <td></td></tr>
-<tr><td align="left"><br>R</td></tr>
-<tr><td><a href="Server.html#TYPEreceive_cb">receive_cb</a> [<a href="Server.html">Server</a>]</td>
+<tr><td align="left"><br>T</td></tr>
+<tr><td><a href="Protocol_9p_filesystem.S.html#TYPEt">t</a> [<a href="Protocol_9p_filesystem.S.html">Protocol_9p_filesystem.S</a>]</td>
 <td><div class="info">
-Every time a request is received, this is the type of the callback which
-    is called.
+A filesystem.
 </div>
 </td></tr>
-<tr><td align="left"><br>T</td></tr>
-<tr><td><a href="Buffered9PReader.Make.html#TYPEt">t</a> [<a href="Buffered9PReader.Make.html">Buffered9PReader.Make</a>]</td>
+<tr><td><a href="Protocol_9p_buffered9PReader.Make.html#TYPEt">t</a> [<a href="Protocol_9p_buffered9PReader.Make.html">Protocol_9p_buffered9PReader.Make</a>]</td>
 <td><div class="info">
 A buffered 9P message reader over a FLOW
 </div>
 </td></tr>
-<tr><td><a href="Server.Make.html#TYPEt">t</a> [<a href="Server.Make.html">Server.Make</a>]</td>
+<tr><td><a href="Protocol_9p_server.Make.html#TYPEt">t</a> [<a href="Protocol_9p_server.Make.html">Protocol_9p_server.Make</a>]</td>
 <td><div class="info">
 An established connection to a 9P client
 </div>
 </td></tr>
-<tr><td><a href="Client.S.html#TYPEt">t</a> [<a href="Client.S.html">Client.S</a>]</td>
+<tr><td><a href="Protocol_9p_client.S.html#TYPEt">t</a> [<a href="Protocol_9p_client.S.html">Protocol_9p_client.S</a>]</td>
 <td><div class="info">
 An established connection to a 9P server
 </div>
 </td></tr>
-<tr><td><a href="Types.Stat.html#TYPEt">t</a> [<a href="Types.Stat.html">Types.Stat</a>]</td>
+<tr><td><a href="Protocol_9p_types.Stat.html#TYPEt">t</a> [<a href="Protocol_9p_types.Stat.html">Protocol_9p_types.Stat</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Data.html#TYPEt">t</a> [<a href="Types.Data.html">Types.Data</a>]</td>
-<td><div class="info">
-A length-prefixed chunk of data which may include embedded NULLs, or may be
-      interpreted later as UTF-8 text.
-</div>
-</td></tr>
-<tr><td><a href="Types.Tag.html#TYPEt">t</a> [<a href="Types.Tag.html">Types.Tag</a>]</td>
+<tr><td><a href="Protocol_9p_types.Data.html#TYPEt">t</a> [<a href="Protocol_9p_types.Data.html">Protocol_9p_types.Data</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Qid.html#TYPEt">t</a> [<a href="Types.Qid.html">Types.Qid</a>]</td>
-<td><div class="info">
-The server's unique id for the file.
-</div>
-</td></tr>
-<tr><td><a href="Types.FileMode.html#TYPEt">t</a> [<a href="Types.FileMode.html">Types.FileMode</a>]</td>
-<td><div class="info">
-A 'mode' returned from a call to "Stat"
-</div>
-</td></tr>
-<tr><td><a href="Types.OpenMode.html#TYPEt">t</a> [<a href="Types.OpenMode.html">Types.OpenMode</a>]</td>
-<td><div class="info">
-A 'mode' passed as an argument to "Open" and "Create"
-</div>
-</td></tr>
-<tr><td><a href="Types.Fid.html#TYPEt">t</a> [<a href="Types.Fid.html">Types.Fid</a>]</td>
+<tr><td><a href="Protocol_9p_types.Tag.html#TYPEt">t</a> [<a href="Protocol_9p_types.Tag.html">Protocol_9p_types.Tag</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Version.html#TYPEt">t</a> [<a href="Types.Version.html">Types.Version</a>]</td>
+<tr><td><a href="Protocol_9p_types.Qid.html#TYPEt">t</a> [<a href="Protocol_9p_types.Qid.html">Protocol_9p_types.Qid</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Int64.html#TYPEt">t</a> [<a href="Types.Int64.html">Types.Int64</a>]</td>
+<tr><td><a href="Protocol_9p_types.FileMode.html#TYPEt">t</a> [<a href="Protocol_9p_types.FileMode.html">Protocol_9p_types.FileMode</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Int16.html#TYPEt">t</a> [<a href="Types.Int16.html">Types.Int16</a>]</td>
+<tr><td><a href="Protocol_9p_types.OpenMode.html#TYPEt">t</a> [<a href="Protocol_9p_types.OpenMode.html">Protocol_9p_types.OpenMode</a>]</td>
 <td></td></tr>
-<tr><td><a href="Types.Int8.html#TYPEt">t</a> [<a href="Types.Int8.html">Types.Int8</a>]</td>
+<tr><td><a href="Protocol_9p_types.Fid.html#TYPEt">t</a> [<a href="Protocol_9p_types.Fid.html">Protocol_9p_types.Fid</a>]</td>
 <td></td></tr>
-<tr><td><a href="Response.Wstat.html#TYPEt">t</a> [<a href="Response.Wstat.html">Response.Wstat</a>]</td>
-<td><div class="info">
-The payload of a Wstat response
-</div>
-</td></tr>
-<tr><td><a href="Response.Stat.html#TYPEt">t</a> [<a href="Response.Stat.html">Response.Stat</a>]</td>
-<td><div class="info">
-The payload of a Stat response
-</div>
-</td></tr>
-<tr><td><a href="Response.Remove.html#TYPEt">t</a> [<a href="Response.Remove.html">Response.Remove</a>]</td>
-<td><div class="info">
-The payload of a Remove response
-</div>
-</td></tr>
-<tr><td><a href="Response.Clunk.html#TYPEt">t</a> [<a href="Response.Clunk.html">Response.Clunk</a>]</td>
-<td><div class="info">
-The payload of a Clunk response
-</div>
-</td></tr>
-<tr><td><a href="Response.Write.html#TYPEt">t</a> [<a href="Response.Write.html">Response.Write</a>]</td>
-<td><div class="info">
-The payload of a Write response
-</div>
-</td></tr>
-<tr><td><a href="Response.Read.html#TYPEt">t</a> [<a href="Response.Read.html">Response.Read</a>]</td>
-<td><div class="info">
-The payload of a Read response
-</div>
-</td></tr>
-<tr><td><a href="Response.Create.html#TYPEt">t</a> [<a href="Response.Create.html">Response.Create</a>]</td>
-<td><div class="info">
-The payload of a Create response
-</div>
-</td></tr>
-<tr><td><a href="Response.Open.html#TYPEt">t</a> [<a href="Response.Open.html">Response.Open</a>]</td>
-<td><div class="info">
-The payload of an Open response
-</div>
-</td></tr>
-<tr><td><a href="Response.Walk.html#TYPEt">t</a> [<a href="Response.Walk.html">Response.Walk</a>]</td>
-<td><div class="info">
-The payload of a walk response
-</div>
-</td></tr>
-<tr><td><a href="Response.Attach.html#TYPEt">t</a> [<a href="Response.Attach.html">Response.Attach</a>]</td>
-<td><div class="info">
-The payload of an attach response
-</div>
-</td></tr>
-<tr><td><a href="Response.Flush.html#TYPEt">t</a> [<a href="Response.Flush.html">Response.Flush</a>]</td>
-<td><div class="info">
-The payload of a flush response
-</div>
-</td></tr>
-<tr><td><a href="Response.Err.html#TYPEt">t</a> [<a href="Response.Err.html">Response.Err</a>]</td>
-<td><div class="info">
-The pauload of an error response
-</div>
-</td></tr>
-<tr><td><a href="Response.Auth.html#TYPEt">t</a> [<a href="Response.Auth.html">Response.Auth</a>]</td>
-<td><div class="info">
-The payload of an authentication response
-</div>
-</td></tr>
-<tr><td><a href="Response.Version.html#TYPEt">t</a> [<a href="Response.Version.html">Response.Version</a>]</td>
-<td><div class="info">
-The payload of a version message
-</div>
-</td></tr>
-<tr><td><a href="Response.html#TYPEt">t</a> [<a href="Response.html">Response</a>]</td>
-<td><div class="info">
-A 9P protocol response
-</div>
-</td></tr>
-<tr><td><a href="Error.html#TYPEt">t</a> [<a href="Error.html">Error</a>]</td>
+<tr><td><a href="Protocol_9p_types.Version.html#TYPEt">t</a> [<a href="Protocol_9p_types.Version.html">Protocol_9p_types.Version</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.Wstat.html#TYPEt">t</a> [<a href="Request.Wstat.html">Request.Wstat</a>]</td>
+<tr><td><a href="Protocol_9p_types.Int64.html#TYPEt">t</a> [<a href="Protocol_9p_types.Int64.html">Protocol_9p_types.Int64</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.Stat.html#TYPEt">t</a> [<a href="Request.Stat.html">Request.Stat</a>]</td>
+<tr><td><a href="Protocol_9p_types.Int16.html#TYPEt">t</a> [<a href="Protocol_9p_types.Int16.html">Protocol_9p_types.Int16</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.Remove.html#TYPEt">t</a> [<a href="Request.Remove.html">Request.Remove</a>]</td>
+<tr><td><a href="Protocol_9p_types.Int8.html#TYPEt">t</a> [<a href="Protocol_9p_types.Int8.html">Protocol_9p_types.Int8</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.Clunk.html#TYPEt">t</a> [<a href="Request.Clunk.html">Request.Clunk</a>]</td>
+<tr><td><a href="Protocol_9p_response.Wstat.html#TYPEt">t</a> [<a href="Protocol_9p_response.Wstat.html">Protocol_9p_response.Wstat</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.Write.html#TYPEt">t</a> [<a href="Request.Write.html">Request.Write</a>]</td>
+<tr><td><a href="Protocol_9p_response.Stat.html#TYPEt">t</a> [<a href="Protocol_9p_response.Stat.html">Protocol_9p_response.Stat</a>]</td>
 <td></td></tr>
-<tr><td><a href="Request.Read.html#TYPEt">t</a> [<a href="Request.Read.html">Request.Read</a>]</td>
+<tr><td><a href="Protocol_9p_response.Remove.html#TYPEt">t</a> [<a href="Protocol_9p_response.Remove.html">Protocol_9p_response.Remove</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Clunk.html#TYPEt">t</a> [<a href="Protocol_9p_response.Clunk.html">Protocol_9p_response.Clunk</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Write.html#TYPEt">t</a> [<a href="Protocol_9p_response.Write.html">Protocol_9p_response.Write</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Read.html#TYPEt">t</a> [<a href="Protocol_9p_response.Read.html">Protocol_9p_response.Read</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Create.html#TYPEt">t</a> [<a href="Protocol_9p_response.Create.html">Protocol_9p_response.Create</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Open.html#TYPEt">t</a> [<a href="Protocol_9p_response.Open.html">Protocol_9p_response.Open</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Walk.html#TYPEt">t</a> [<a href="Protocol_9p_response.Walk.html">Protocol_9p_response.Walk</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Attach.html#TYPEt">t</a> [<a href="Protocol_9p_response.Attach.html">Protocol_9p_response.Attach</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Flush.html#TYPEt">t</a> [<a href="Protocol_9p_response.Flush.html">Protocol_9p_response.Flush</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Err.html#TYPEt">t</a> [<a href="Protocol_9p_response.Err.html">Protocol_9p_response.Err</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Auth.html#TYPEt">t</a> [<a href="Protocol_9p_response.Auth.html">Protocol_9p_response.Auth</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.Version.html#TYPEt">t</a> [<a href="Protocol_9p_response.Version.html">Protocol_9p_response.Version</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_response.html#TYPEt">t</a> [<a href="Protocol_9p_response.html">Protocol_9p_response</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_info.html#TYPEt">t</a> [<a href="Protocol_9p_info.html">Protocol_9p_info</a>]</td>
 <td><div class="info">
-The payload of a Read message
+Information about the active connection, passed to the receive callback.
 </div>
 </td></tr>
-<tr><td><a href="Request.Create.html#TYPEt">t</a> [<a href="Request.Create.html">Request.Create</a>]</td>
-<td><div class="info">
-The payload of a Create message
-</div>
-</td></tr>
-<tr><td><a href="Request.Open.html#TYPEt">t</a> [<a href="Request.Open.html">Request.Open</a>]</td>
-<td><div class="info">
-The payload of an Open message
-</div>
-</td></tr>
-<tr><td><a href="Request.Walk.html#TYPEt">t</a> [<a href="Request.Walk.html">Request.Walk</a>]</td>
-<td><div class="info">
-The payload of a walk message
-</div>
-</td></tr>
-<tr><td><a href="Request.Attach.html#TYPEt">t</a> [<a href="Request.Attach.html">Request.Attach</a>]</td>
-<td><div class="info">
-The payload of an attach message
-</div>
-</td></tr>
-<tr><td><a href="Request.Flush.html#TYPEt">t</a> [<a href="Request.Flush.html">Request.Flush</a>]</td>
-<td><div class="info">
-The payload of a flush message
-</div>
-</td></tr>
-<tr><td><a href="Request.Auth.html#TYPEt">t</a> [<a href="Request.Auth.html">Request.Auth</a>]</td>
-<td><div class="info">
-The payload of a version message
-</div>
-</td></tr>
-<tr><td><a href="Request.Version.html#TYPEt">t</a> [<a href="Request.Version.html">Request.Version</a>]</td>
-<td><div class="info">
-The payload of a version message
-</div>
-</td></tr>
-<tr><td><a href="Request.html#TYPEt">t</a> [<a href="Request.html">Request</a>]</td>
-<td><div class="info">
-A 9P protocol request
-</div>
-</td></tr>
-<tr><td><a href="S.SERIALISABLE.html#TYPEt">t</a> [<a href="S.SERIALISABLE.html">S.SERIALISABLE</a>]</td>
+<tr><td><a href="Protocol_9p_error.html#TYPEt">t</a> [<a href="Protocol_9p_error.html">Protocol_9p_error</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Wstat.html#TYPEt">t</a> [<a href="Protocol_9p_request.Wstat.html">Protocol_9p_request.Wstat</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Stat.html#TYPEt">t</a> [<a href="Protocol_9p_request.Stat.html">Protocol_9p_request.Stat</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Remove.html#TYPEt">t</a> [<a href="Protocol_9p_request.Remove.html">Protocol_9p_request.Remove</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Clunk.html#TYPEt">t</a> [<a href="Protocol_9p_request.Clunk.html">Protocol_9p_request.Clunk</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Write.html#TYPEt">t</a> [<a href="Protocol_9p_request.Write.html">Protocol_9p_request.Write</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Read.html#TYPEt">t</a> [<a href="Protocol_9p_request.Read.html">Protocol_9p_request.Read</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Create.html#TYPEt">t</a> [<a href="Protocol_9p_request.Create.html">Protocol_9p_request.Create</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Open.html#TYPEt">t</a> [<a href="Protocol_9p_request.Open.html">Protocol_9p_request.Open</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Walk.html#TYPEt">t</a> [<a href="Protocol_9p_request.Walk.html">Protocol_9p_request.Walk</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Attach.html#TYPEt">t</a> [<a href="Protocol_9p_request.Attach.html">Protocol_9p_request.Attach</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Flush.html#TYPEt">t</a> [<a href="Protocol_9p_request.Flush.html">Protocol_9p_request.Flush</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Auth.html#TYPEt">t</a> [<a href="Protocol_9p_request.Auth.html">Protocol_9p_request.Auth</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.Version.html#TYPEt">t</a> [<a href="Protocol_9p_request.Version.html">Protocol_9p_request.Version</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_request.html#TYPEt">t</a> [<a href="Protocol_9p_request.html">Protocol_9p_request</a>]</td>
+<td></td></tr>
+<tr><td><a href="Protocol_9p_s.SERIALISABLE.html#TYPEt">t</a> [<a href="Protocol_9p_s.SERIALISABLE.html">Protocol_9p_s.SERIALISABLE</a>]</td>
 <td><div class="info">
 Instances of this type can be read and written
 </div>
