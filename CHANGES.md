@@ -1,3 +1,7 @@
+## v0.7.2 (2016-07-15)
+
+* fix more dependency issues in the META file
+
 ## v0.7.1 (2016-07-15)
 
 * switch to topkg
