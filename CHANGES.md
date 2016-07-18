@@ -1,3 +1,11 @@
+## v0.7.3 (2016-07-18)
+
+* remove the remaining uses of stringext (in the CLI example)
+
+## v0.7.2 (2016-07-15)
+
+* fix more dependency issues in the META file
+
 ## v0.7.1 (2016-07-15)
 
 * switch to topkg

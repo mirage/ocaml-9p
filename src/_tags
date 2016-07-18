@@ -1,4 +1,4 @@
-<*.*>: package(stringext), package(result), package(fmt), package(lambda-term)
+<*.*>: package(astring), package(result), package(fmt), package(lambda-term)
 <*.*>: package(cstruct), package(cstruct.lwt)
 <*.*>: package(lwt)
 <*.*>: package(cmdliner, logs.fmt)
