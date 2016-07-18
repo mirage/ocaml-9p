@@ -18,6 +18,7 @@
 open Protocol_9p
 open Infix
 open Lwt
+open Astring
 
 let project_url = "http://github.com/mirage/ocaml-9p"
 let version = "%%VERSION%%"
@@ -39,11 +40,11 @@ let finally f g =
       Lwt.fail e)
 
 let parse_address address =
-  match Stringext.split ~on:':' ~max:2 address with
-  | [ proto; address ] -> proto, address
-  | _ -> address, "5640"
+  match String.cut ~sep:":" address with
+  | Some (proto, address) -> proto, address
+  | None -> address, "5640"
 
-let parse_path x = Stringext.split x ~on:'/'
+let parse_path x = String.cuts x ~sep:"/"
 
 let with_client address username f =
   let proto, address = parse_address address in
@@ -160,7 +161,7 @@ let print_stats stats =
   let rows = Array.of_list (List.map row_of_stat stats) in
   let padto n x =
     let extra = max 0 (n - (String.length x)) in
-    x ^ (String.make extra ' ') in
+    x ^ (String.v extra (fun _ -> ' ')) in
   Array.iter (fun row ->
     Array.iteri (fun i txt ->
       let column = Array.map (fun row -> row.(i)) rows in
@@ -200,7 +201,7 @@ class read_line ~term ~history ~state = object(self)
   initializer
     let open React in
     let open LTerm_text in
-    self#set_prompt (S.const (eval [ S (Printf.sprintf "9P %s> " (String.concat "/" !cwd)) ]))
+    self#set_prompt (S.const (eval [ S (Printf.sprintf "9P %s> " (String.concat ~sep:"/" !cwd)) ]))
 end
 
 let shell debug address username =
@@ -209,7 +210,7 @@ let shell debug address username =
     with_client address username
       (fun t ->
         let execute_command x =
-          match Stringext.split ~on:' ' x with
+          match String.cuts ~sep:" " x with
           | [ "ls" ] ->
             begin
               Client.readdir t !cwd >>= function
@@ -221,7 +222,7 @@ let shell debug address username =
                 return ()
             end
           | [ "cd"; dir ] ->
-            let dir' = Stringext.split ~on:'/' dir in
+            let dir' = String.cuts ~sep:"/" dir in
             let newdir =
               if dir <> "" && dir.[0] = '/' then dir'
               else if dir = "." then !cwd
@@ -273,7 +274,7 @@ let shell debug address username =
             >>= fun () ->
             return ()
           | "write" :: file :: rest ->
-            let data = String.concat " " rest in
+            let data = String.concat ~sep:" " rest in
             let buf = Cstruct.create (String.length data) in
             Cstruct.blit_from_string data 0 buf 0 (Cstruct.len buf);
             begin
