@@ -85,7 +85,7 @@ module Make(Log: S.LOG) = struct
   let disconnect { client; flow } =
     Client.disconnect client
     >>= fun () ->
-    Flow_lwt_unix.close flow
+    Flow_lwt_unix.disconnect flow
 
   let create { client } = Client.create client
 
