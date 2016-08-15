@@ -16,9 +16,11 @@
  *
  *)
 
+open Result
 open Lwt
 open Protocol_9p
 open Astring
+open Protocol_9p.Infix
 
 module Make(Log: S.LOG) = struct
 
@@ -30,6 +32,19 @@ module Make(Log: S.LOG) = struct
   }
 
   type connection = t
+
+  let pp_addr f = function
+    | Lwt_unix.ADDR_UNIX path -> Printf.sprintf "unix:%s" path
+    | Lwt_unix.ADDR_INET (host, port) -> Printf.sprintf "tcp:%s:%d" (Unix.string_of_inet_addr host) port
+
+  let connect_or_close s addr =
+    Lwt.catch
+      (fun () -> Lwt_unix.connect s addr >|= fun () -> Ok s)
+      (fun ex ->
+         Lwt_unix.close s >|= fun () ->
+         Protocol_9p.Error.error_msg "Error connecting socket to 9p endpoint %a: %s"
+           pp_addr addr (Printexc.to_string ex)
+      )
 
   let open_tcp hostname port =
     Lwt_unix.gethostbyname hostname
@@ -44,15 +59,11 @@ module Make(Log: S.LOG) = struct
       else return h.Lwt_unix.h_addr_list.(0)
     ) >>= fun inet_addr ->
     let s = Lwt_unix.socket h.Lwt_unix.h_addrtype Lwt_unix.SOCK_STREAM 0 in
-    Lwt_unix.connect s (Lwt_unix.ADDR_INET (inet_addr, port))
-    >>= fun () ->
-    Lwt.return s
+    connect_or_close s (Lwt_unix.ADDR_INET (inet_addr, port))
 
   let open_unix path =
     let s = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
-    Lwt_unix.connect s (Lwt_unix.ADDR_UNIX path)
-    >>= fun () ->
-    Lwt.return s
+    connect_or_close s (Lwt_unix.ADDR_UNIX path)
 
   let connect proto address ?msize ?username ?aname () =
     ( match proto, address with
@@ -68,10 +79,10 @@ module Make(Log: S.LOG) = struct
       | _, address when Astring.String.is_prefix ~affix:"\\\\" address ->
         Named_pipe_lwt.Client.openpipe address
         >>= fun pipe ->
-        Lwt.return (Named_pipe_lwt.Client.to_fd pipe)
+        Lwt.return (Ok (Named_pipe_lwt.Client.to_fd pipe))
       | _ ->
-        Lwt.fail_with (Printf.sprintf "Unknown protocol %s" proto)
-    ) >>= fun s ->
+        Lwt.return (Error.error_msg "Unknown protocol %s" proto)
+    ) >>*= fun s ->
     let flow = Flow_lwt_unix.connect s in
     Client.connect flow ?msize ?username ?aname ()
     >>= function
