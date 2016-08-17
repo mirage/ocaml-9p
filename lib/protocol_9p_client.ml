@@ -307,8 +307,10 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     let rec allocate_fid t =
       let open Lwt in
       if t.free_fids = Types.Fid.Set.empty && (dispatcher_is_running t)
-      then Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
-      else
+      then (
+        Log.info (fun f -> f "FID pool exhausted (will wait for a free one; deadlock possible)");
+        Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+      ) else
         if not(dispatcher_is_running t)
         then return (Error (`Msg "connection disconnected"))
         else
