@@ -29,25 +29,36 @@ type flow = {
   fd: Lwt_unix.file_descr;
   read_buffer_size: int;
   mutable read_buffer: Cstruct.t;
-  mutable closed: bool;
+  mutable disconnected: bool;
 }
 
 let connect fd =
   let read_buffer_size = 32768 in
   let read_buffer = Cstruct.create read_buffer_size in
-  let closed = false in
-  { fd; read_buffer_size; read_buffer; closed }
+  let disconnected = false in
+  { fd; read_buffer_size; read_buffer; disconnected }
 
-let close t =
-  match t.closed with
+let disconnect t =
+  match t.disconnected with
   | false ->
-    t.closed <- true;
+    t.disconnected <- true;
     Lwt_unix.close t.fd
   | true ->
     Lwt.return ()
 
+let close flow =
+  if flow.disconnected
+  then Lwt.return ()
+  else begin
+    try
+      Lwt_unix.shutdown flow.fd Unix.SHUTDOWN_SEND;
+      Lwt.return ()
+    with
+    | Unix.Unix_error(Unix.ENOTCONN, _, _) -> Lwt.return ()
+  end
+
 let read flow =
-  if flow.closed then return `Eof
+  if flow.disconnected then return `Eof
   else begin
     if Cstruct.len flow.read_buffer = 0
     then flow.read_buffer <- Cstruct.create flow.read_buffer_size;
@@ -62,7 +73,7 @@ let read flow =
   end
 
 let write flow buf =
-  if flow.closed then return `Eof
+  if flow.disconnected then return `Eof
   else
     Lwt.catch
       (fun () ->
@@ -77,7 +88,7 @@ let writev flow bufs =
   let rec loop = function
     | [] -> return (`Ok ())
     | x :: xs ->
-      if flow.closed then return `Eof
+      if flow.disconnected then return `Eof
       else
         Lwt.catch
           (fun () ->
