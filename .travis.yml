@@ -7,6 +7,7 @@ sudo: required
 env:
   global:
     - PINS="named-pipe:https://github.com/djs55/ocaml-namedpipe.git win-error:https://github.com/djs55/ocaml-win-error.git"
+    - EXTRA_REMOTES="https://github.com/mirage/mirage-dev.git"
     - PACKAGE="protocol-9p"
     - OCAML_VERSION=4.02
     - DEPOPTS="named-pipe"
