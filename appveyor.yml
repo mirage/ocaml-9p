@@ -12,3 +12,6 @@ install:
 
 build_script:
   - "%CYG_BASH% '${APPVEYOR_BUILD_FOLDER}/appveyor-opam.sh'"
+
+artifacts:
+  - path: "9ptool.exe"
