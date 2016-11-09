@@ -459,7 +459,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     type error =
       | Unknown_key of string
-      | Failure of string
 
     type id = unit
 
@@ -482,13 +481,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>= function
       | Ok stat -> return (`Ok stat.Types.Stat.length)
       | _ -> return (`Error (Unknown_key key))
-
-    let mem t key =
-      let path = parse_path key in
-      stat t path
-      >>= function
-      | Ok stat -> return (`Ok true)
-      | _ -> return (`Ok false)
 
     let disconnect = disconnect
   end
