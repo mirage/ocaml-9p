@@ -121,6 +121,8 @@ module Make(Log: S.LOG) = struct
 
     type 'a io = 'a KV_RO.io
 
+    type id = KV_RO.id
+
     type page_aligned_buffer = KV_RO.page_aligned_buffer
 
     let disconnect { client } = KV_RO.disconnect client

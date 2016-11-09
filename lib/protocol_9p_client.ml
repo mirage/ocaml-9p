@@ -461,6 +461,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Unknown_key of string
       | Failure of string
 
+    type id = unit
+
     type page_aligned_buffer = Cstruct.t
 
     let parse_path x = String.cuts x ~sep:"/"
