@@ -15,7 +15,7 @@
  *
  *)
 
-open Lwt
+open Lwt.Infix
 
 type 'a io = 'a Lwt.t
 
@@ -46,45 +46,37 @@ let close t =
   | true ->
     Lwt.return ()
 
+let safe op f r =
+  Lwt.catch (fun () -> op f r) (function
+      | Unix.Unix_error (Unix.EPIPE, _, _) -> Lwt.return 0
+      | e -> Lwt.fail e)
+
 let read flow =
-  if flow.closed then return `Eof
+  if flow.closed then Lwt.return `Eof
   else begin
     if Cstruct.len flow.read_buffer = 0
     then flow.read_buffer <- Cstruct.create flow.read_buffer_size;
-    Lwt_cstruct.read flow.fd flow.read_buffer
-    >>= function
-    | 0 ->
-      return `Eof
+    safe Lwt_cstruct.read flow.fd flow.read_buffer >|= function
+    | 0 -> `Eof
     | n ->
       let result = Cstruct.sub flow.read_buffer 0 n in
       flow.read_buffer <- Cstruct.shift flow.read_buffer n;
-      return (`Ok result)
+      `Ok result
   end
 
 let write flow buf =
-  if flow.closed then return `Eof
+  if flow.closed then Lwt.return `Eof
   else
-    Lwt.catch
-      (fun () ->
-        Lwt_cstruct.(complete (write flow.fd) buf)
-        >>= fun () ->
-        return (`Ok ())
-      ) (function
-        | Unix.Unix_error(Unix.EPIPE, _, _) -> return `Eof
-        | e -> fail e)
+    Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) buf >|= fun () ->
+    `Ok ()
 
 let writev flow bufs =
   let rec loop = function
-    | [] -> return (`Ok ())
+    | []      -> Lwt.return (`Ok ())
     | x :: xs ->
-      if flow.closed then return `Eof
+      if flow.closed then Lwt.return `Eof
       else
-        Lwt.catch
-          (fun () ->
-            Lwt_cstruct.(complete (write flow.fd) x)
-            >>= fun () ->
-            loop xs
-          ) (function
-            | Unix.Unix_error(Unix.EPIPE, _, _) -> return `Eof
-            | e -> fail e) in
+        Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) x >>= fun () ->
+        loop xs
+  in
   loop bufs
