@@ -27,7 +27,7 @@ depends: [
   "base-unix"
   "cmdliner"
   "astring"
-  "named-pipe"
+  "named-pipe" {>= "0.4.0"}
   "fmt"
   "logs" {>= "0.5.0"}
   "win-error"
