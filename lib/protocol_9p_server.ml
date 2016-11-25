@@ -56,9 +56,9 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
   let (>>|=) m f =
     let open Lwt in
     m >>= function
-    | `Ok x -> f x
-    | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
-    | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
+    | Ok x -> f x
+    | Error `Closed -> return (error_msg "Writing to closed FLOW")
+    | Error (`Msg e) -> return (error_msg "Unexpected error on underlying FLOW: %s" e)
 
   let disconnect t =
     t.please_shutdown <- true;

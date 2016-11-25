@@ -117,11 +117,9 @@ module Make(Log: S.LOG) = struct
 
     type t = connection
 
-    type error = KV_RO.error = Unknown_key of string
+    type error = KV_RO.error = Unknown_key of string | Failure of string
 
     type 'a io = 'a KV_RO.io
-
-    type id = KV_RO.id
 
     type page_aligned_buffer = KV_RO.page_aligned_buffer
 
@@ -130,6 +128,8 @@ module Make(Log: S.LOG) = struct
     let read { client } = KV_RO.read client
 
     let size { client } = KV_RO.size client
+
+    let mem { client } = KV_RO.mem client
   end
 
   module LowLevel = struct

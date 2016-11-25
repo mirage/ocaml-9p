@@ -21,6 +21,7 @@ depends: [
   "cstruct" {>= "1.9.0"}
   "sexplib" {> "113.00.00" }
   "result"
+  "rresult"
   "mirage-types-lwt"
   "channel" {>= "1.1.0" }
   "lwt" {>= "2.4.7"}
