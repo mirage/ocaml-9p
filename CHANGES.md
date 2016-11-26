@@ -1,3 +1,10 @@
+## v0.7.4 (2016-11-10)
+
+* Protect flow reads from EPIPE exceptions (this can happens on Windows)
+  (#104, @samoht)
+* Log a message when FID pool is exhausted (#98, @talex5)
+* Close socket if we get an error trying to connect (#97, @talex5)
+
 ## v0.7.3 (2016-07-18)
 
 * remove the remaining uses of stringext (in the CLI example)

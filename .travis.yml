@@ -1,13 +1,11 @@
 language: c
 install:
   - wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-opam.sh
-  - wget https://raw.githubusercontent.com/simonjbeaumont/ocaml-travis-coveralls/master/travis-coveralls.sh
 script: bash -ex .travis-opam.sh
 sudo: required
 env:
   global:
-    - EXTRA_REMOTES="https://github.com/mirage/mirage-dev.git"
     - PACKAGE="protocol-9p"
-    - OCAML_VERSION=4.02
+    - OCAML_VERSION=4.03
     - DEPOPTS="named-pipe"
-    - COV_CONF="oasis setup && ./configure --enable-tests"
+    - EXTRA_REMOTES="https://github.com/mirage/mirage-dev.git"

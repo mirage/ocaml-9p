@@ -21,13 +21,14 @@ depends: [
   "cstruct" {>= "1.9.0"}
   "sexplib" {> "113.00.00" }
   "result"
+  "rresult"
   "mirage-types-lwt"
   "channel" {>= "1.1.0" }
   "lwt" {>= "2.4.7"}
   "base-unix"
   "cmdliner"
   "astring"
-  "named-pipe"
+  "named-pipe" {>= "0.4.0"}
   "fmt"
   "logs" {>= "0.5.0"}
   "win-error"
@@ -40,4 +41,4 @@ depends: [
   "alcotest" {test & >= "0.4.0"}
 ]
 depopts: ["lambda-term"]
-available: [ocaml-version >= "4.02.0"]
+available: [ocaml-version >= "4.03.0"]

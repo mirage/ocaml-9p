@@ -97,9 +97,9 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
   let (>>|=) m f =
     let open Lwt in
     m >>= function
-    | `Ok x -> f x
-    | `Eof -> return (error_msg "Caught EOF on underlying FLOW")
-    | `Error e -> return (error_msg "Unexpected error on underlying FLOW: %s" (FLOW.error_message e))
+    | Ok x -> f x
+    | Error `Closed -> return (error_msg "Writing to closed FLOW")
+    | Error (`Msg e) -> return (error_msg "Unexpected error on underlying FLOW: %s" e)
 
   let read_one_packet reader =
     Reader.read reader
@@ -461,6 +461,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       | Unknown_key of string
       | Failure of string
 
+    type id = unit
+
     type page_aligned_buffer = Cstruct.t
 
     let parse_path x = String.cuts x ~sep:"/"
@@ -485,9 +487,9 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       let path = parse_path key in
       stat t path
       >>= function
-      | Ok stat -> return (`Ok true)
+      | Ok _ -> return (`Ok true)
       | _ -> return (`Ok false)
-
+     
     let disconnect = disconnect
   end
 
