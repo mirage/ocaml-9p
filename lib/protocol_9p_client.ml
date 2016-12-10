@@ -457,10 +457,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     type t = connection
 
-    type error =
-      | Unknown_key of string
-      | Failure of string
-
     type id = unit
 
     type page_aligned_buffer = Cstruct.t
@@ -469,26 +465,25 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     let read t key offset length =
       let path = parse_path key in
-      let offset = Int64.of_int offset in
-      let count = Int32.of_int length in
+      let count = Int64.to_int32 length in (* FIXME: Error on overflow? *)
       read t path offset count
       >>= function
-      | Ok bufs -> return (`Ok bufs)
-      | _ -> return (`Error (Unknown_key key))
+      | Ok bufs -> return (Ok bufs)
+      | _ -> return (Error `Unknown_key)
 
     let size t key =
       let path = parse_path key in
       stat t path
       >>= function
-      | Ok stat -> return (`Ok stat.Types.Stat.length)
-      | _ -> return (`Error (Unknown_key key))
+      | Ok stat -> return (Ok stat.Types.Stat.length)
+      | _ -> return (Error `Unknown_key)
 
     let mem t key =
       let path = parse_path key in
       stat t path
       >>= function
-      | Ok _ -> return (`Ok true)
-      | _ -> return (`Ok false)
+      | Ok _ -> return (Ok true)
+      | _ -> return (Ok false)
      
     let disconnect = disconnect
   end
