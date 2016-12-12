@@ -154,11 +154,13 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
   include S
 
   val connect:
-    FLOW.flow -> ?msize:int32 -> ?username:string -> ?aname:string -> unit ->
+    FLOW.flow -> ?msize:int32 -> ?username:string -> ?max_fids:int32 ->
+    ?aname:string -> unit ->
     t Protocol_9p_error.t Lwt.t
   (** Establish a fresh connection to a 9P server. [msize] gives the maximum
       message size we support: the server may choose a lower value. [username]
-      is the username to present to the remote server. [aname] is the name of
-      the exported filesystem. *)
+      is the username to present to the remote server. [max_fids] is the default
+      number of maximum openened fids: by default it is set to [100].
+      [aname] is the name of the exported filesystem. *)
 
 end
