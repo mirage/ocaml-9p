@@ -53,10 +53,11 @@ Given a transport (a Mirage FLOW), construct a 9P client on top.<br>
 
 <pre><span class="keyword">include</span> <a href="Protocol_9p_client.S.html">Protocol_9p_client.S</a></pre>
 
-<pre><span id="VALconnect"><span class="keyword">val</span> connect</span> : <code class="type">FLOW.flow -><br>       ?msize:int32 -><br>       ?username:string -> ?aname:string -> unit -> t <a href="Protocol_9p_error.html#TYPEt">Protocol_9p_error.t</a> Lwt.t</code></pre><div class="info ">
+<pre><span id="VALconnect"><span class="keyword">val</span> connect</span> : <code class="type">FLOW.flow -><br>       ?msize:int32 -><br>       ?username:string -><br>       ?max_fids:int32 -> ?aname:string -> unit -> t <a href="Protocol_9p_error.html#TYPEt">Protocol_9p_error.t</a> Lwt.t</code></pre><div class="info ">
 Establish a fresh connection to a 9P server. <code class="code">msize</code> gives the maximum
       message size we support: the server may choose a lower value. <code class="code">username</code>
-      is the username to present to the remote server. <code class="code">aname</code> is the name of
-      the exported filesystem.<br>
+      is the username to present to the remote server. <code class="code">max_fids</code> is the default
+      number of maximum openened fids: by default it is set to <code class="code">100</code>.
+      <code class="code">aname</code> is the name of the exported filesystem.<br>
 </div>
 </body></html>
