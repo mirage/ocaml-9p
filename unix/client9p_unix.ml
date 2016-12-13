@@ -65,7 +65,7 @@ module Make(Log: S.LOG) = struct
     let s = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
     connect_or_close s (Lwt_unix.ADDR_UNIX path)
 
-  let connect proto address ?msize ?username ?aname () =
+  let connect proto address ?msize ?username ?aname ?max_fids  () =
     ( match proto, address with
       | "tcp", _ ->
         begin match String.cuts ~sep:":" address with
@@ -84,7 +84,7 @@ module Make(Log: S.LOG) = struct
         Lwt.return (Error.error_msg "Unknown protocol %s" proto)
     ) >>*= fun s ->
     let flow = Flow_lwt_unix.connect s in
-    Client.connect flow ?msize ?username ?aname ()
+    Client.connect flow ?msize ?username ?aname ?max_fids ()
     >>= function
     | Result.Error _ as err -> Lwt.return err
     | Result.Ok client ->

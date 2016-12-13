@@ -87,7 +87,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     mutable wakeners: Response.payload Error.t Lwt.u Types.Tag.Map.t;
     mutable free_tags: Types.Tag.Set.t;
     free_tags_c: unit Lwt_condition.t;
-    mutable free_fids: Types.Fid.Set.t;
+    max_fids: int32;
+    mutable fids: Types.Fid.Set.t;
     free_fids_c: unit Lwt_condition.t;
   }
 
@@ -304,21 +305,62 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
         Lwt.return (Ok x)
       | { Response.payload = p } -> return_error p
 
+    let fid = function
+      | 0l -> (* 0 is the pre-allocated FS root *) None
+      | n  ->
+        match Types.Fid.of_int32 n with
+        | Ok m    -> Some m
+        | Error _ -> (* NOFID *) None
+
+    let rec random_fid ?(n=10) t =
+      if n = 0 then (
+        Log.info (fun l -> l "Cannot allocate a new random fid after 10 tries");
+        None
+      ) else match fid @@ Random.int32 Int32.max_int with
+        | None        -> random_fid ~n:(n-1) t
+        | Some f as r -> if Types.Fid.Set.mem f t.fids then random_fid t else r
+
+    let min_fid t =
+      match fid @@ Int32.pred Types.Fid.(to_int32 @@ Set.min_elt t.fids) with
+      | None        -> random_fid t
+      | Some _ as r -> r
+
+    (* if max_fids is not reached, the allocation strategy is:
+       - pick max(allocated_fid) + 1
+       - if this is NOFID:
+         - pick min(allocated_fid) - 1
+         - if this is 0 or NOFID:
+           - pick a random fid until finding a non-allocated one
+       This means that keeping [0=(NOFID+1)] and [NOFID-1] always open
+       might be costly.*)
+    let next_fid t =
+      match Int32.of_int (Types.Fid.Set.cardinal t.fids) with
+      | 0l -> fid 1l (* 0l is pre-allocated for the FS root *)
+      | n  ->
+        if n >= t.max_fids then None else
+          Types.Fid.Set.max_elt t.fids
+          |> Types.Fid.to_int32
+          |> Int32.succ
+          |> fid
+          |> function
+          | Some _ as r -> r
+          | None        -> min_fid t
+
     let rec allocate_fid t =
-      let open Lwt in
-      if t.free_fids = Types.Fid.Set.empty && (dispatcher_is_running t)
-      then (
-        Log.info (fun f -> f "FID pool exhausted (will wait for a free one; deadlock possible)");
-        Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
-      ) else
-        if not(dispatcher_is_running t)
-        then return (Error (`Msg "connection disconnected"))
-        else
-          let fid = Types.Fid.Set.min_elt t.free_fids in
-          t.free_fids <- Types.Fid.Set.remove fid t.free_fids;
-          return (Ok fid)
+      let open Lwt.Infix in
+      match next_fid t with
+      | None ->
+        if dispatcher_is_running t then (
+          Log.info (fun f -> f "FID pool exhausted (will wait for a free one; \
+                                deadlock possible)");
+          Lwt_condition.wait t.free_fids_c >>= fun () -> allocate_fid t
+        ) else
+          Lwt.return (Error (`Msg "connection disconnected"))
+      | Some fid ->
+        t.fids <- Types.Fid.Set.add fid t.fids;
+        Lwt.return (Ok fid)
     let mark_fid_as_free t fid =
-      t.free_fids <- Types.Fid.Set.add fid t.free_fids;
+      t.fids <- Types.Fid.Set.remove fid t.fids;
       Lwt_condition.signal t.free_fids_c ()
     let deallocate_fid t fid =
       let open Lwt in
@@ -510,7 +552,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     )
 
   (* 8215 = 8192 + 23 (maximum overhead in a write packet) *)
-  let connect flow ?(msize = 8215l) ?(username = "nobody") ?(aname = "/") () =
+  let connect flow ?(msize = 8215l) ?(username = "nobody") ?(max_fids=100l) ?(aname = "/") () =
     let reader = Reader.create flow in
     let writer = flow in
     LowLevel.version reader writer msize Types.Version.unix
@@ -541,7 +583,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       wakeners = Types.Tag.Map.empty;
       free_tags = Types.Tag.recommended;
       free_tags_c = Lwt_condition.create ();
-      free_fids = Types.Fid.recommended;
+      max_fids; fids = Types.Fid.Set.empty;
       free_fids_c = Lwt_condition.create ();
     } in
     LowLevel.attach reader writer root Types.Fid.nofid username aname None

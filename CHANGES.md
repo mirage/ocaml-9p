@@ -1,3 +1,9 @@
+## v0.8.0 (2016-12-12)
+
+* Add a `max_fids` optional argument to `connect` to set the maximal number
+  of fids a client can open in parallel (the default remains 100).
+  (#108. @samoht)
+
 ## v0.7.4 (2016-11-10)
 
 * Protect flow reads from EPIPE exceptions (this can happens on Windows)
