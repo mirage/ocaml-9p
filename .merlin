@@ -1,7 +1,9 @@
 PKG cstruct
 PKG sexplib
-PKG result
-PKG mirage-types.lwt
+PKG result rresult
+PKG mirage-flow-lwt
+PKG mirage-kv-lwt
+PKG mirage-channel-lwt
 PKG lwt
 PKG cmdliner
 PKG astring

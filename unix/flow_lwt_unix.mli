@@ -15,6 +15,8 @@
  *
  *)
 
-include V1_LWT.FLOW
+(* FIXME(samoht): should be moved in mirage-flow *)
+
+include Mirage_flow_lwt.S
 
 val connect: Lwt_unix.file_descr -> flow

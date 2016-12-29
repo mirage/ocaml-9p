@@ -41,7 +41,7 @@ module type S = sig
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
   val stat: t -> string list -> Types.Stat.t Error.t Lwt.t
 
-  module KV_RO : V1_LWT.KV_RO with type t = t
+  module KV_RO : Mirage_kv_lwt.RO with type t = t
 
   module LowLevel : sig
     val maximum_write_payload: t -> int32
@@ -66,7 +66,7 @@ module type S = sig
   val with_fid: t -> (Types.Fid.t -> 'a Error.t Lwt.t) -> 'a Error.t Lwt.t
 end
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
   module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
 
   open Log
@@ -100,7 +100,9 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     m >>= function
     | Ok x -> f x
     | Error `Closed -> return (error_msg "Writing to closed FLOW")
-    | Error (`Msg e) -> return (error_msg "Unexpected error on underlying FLOW: %s" e)
+    | Error e       ->
+      return (error_msg "Unexpected error on underlying FLOW: %a"
+                FLOW.pp_write_error e)
 
   let read_one_packet reader =
     Reader.read reader
@@ -499,7 +501,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
 
     type t = connection
 
-    type id = unit
+    type error = Mirage_kv.error
+    let pp_error = Mirage_kv.pp_error
 
     type page_aligned_buffer = Cstruct.t
 
@@ -511,14 +514,14 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       read t path offset count
       >>= function
       | Ok bufs -> return (Ok bufs)
-      | _ -> return (Error `Unknown_key)
+      | _ -> return (Error (`Unknown_key key))
 
     let size t key =
       let path = parse_path key in
       stat t path
       >>= function
       | Ok stat -> return (Ok stat.Types.Stat.length)
-      | _ -> return (Error `Unknown_key)
+      | _ -> return (Error (`Unknown_key key))
 
     let mem t key =
       let path = parse_path key in
@@ -526,7 +529,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       >>= function
       | Ok _ -> return (Ok true)
       | _ -> return (Ok false)
-     
+
     let disconnect = disconnect
   end
 

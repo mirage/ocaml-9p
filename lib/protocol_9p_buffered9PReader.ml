@@ -21,8 +21,8 @@ open Lwt.Infix
 
 let max_message_size = 655360l       (* 640 KB should be enough... Linux limit is 32 KB *)
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
-  module C = Channel.Make(FLOW)
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
+  module C = Mirage_channel_lwt.Make(FLOW)
   type t = {
     channel: C.t;
     read_m: Lwt_mutex.t;
@@ -39,7 +39,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
     C.read_exactly ~len c >>= function
     | Ok (`Data bufs) -> Lwt.return (Ok (Cstruct.concat bufs))
     | Ok `Eof -> Lwt.return (Error `Eof)
-    | Error (`Msg e) -> Lwt.return (Error (`Msg e))
+    | Error e -> Lwt.return (Error (`Msg (Fmt.strf "%a" C.pp_error e)))
 
   let read_must_have_lock t =
     let len_size = 4 in
@@ -62,6 +62,8 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) = struct
       read_must_have_lock t >|= function
       | Ok _ as ok -> ok
       | Error `Eof -> error_msg "Caught EOF on underlying FLOW"
-      | Error (`Msg _) as err -> R.reword_error_msg (fun msg -> R.msgf "Unexpected error on underlying FLOW: %s" msg) err
+      | Error (`Msg _) as err ->
+        R.reword_error_msg (fun msg ->
+            R.msgf "Unexpected error on underlying FLOW: %s" msg) err
     )
 end

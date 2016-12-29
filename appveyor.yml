@@ -5,6 +5,7 @@ environment:
   CYG_ROOT: "C:\\cygwin"
   CYG_BASH: "%CYG_ROOT%\\bin\\bash -lc"
   OPAM_SWITCH: "4.03.0+mingw64c"
+  EXTRA_REMOTES: "https://github.com/mirage/mirage-dev.git"
 
 install:
   - appveyor DownloadFile https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/appveyor-opam.sh
