@@ -55,7 +55,11 @@ let unix_exn_converter info exn =
 *)
 
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem : Protocol_9p_filesystem.S) : sig
+module Make
+    (Log: Protocol_9p_s.LOG)
+    (FLOW: Mirage_flow_lwt.S)
+    (Filesystem: Protocol_9p_filesystem.S) :
+sig
 
   type t
   (** An established connection to a 9P client *)

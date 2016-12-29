@@ -58,7 +58,7 @@ module type S = sig
     Protocol_9p_types.Stat.t Protocol_9p_error.t Lwt.t
   (** Return information about a named directory or named file. *)
 
-  module KV_RO : V1_LWT.KV_RO with type t = t
+  module KV_RO : Mirage_kv_lwt.RO with type t = t
 
   module LowLevel : sig
     (** The functions in this module are mapped directly onto individual 9P
@@ -150,7 +150,7 @@ module type S = sig
 end
 
 (** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
-module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW) : sig
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) : sig
   include S
 
   val connect:

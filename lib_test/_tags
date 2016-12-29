@@ -2,4 +2,5 @@
 <*.*>: package(lwt), package(cstruct.lwt)
 <*.*>: package(logs.fmt)
 <*.*>: package(astring), package(named-pipe.lwt)
-<*.*>: package(channel), package(io-page.unix)
+<*.*>: package(io-page.unix)
+<*.*>: package(mirage-flow-lwt mirage-kv-lwt mirage-channel-lwt)

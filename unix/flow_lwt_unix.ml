@@ -18,10 +18,15 @@
 open Lwt.Infix
 
 type 'a io = 'a Lwt.t
-
 type buffer = Cstruct.t
+type error = [`Unix of Unix.error]
+type write_error = [`Closed | `Unix of Unix.error]
 
-type error = Unix.error
+let pp_error ppf (`Unix e) = Fmt.string ppf (Unix.error_message e)
+
+let pp_write_error ppf = function
+  | #Mirage_flow.write_error as e -> Mirage_flow.pp_write_error ppf e
+  | #error as e -> pp_error ppf e
 
 let error_message = Unix.error_message
 

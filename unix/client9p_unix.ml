@@ -33,9 +33,10 @@ module Make(Log: S.LOG) = struct
 
   type connection = t
 
-  let pp_addr f = function
-    | Lwt_unix.ADDR_UNIX path -> Printf.sprintf "unix:%s" path
-    | Lwt_unix.ADDR_INET (host, port) -> Printf.sprintf "tcp:%s:%d" (Unix.string_of_inet_addr host) port
+  let pp_addr ppf = function
+    | Lwt_unix.ADDR_UNIX path -> Fmt.pf ppf "unix:%s" path
+    | Lwt_unix.ADDR_INET (host, port) ->
+      Fmt.pf ppf "tcp:%s:%d" (Unix.string_of_inet_addr host) port
 
   let connect_or_close s addr =
     Lwt.catch
@@ -118,6 +119,10 @@ module Make(Log: S.LOG) = struct
     type t = connection
 
     type 'a io = 'a KV_RO.io
+
+    type error = KV_RO.error
+
+    let pp_error = KV_RO.pp_error
 
     type page_aligned_buffer = KV_RO.page_aligned_buffer
 

@@ -27,7 +27,11 @@ module Response = Protocol_9p_response
 
 type exn_converter = Protocol_9p_info.t -> exn -> Protocol_9p_response.payload
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_filesystem.S) = struct
+module Make
+    (Log: Protocol_9p_s.LOG)
+    (FLOW: Mirage_flow_lwt.S)
+    (Filesystem: Protocol_9p_filesystem.S) =
+struct
   module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
   open Log
 
@@ -58,7 +62,9 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: V1_LWT.FLOW)(Filesystem: Protocol_9p_f
     m >>= function
     | Ok x -> f x
     | Error `Closed -> return (error_msg "Writing to closed FLOW")
-    | Error (`Msg e) -> return (error_msg "Unexpected error on underlying FLOW: %s" e)
+    | Error  e      ->
+      return (error_msg "Unexpected error on underlying FLOW: %a"
+                FLOW.pp_write_error e)
 
   let disconnect t =
     t.please_shutdown <- true;
