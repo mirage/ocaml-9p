@@ -21,8 +21,10 @@ depends: [
   "cstruct" {>= "1.9.0"}
   "sexplib" {> "113.00.00" }
   "result"
-  "mirage-types-lwt"
-  "channel" {>= "1.1.0" }
+  "rresult"
+  "mirage-flow-lwt"
+  "mirage-kv-lwt"
+  "mirage-channel-lwt"
   "lwt" {>= "2.4.7"}
   "base-unix"
   "cmdliner"

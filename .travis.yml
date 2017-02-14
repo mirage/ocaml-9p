@@ -8,3 +8,4 @@ env:
     - PACKAGE="protocol-9p"
     - OCAML_VERSION=4.03
     - DEPOPTS="named-pipe"
+    - EXTRA_REMOTES="https://github.com/mirage/mirage-dev.git"
