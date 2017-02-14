@@ -1,3 +1,7 @@
+## v0.9.0 (2017-02-14)
+
+* Update to Mirage 3 APIs (114, @avsm and @samoht)
+
 ## v0.8.0 (2016-12-12)
 
 * Add a `max_fids` optional argument to `connect` to set the maximal number
