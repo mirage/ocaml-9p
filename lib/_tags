@@ -1,4 +1,0 @@
-<*.*>: package(result), package(cstruct), package(cstruct.lwt)
-<*.*>: package(sexplib), package(ppx_deriving), package(ppx_sexp_conv)
-<*.*>: package(lwt), package(mirage-flow-lwt mirage-channel-lwt mirage-kv-lwt)
-<*.*>: package(astring), package(fmt)
