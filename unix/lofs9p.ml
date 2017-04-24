@@ -121,7 +121,7 @@ let make root = { root }
       let mtime = Int32.of_float stats.LargeFile.st_mtime in
       let uid = string_of_int stats.LargeFile.st_uid in
       let gid = string_of_int stats.LargeFile.st_gid in
-      ( if info.Protocol_9p_info.version = Types.Version.unix then begin
+      ( if info.Protocol_9p.Info.version = Types.Version.unix then begin
           ( match stats.LargeFile.st_kind with
             | S_LNK ->
               Lwt_unix.readlink realpath
@@ -177,7 +177,7 @@ let make root = { root }
 
   type connection = {
     t: t;
-    info: Protocol_9p_info.t;
+    info: Protocol_9p.Info.t;
     fids: Resource.t Types.Fid.Map.t ref;
   }
 
@@ -186,13 +186,13 @@ let make root = { root }
     { t; info; fids }
 
   let path_of_fid connection fid =
-    if fid = connection.info.Protocol_9p_info.root
+    if fid = connection.info.Protocol_9p.Info.root
     then Path.root
     else (Types.Fid.Map.find fid !(connection.fids)).Resource.path
 
   let read connection ~cancel { Request.Read.fid; offset; count } =
     (* The client can requests a count which is larger than the negotiated msize *)
-    let max_count = Int32.(sub (sub connection.info.Protocol_9p_info.msize (of_int Response.sizeof_header)) (of_int Response.Read.sizeof_header)) in
+    let max_count = Int32.(sub (sub connection.info.Protocol_9p.Info.msize (of_int Response.sizeof_header)) (of_int Response.Read.sizeof_header)) in
     let count = min max_count count in
     match path_of_fid connection fid with
     | exception Not_found -> bad_fid
