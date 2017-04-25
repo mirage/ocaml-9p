@@ -1,6 +1,6 @@
 description = "9P filesystem protocol"
 version = "0.9.0"
-requires = "result rresult cstruct sexplib mirage-kv-lwt mirage-flow-lwt mirage-channel-lwt lwt astring fmt"
+requires = "result rresult cstruct sexplib mirage-kv-lwt mirage-flow-lwt mirage-channel-lwt lwt astring fmt prometheus"
 archive(byte) = "protocol-9p.cma"
 archive(native) = "protocol-9p.cmxa"
 plugin(byte) = "protocol-9p.cma"
