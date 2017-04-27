@@ -16,6 +16,7 @@
  *)
 
 open Protocol_9p
+open Protocol_9p_unix
 open Infix
 open Lwt
 open Astring
@@ -232,7 +233,7 @@ let shell debug address username =
               Client.stat t newdir
               >>= function
               | Result.Ok x ->
-                if x.Protocol_9p_types.Stat.mode.Protocol_9p_types.FileMode.is_directory then begin
+                if x.Protocol_9p.Types.Stat.mode.Protocol_9p.Types.FileMode.is_directory then begin
                   cwd := newdir;
                   return ()
                 end else begin
@@ -244,7 +245,7 @@ let shell debug address username =
                 return ()
             end
           | [ "create"; file ] ->
-            let mode = Protocol_9p_types.FileMode.make ~is_directory:false
+            let mode = Protocol_9p.Types.FileMode.make ~is_directory:false
               ~owner:[`Read; `Write] ~group:[`Read]
               ~other:[`Read; `Execute ] () in
             begin
@@ -287,7 +288,7 @@ let shell debug address username =
                 return ()
             end
           | [ "mkdir"; dir ] ->
-            let mode = Protocol_9p_types.FileMode.make ~is_directory:true
+            let mode = Protocol_9p.Types.FileMode.make ~is_directory:true
               ~owner:[`Read; `Write; `Execute] ~group:[`Read; `Execute]
               ~other:[`Read; `Execute ] () in
             begin
