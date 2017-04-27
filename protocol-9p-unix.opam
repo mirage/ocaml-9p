@@ -16,6 +16,7 @@ build-test: [
 ]
 
 depends: [
+  "protocol-9p"
   "base-bytes"
   "cstruct" {>= "1.9.0"}
   "sexplib" {> "113.00.00" }

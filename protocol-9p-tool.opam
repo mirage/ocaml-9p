@@ -12,6 +12,8 @@ build: [
 ]
 
 depends: [
+  "protocol-9p"
+  "protocol-9p-unix"
   "base-bytes"
   "rresult"
   "logs" {>= "0.5.0"}
