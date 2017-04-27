@@ -16,6 +16,7 @@
  *)
 
 open Protocol_9p
+open Protocol_9p_unix
 open Lwt
 open Infix
 open Result
