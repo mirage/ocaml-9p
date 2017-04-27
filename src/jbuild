@@ -1,6 +1,6 @@
 (executables
  ((names (main))
-  (libraries (protocol-9p protocol-9p-unix io-page.unix logs logs.fmt rresult win-error lambda-term cmdliner))))
+  (libraries (protocol_9p protocol_9p_unix io-page.unix logs logs.fmt rresult win-error lambda-term cmdliner))))
 
 (install
  ((section bin)
