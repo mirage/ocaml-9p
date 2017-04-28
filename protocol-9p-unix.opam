@@ -7,16 +7,16 @@ dev-repo:     "https://github.com/mirage/ocaml-9p.git"
 bug-reports:  "https://github.com/mirage/ocaml-9p/issues"
 doc:          "https://mirage.github.io/ocaml-9p/"
 
-build: ["ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%"
-          "--with-lambda-term" "%{lambda-term:installed}%"]
+build: [
+  [ "jbuilder" "build" "--only-packages=protocol-9p-unix,protocol-9p" ]
+]
 
 build-test: [
-  ["ocaml" "pkg/pkg.ml" "build" "--tests" "true"
-     "--with-lambda-term" "%{lambda-term:installed}%"]
-  ["ocaml" "pkg/pkg.ml" "test"]
+  [ "jbuilder" "runtest" ]
 ]
 
 depends: [
+  "protocol-9p"
   "base-bytes"
   "cstruct" {>= "1.9.0"}
   "sexplib" {> "113.00.00" }
@@ -25,7 +25,7 @@ depends: [
   "mirage-flow-lwt"
   "mirage-kv-lwt"
   "mirage-channel-lwt"
-  "lwt" {>= "2.4.7"}
+  "lwt" {>= "2.7.1"}
   "base-unix"
   "cmdliner"
   "astring"
@@ -36,10 +36,8 @@ depends: [
   "ppx_deriving" {build}
   "ppx_sexp_conv" {build}
   "ocamlfind" {build}
-  "ocamlbuild" {build}
+  "jbuilder" {build}
   "ppx_tools" {build}
-  "topkg" {build & >= "0.7.3"}
   "alcotest" {test & >= "0.4.0"}
 ]
-depopts: ["lambda-term"]
 available: [ocaml-version >= "4.03.0"]

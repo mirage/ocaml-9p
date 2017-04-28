@@ -1,0 +1,6 @@
+(library
+ ((name        protocol_9p)
+  (public_name protocol-9p)
+  (libraries   (result rresult cstruct cstruct.lwt sexplib lwt mirage-flow-lwt mirage-channel-lwt mirage-kv-lwt astring fmt))
+  (preprocess (pps (ppx_sexp_conv)))
+))

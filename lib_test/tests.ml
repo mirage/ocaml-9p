@@ -15,6 +15,7 @@
  *
  *)
 open Protocol_9p
+open Protocol_9p_unix
 open Result
 
 let () =

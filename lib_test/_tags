@@ -1,6 +1,0 @@
-<*.*>: package(result), package(cstruct), package(alcotest)
-<*.*>: package(lwt), package(cstruct.lwt)
-<*.*>: package(logs.fmt)
-<*.*>: package(astring), package(named-pipe.lwt)
-<*.*>: package(io-page.unix)
-<*.*>: package(mirage-flow-lwt mirage-kv-lwt mirage-channel-lwt)
