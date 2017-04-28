@@ -5,4 +5,4 @@
 (alias
  ((name    runtest)
   (deps    (lofs_test.exe tests.exe))
-  (action  (run ${<}))))
+  (action  (run ${<} -e -v))))
