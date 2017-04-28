@@ -58,7 +58,8 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
         let fd = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
         Lwt_unix.setsockopt fd Lwt_unix.SO_REUSEADDR true;
         let sockaddr = Lwt_unix.ADDR_INET(Unix.inet_addr_of_string ip, int_of_string port) in
-        Lwt_unix.Versioned.bind_1 fd sockaddr;
+        Lwt_unix.bind fd sockaddr
+        >>= fun () ->
         Lwt_unix.listen fd 5;
         Lwt.return (Result.Ok (of_fd fs fd))
       | _ ->
@@ -69,7 +70,8 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
       >>= fun () ->
       let fd = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
       let sockaddr = Lwt_unix.ADDR_UNIX(address) in
-      Lwt_unix.Versioned.bind_1 fd sockaddr;
+      Lwt_unix.bind fd sockaddr
+      >>= fun () ->
       Lwt_unix.listen fd 5;
       Lwt.return (Result.Ok (of_fd fs fd))
     | _ ->

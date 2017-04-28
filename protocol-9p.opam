@@ -24,7 +24,7 @@ depends: [
   "mirage-flow-lwt"
   "mirage-kv-lwt"
   "mirage-channel-lwt"
-  "lwt" {>= "2.7.1"}
+  "lwt" {>= "3.0.0"}
   "base-unix"
   "cmdliner"
   "astring"
