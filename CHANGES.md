@@ -1,3 +1,10 @@
+## v0.10.0 (2017-04-28)
+
+* Update to lwt.3.0.0
+* Switch build to `jbuilder`
+* Split into 3 opam packages: protocol-9p, protocol-9p-unix, protocol-9p-tool
+* The Unix modules are inside the `Protocol_9p_unix` module
+
 ## v0.9.0 (2017-02-14)
 
 * Update to Mirage 3 APIs (114, @avsm and @samoht)
