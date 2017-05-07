@@ -22,6 +22,15 @@ open Protocol_9p
 open Astring
 open Protocol_9p.Infix
 
+module Metrics = struct
+  let namespace = "ocaml9p"
+  let subsystem = "client"
+
+  let server_ping_time_seconds =
+    let help = "Time to receive a response to a ping message" in
+    Prometheus.Summary.v ~help ~namespace ~subsystem "ping_time_seconds"
+end
+
 module Make(Log: S.LOG) = struct
 
   module Client = Client.Make(Log)(Flow_lwt_unix)
@@ -29,6 +38,7 @@ module Make(Log: S.LOG) = struct
   type t = {
     client: Client.t;
     flow: Flow_lwt_unix.flow;
+    switch : Lwt_switch.t;
   }
 
   type connection = t
@@ -66,7 +76,27 @@ module Make(Log: S.LOG) = struct
     let s = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
     connect_or_close s (Lwt_unix.ADDR_UNIX path)
 
-  let connect proto address ?msize ?username ?aname ?max_fids  () =
+  let rec ping_thread ~switch t =
+    Client.with_fid t.client (fun newfid ->
+        let t0 = Unix.gettimeofday () in
+        Client.walk_from_root t.client newfid [] >>*= fun _ ->
+        Prometheus.Summary.observe Metrics.server_ping_time_seconds (Unix.gettimeofday () -. t0);
+        Lwt.return (Ok ())
+      )
+    >>= fun result ->
+    if Lwt_switch.is_on switch then (
+      match result with
+      | Ok () ->
+        Lwt_unix.sleep 30.0 >>= fun () ->
+        ping_thread ~switch t
+      | Error (`Msg e) ->
+        Log.err (fun f -> f "Ping failed: %s" e);
+        Lwt_switch.turn_off switch
+    ) else (
+      Lwt.return_unit
+    )
+
+  let connect proto address ?msize ?username ?aname ?max_fids ?(send_pings=false) () =
     ( match proto, address with
       | "tcp", _ ->
         begin match String.cuts ~sep:":" address with
@@ -90,14 +120,21 @@ module Make(Log: S.LOG) = struct
     | Result.Error _ as err -> Lwt.return err
     | Result.Ok client ->
       Log.debug (fun f -> f "Successfully negotiated a connection.");
-      Lwt.return (Result.Ok { client; flow; })
+      let switch = Lwt_switch.create () in
+      let t = { client; flow; switch } in
+      Lwt_switch.add_hook (Some switch)
+        (fun () ->
+           Client.disconnect client
+           >>= fun () ->
+           Flow_lwt_unix.close flow
+        );
+      if send_pings then Lwt.async (fun () -> ping_thread ~switch t);
+      Lwt.return (Result.Ok t)
 
   let after_disconnect { client } = Client.after_disconnect client
 
-  let disconnect { client; flow } =
-    Client.disconnect client
-    >>= fun () ->
-    Flow_lwt_unix.close flow
+  let disconnect t =
+    Lwt_switch.turn_off t.switch
 
   let create { client } = Client.create client
 

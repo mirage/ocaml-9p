@@ -2,5 +2,5 @@
  ((name        protocol_9p_unix)
   (public_name protocol-9p-unix)
   (libraries   (result fmt lwt mirage-flow-lwt cstruct astring named-pipe.lwt
-                protocol_9p io-page.unix))
+                protocol_9p io-page.unix prometheus))
 ))
