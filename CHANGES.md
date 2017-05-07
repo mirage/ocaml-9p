@@ -1,3 +1,9 @@
+## v0.11.0 (2017-05-07)
+
+* protocol-9p-unix: add missing dependency on io-page.unix
+* protocol-9p-unix: add optional periodic ping thread to keep connections alive
+* protocol-9p-unix: add prometheus metrics integration
+
 ## v0.10.0 (2017-04-28)
 
 * Update to lwt.3.0.0
