@@ -26,7 +26,7 @@ module Metrics = struct
   let namespace = "ocaml9p"
   let subsystem = "client"
 
-  let db_ping_time_seconds =
+  let server_ping_time_seconds =
     let help = "Time to receive a response to a ping message" in
     Prometheus.Summary.v ~help ~namespace ~subsystem "ping_time_seconds"
 end
@@ -80,7 +80,7 @@ module Make(Log: S.LOG) = struct
     Client.with_fid t.client (fun newfid ->
         let t0 = Unix.gettimeofday () in
         Client.walk_from_root t.client newfid [] >>*= fun _ ->
-        Prometheus.Summary.observe Metrics.db_ping_time_seconds (Unix.gettimeofday () -. t0);
+        Prometheus.Summary.observe Metrics.server_ping_time_seconds (Unix.gettimeofday () -. t0);
         Lwt.return (Ok ())
       )
     >>= fun result ->
