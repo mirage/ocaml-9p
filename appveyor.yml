@@ -4,7 +4,6 @@ platform:
 environment:
   CYG_ROOT: "C:\\cygwin"
   CYG_BASH: "%CYG_ROOT%\\bin\\bash -lc"
-  EXTRA_REMOTES: "https://github.com/mirage/mirage-dev.git"
   PACKAGE: "protocol-9p-unix"
 
 install:
