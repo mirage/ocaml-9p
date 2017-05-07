@@ -20,11 +20,14 @@ module Make(Log: Protocol_9p.S.LOG) : sig
 
   val connect:
     string -> string -> ?msize:int32 -> ?username:string -> ?aname:string ->
-    ?max_fids:int32 -> unit -> t Protocol_9p.Error.t Lwt.t
+    ?max_fids:int32 -> ?send_pings:bool -> unit -> t Protocol_9p.Error.t Lwt.t
   (** [connect proto address ?msize ?username ?aname ()] creates a 9P connection
       over [proto] to [address] with an optional maximum message size [?msize]
       and optional [?username] and authentication [?aname]. [max_fids] is the
-      maximal numbers of files concurrently opened  by the client.
+      maximal numbers of files concurrently opened  by the client. If [?send_pings]
+      is true then regular "walk"s to / will be used to keep the connection alive--
+      this is useful over TCP connections where stateful middleboxes silently
+      drop connections.
       Allowed combinations
       of [proto] and [address] are:
       - unix /path/to/file

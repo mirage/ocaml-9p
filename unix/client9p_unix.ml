@@ -96,7 +96,7 @@ module Make(Log: S.LOG) = struct
       Lwt.return_unit
     )
 
-  let connect proto address ?msize ?username ?aname ?max_fids  () =
+  let connect proto address ?msize ?username ?aname ?max_fids ?(send_pings=false) () =
     ( match proto, address with
       | "tcp", _ ->
         begin match String.cuts ~sep:":" address with
@@ -128,7 +128,7 @@ module Make(Log: S.LOG) = struct
            >>= fun () ->
            Flow_lwt_unix.close flow
         );
-      Lwt.async (fun () -> ping_thread ~switch t);
+      if send_pings then Lwt.async (fun () -> ping_thread ~switch t);
       Lwt.return (Result.Ok t)
 
   let after_disconnect { client } = Client.after_disconnect client
