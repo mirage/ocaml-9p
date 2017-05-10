@@ -69,11 +69,21 @@ let read flow =
       Ok (`Data result)
   end
 
+let protect f =
+  Lwt.catch f (function
+      (* Lwt_cstruct.complete can raise End_of_file :-/ *)
+      | End_of_file -> Lwt.return (Error `Closed)
+      | Unix.Unix_error (e, _, _) -> Lwt.return (Error (`Unix e))
+      | e -> Lwt.fail e
+    )
+
 let write flow buf =
   if flow.closed then Lwt.return (Error `Closed)
   else
-    Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) buf >|= fun () ->
-    Ok ()
+    protect (fun () ->
+        Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) buf >|= fun () ->
+        Ok ()
+      )
 
 let writev flow bufs =
   let rec loop = function
@@ -84,4 +94,4 @@ let writev flow bufs =
         Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) x >>= fun () ->
         loop xs
   in
-  loop bufs
+  protect (fun () -> loop bufs)
