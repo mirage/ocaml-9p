@@ -327,6 +327,12 @@ struct
           err (fun f -> f "dispatcher caught %s: no more requests will be handled" (Printexc.to_string e));
           Lwt.wakeup_later shutdown_complete_wakener ();
           Lwt.return ()
+        ) >>= fun () ->
+        Lwt.catch (fun () ->
+          Filesystem.disconnect connection info
+        ) (fun e ->
+          err (fun f -> f "Filesystem.disconnect caught: %s" (Printexc.to_string e));
+          Lwt.return ()
         )
       );
       Lwt.return (Ok t)
