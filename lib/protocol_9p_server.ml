@@ -73,7 +73,11 @@ struct
   let after_disconnect t = t.shutdown_complete_t
 
   let write_one_packet ?write_lock writer response =
-    debug (fun f -> f "S %a" Response.pp response);
+    let logger = match response.Response.payload with
+      | Response.Err _ -> info
+      | _              -> debug
+    in
+    logger (fun f -> f "S %a" Response.pp response);
     let sizeof = Response.sizeof response in
     let buffer = Cstruct.create sizeof in
     Lwt.return (Response.write response buffer)
