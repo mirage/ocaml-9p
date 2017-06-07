@@ -1,3 +1,7 @@
+## v0.11.1 (2017-06-07)
+* Protect Flow_lwt_unix.write against End_of_file exceptions
+* Add topkg-jbuilder support
+
 ## v0.11.0 (2017-05-07)
 
 * protocol-9p-unix: add missing dependency on io-page.unix
