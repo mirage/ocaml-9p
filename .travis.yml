@@ -1,10 +1,13 @@
 language: c
-install:
-  - wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-opam.sh
-script: bash -ex .travis-opam.sh
-sudo: required
+sudo: false
+services:
+  - docker
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-docker.sh
+script: bash -ex ./.travis-docker.sh
 env:
   global:
-    - PACKAGE="protocol-9p-unix"
-    - OCAML_VERSION=4.03
-    - DEPOPTS="named-pipe"
+  - PINS="protocol-9p:. protocol-9p-tool:. protocol-9p-unix:."
+  matrix:
+  - PACKAGE="protocol-9p" DISTRO="alpine-3.5" OCAML_VERSION="4.03.0"
+  - PACKAGE="protocol-9p-unix" DISTRO="alpine-3.5" OCAML_VERSION="4.03.0"
+  - PACKAGE="protocol-9p-tool" DISTRO="alpine-3.5" OCAML_VERSION="4.03.0"
