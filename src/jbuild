@@ -1,3 +1,5 @@
+(jbuild_version 1)
+
 (executables
  ((names (main))
   (libraries (protocol_9p protocol_9p_unix logs logs.fmt rresult win-error
