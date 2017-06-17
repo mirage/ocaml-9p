@@ -1,3 +1,7 @@
+## v0.11.2 (2016-06-17)
+* Add dependency on io-page-unix
+* Modernise travis and appveyor
+
 ## v0.11.1 (2017-06-07)
 * Protect Flow_lwt_unix.write against End_of_file exceptions
 * Add topkg-jbuilder support
