@@ -4,6 +4,7 @@ platform:
 environment:
   FORK_USER: ocaml
   FORK_BRANCH: master
+  PINS: "protocol-9p:. protocol-9p-tool:. protocol-9p-unix:."
   PACKAGE: protocol-9p-unix
   CYG_ROOT: C:\cygwin64
 
