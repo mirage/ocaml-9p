@@ -8,14 +8,11 @@ bug-reports:  "https://github.com/mirage/ocaml-9p/issues"
 doc:          "https://mirage.github.io/ocaml-9p/"
 
 build: [
-  [ "jbuilder" "build" "--only-packages=protocol-9p" ]
+  ["jbuilder" "subst" "-p" name "--name" name] {pinned}
+  ["jbuilder" "build" "-p" name "-j" jobs]
 ]
-
-build-test: [
-  [ "jbuilder" "runtest" ]
-]
-
 depends: [
+  "jbuilder" {build & >="1.0+beta7"}
   "base-bytes"
   "cstruct" {>= "1.9.0"}
   "sexplib" {> "113.00.00" }
@@ -34,8 +31,6 @@ depends: [
   "win-error"
   "ppx_deriving" {build}
   "ppx_sexp_conv" {build}
-  "ocamlfind" {build}
-  "jbuilder" {build}
   "ppx_tools" {build}
   "alcotest" {test & >= "0.4.0"}
 ]
