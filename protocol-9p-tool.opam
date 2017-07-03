@@ -8,13 +8,13 @@ bug-reports:  "https://github.com/mirage/ocaml-9p/issues"
 doc:          "https://mirage.github.io/ocaml-9p/"
 
 build: [
-  ["jbuilder" "subst" "-p" name "--name" name] {pinned}
+  ["jbuilder" "subst"] {pinned}
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "jbuilder" {build & >="1.0+beta7"}
-  "protocol-9p"
-  "protocol-9p-unix"
+  "jbuilder" {build & >= "1.0+beta10"}
+  "protocol-9p" {= "0.11.2"}
+  "protocol-9p-unix" {= "0.11.2"}
   "base-bytes"
   "rresult"
   "logs" {>= "0.5.0"}
@@ -24,6 +24,5 @@ depends: [
   "lambda-term"
   "win-error"
   "cmdliner"
-  "io-page"
 ]
 available: [ocaml-version >= "4.03.0"]
