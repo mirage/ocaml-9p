@@ -1,3 +1,7 @@
+## v0.11.3 (2017-09-15)
+
+* Remove unnecessary Unix dependency from core library
+
 ## v0.11.2 (2016-06-17)
 * Add dependency on io-page-unix
 * Modernise travis and appveyor
