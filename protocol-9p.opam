@@ -15,7 +15,6 @@ depends: [
   "jbuilder" {build & >= "1.0+beta10"}
   "base-bytes"
   "cstruct" {>= "3.0.0"}
-  "cstruct-lwt" {>= "3.0.0"}
   "sexplib" {> "113.00.00"}
   "result"
   "rresult"
@@ -23,7 +22,6 @@ depends: [
   "mirage-kv-lwt"
   "mirage-channel-lwt"
   "lwt" {>= "3.0.0"}
-  "base-unix"
   "cmdliner"
   "astring"
   "named-pipe" {>= "0.4.0"}
