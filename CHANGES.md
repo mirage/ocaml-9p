@@ -1,3 +1,7 @@
+## v0.12.0 (2017-11-05)
+
+* Remove unnecessary dependency on `ppx_deriving`
+
 ## v0.11.3 (2017-09-15)
 
 * Remove unnecessary Unix dependency from core library
