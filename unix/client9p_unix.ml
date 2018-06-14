@@ -107,10 +107,6 @@ module Make(Log: S.LOG) = struct
         end
       | "unix", _ ->
         open_unix address
-      | _, address when Astring.String.is_prefix ~affix:"\\\\" address ->
-        Named_pipe_lwt.Client.openpipe address
-        >>= fun pipe ->
-        Lwt.return (Ok (Named_pipe_lwt.Client.to_fd pipe))
       | _ ->
         Lwt.return (Error.error_msg "Unknown protocol %s" proto)
     ) >>*= fun s ->

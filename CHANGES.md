@@ -1,3 +1,8 @@
+## v0.12.1 (2018-06-14)
+
+* Remove (broken) support for named pipes.
+* Remove unnecessary dependency on `cmdliner` in the core library.
+
 ## v0.12.0 (2017-11-05)
 
 * Remove unnecessary dependency on `ppx_deriving`
