@@ -15,8 +15,6 @@
  *
  *)
 
-open Result
-
 type 'a or_error = ('a, Protocol_9p_response.Err.t) result
 
 module type S = sig

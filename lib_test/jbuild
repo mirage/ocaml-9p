@@ -2,7 +2,7 @@
 
 (executables
  ((names (lofs_test tests))
-  (libraries (result cstruct alcotest lwt cstruct-lwt logs.fmt astring
+  (libraries (cstruct alcotest lwt cstruct-lwt logs.fmt astring
               mirage-flow-lwt mirage-kv-lwt mirage-channel-lwt
               protocol-9p protocol-9p-unix))
 ))

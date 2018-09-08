@@ -15,7 +15,6 @@
  *
  *)
 
-open Result
 open Protocol_9p_infix
 open Astring
 
@@ -597,10 +596,10 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
       Lwt.catch (fun () ->
         dispatcher_t shutdown_complete_wakener t
         >>= function
-        | Result.Error (`Msg m) ->
+        | Error (`Msg m) ->
           err (fun f -> f "dispatcher caught %s: no more responses will be handled" m);
           Lwt.return ()
-        | Result.Ok () ->
+        | Ok () ->
           Lwt.return ()
       ) (fun e ->
         err (fun f -> f "dispatcher caught %s: no more responses will be handled" (Printexc.to_string e));

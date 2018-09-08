@@ -16,7 +16,6 @@ depends: [
   "base-bytes"
   "cstruct" {>= "3.0.0"}
   "sexplib" {> "113.00.00"}
-  "result"
   "rresult"
   "mirage-flow-lwt"
   "mirage-kv-lwt"

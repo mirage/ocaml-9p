@@ -17,8 +17,6 @@
 
 (** Parsers and printers for all 9P request messages. *)
 
-open Result
-
 module Version : sig
 
   type t = {

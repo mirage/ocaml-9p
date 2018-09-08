@@ -17,8 +17,6 @@
 
 (** Common signatures used by the library *)
 
-open Result
-
 module type LOG = sig
   (** Common logging functions *)
 

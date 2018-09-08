@@ -19,7 +19,6 @@ open Protocol_9p
 open Protocol_9p_unix
 open Lwt
 open Infix
-open Result
 
 let server_src = Logs.Src.create "server" ~doc:"Server"
 let client1_src = Logs.Src.create "client1" ~doc:"Client 1"
@@ -52,17 +51,17 @@ let with_server f =
   let fs = Lofs9p.make path in
   Server.listen fs proto address
   >>= function
-  | Result.Error (`Msg m) -> Lwt.fail (Failure m)
-  | Result.Ok server ->
+  | Error (`Msg m) -> Lwt.fail (Failure m)
+  | Ok server ->
     Lwt.async (fun () ->
       Lwt.catch (fun () ->
         let open Lwt.Infix in
         Server.serve_forever server
         >>= function
-        | Result.Error (`Msg m) ->
+        | Error (`Msg m) ->
           LogServer.err (fun f -> f "server caught %s: no more requests will be processed" m);
           Lwt.return ()
-        | Result.Ok () ->
+        | Ok () ->
           Lwt.return ()
       ) (fun e ->
         LogServer.err (fun f -> f "server caught %s: no more requests will be processed" (Printexc.to_string e));

@@ -16,7 +16,6 @@
  *
  *)
 
-open Result
 open Lwt
 open Protocol_9p
 open Astring
@@ -113,8 +112,8 @@ module Make(Log: S.LOG) = struct
     let flow = Flow_lwt_unix.connect s in
     Client.connect flow ?msize ?username ?aname ?max_fids ()
     >>= function
-    | Result.Error _ as err -> Lwt.return err
-    | Result.Ok client ->
+    | Error _ as err -> Lwt.return err
+    | Ok client ->
       Log.debug (fun f -> f "Successfully negotiated a connection.");
       let switch = Lwt_switch.create () in
       let t = { client; flow; switch } in
@@ -125,7 +124,7 @@ module Make(Log: S.LOG) = struct
            Flow_lwt_unix.close flow
         );
       if send_pings then Lwt.async (fun () -> ping_thread ~switch t);
-      Lwt.return (Result.Ok t)
+      Lwt.return (Ok t)
 
   let after_disconnect { client } = Client.after_disconnect client
 

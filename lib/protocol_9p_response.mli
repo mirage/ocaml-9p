@@ -18,7 +18,6 @@
 (** Parsers and printers for 9P response messages *)
 
 open Protocol_9p_types
-open Result
 
 module Version : sig
 
