@@ -16,5 +16,5 @@
  *)
 
 val (>>*=) :
-  ('a, 'b) Result.result Lwt.t -> ('a -> ('c, 'b) Result.result Lwt.t) ->
-  ('c, 'b) Result.result Lwt.t
+  ('a, 'b) result Lwt.t -> ('a -> ('c, 'b) result Lwt.t) ->
+  ('c, 'b) result Lwt.t

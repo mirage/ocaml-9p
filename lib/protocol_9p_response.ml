@@ -375,4 +375,4 @@ let pp ppf = function
 let sizeof_header = 4 + 1 + 2
 
 let error ?errno fmt =
-  Printf.ksprintf (fun ename -> Result.Error {Err.ename; errno}) fmt
+  Printf.ksprintf (fun ename -> Error {Err.ename; errno}) fmt

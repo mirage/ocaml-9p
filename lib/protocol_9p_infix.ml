@@ -19,5 +19,5 @@
 let (>>*=) m f =
   let open Lwt in
   m >>= function
-  | Result.Ok x -> f x
-  | Result.Error x -> Lwt.return (Result.Error x)
+  | Ok x -> f x
+  | Error x -> Lwt.return (Error x)

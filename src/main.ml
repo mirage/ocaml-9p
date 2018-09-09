@@ -51,8 +51,8 @@ let with_client address username f =
   let proto, address = parse_address address in
   Client.connect proto address ?username ()
   >>= function
-  | Result.Error (`Msg x) -> failwith x
-  | Result.Ok t ->
+  | Error (`Msg x) -> failwith x
+  | Ok t ->
     finally (fun () -> f t) (fun () -> Client.disconnect t)
 
 let configure_logging debug =
@@ -85,7 +85,7 @@ let read debug address path username =
           >>*= fun data ->
           let len = List.fold_left (+) 0 (List.map (fun x -> Cstruct.len x) data) in
           if len = 0
-          then return (Result.Ok ())
+          then return (Ok ())
           else begin
             List.iter (fun x -> print_string (Cstruct.to_string x)) data;
             loop Int64.(add offset (of_int len))
@@ -106,14 +106,13 @@ let remove debug address path username =
       (fun t ->
         Client.remove t path
         >>*= fun () ->
-        return (Result.Ok ())
+        return (Ok ())
       ) in
   wrap_exceptions
     (fun () ->
-      Result.(match Lwt_main.run t with
+      match Lwt_main.run t with
         | Ok () -> `Ok ()
         | Error (`Msg m) -> `Error(false, m)
-      )
     )
 
 let print_stats stats =
@@ -181,8 +180,8 @@ let ls debug address path username =
     with_client address username
       (fun t ->
         Client.readdir t (parse_path path) >>= function
-         | Result.Error (`Msg x) -> failwith x
-         | Result.Ok stats ->
+         | Error (`Msg x) -> failwith x
+         | Ok stats ->
            print_stats stats;
            return ()
       ) in
@@ -215,10 +214,10 @@ let shell debug address username =
           | [ "ls" ] ->
             begin
               Client.readdir t !cwd >>= function
-              | Result.Error (`Msg x) ->
+              | Error (`Msg x) ->
                 print_endline x;
                 return ()
-              | Result.Ok stats ->
+              | Ok stats ->
                 print_stats stats;
                 return ()
             end
@@ -232,7 +231,7 @@ let shell debug address username =
             begin
               Client.stat t newdir
               >>= function
-              | Result.Ok x ->
+              | Ok x ->
                 if x.Protocol_9p.Types.Stat.mode.Protocol_9p.Types.FileMode.is_directory then begin
                   cwd := newdir;
                   return ()
@@ -240,7 +239,7 @@ let shell debug address username =
                   Printf.printf "not a directory\n";
                   return ()
                 end
-              | Result.Error (`Msg m) ->
+              | Error (`Msg m) ->
                 print_endline m;
                 return ()
             end
@@ -251,8 +250,8 @@ let shell debug address username =
             begin
               Client.create t !cwd file mode
               >>= function
-              | Result.Ok () -> return ()
-              | Result.Error (`Msg m) ->
+              | Ok () -> return ()
+              | Error (`Msg m) ->
                 print_endline m;
                 return ()
             end
@@ -261,10 +260,10 @@ let shell debug address username =
               let requested = 1024l in
               Client.read t (!cwd @ [ file ]) ofs requested
               >>= function
-              | Result.Error (`Msg m) ->
+              | Error (`Msg m) ->
                 print_endline m;
                 return ()
-              | Result.Ok bufs ->
+              | Ok bufs ->
                 let len = List.fold_left (+) 0 (List.map Cstruct.len bufs) in
                 List.iter (fun x -> output_string stdout (Cstruct.to_string x)) bufs;
                 flush stdout;
@@ -281,10 +280,10 @@ let shell debug address username =
             begin
               Client.write t (!cwd @ [ file ]) 0L buf
               >>= function
-              | Result.Error (`Msg m) ->
+              | Error (`Msg m) ->
                 print_endline m;
                 return ()
-              | Result.Ok () ->
+              | Ok () ->
                 return ()
             end
           | [ "mkdir"; dir ] ->
@@ -294,8 +293,8 @@ let shell debug address username =
             begin
               Client.mkdir t !cwd dir mode
               >>= function
-              | Result.Ok () -> return ()
-              | Result.Error (`Msg m) ->
+              | Ok () -> return ()
+              | Error (`Msg m) ->
                 print_endline m;
                 return ()
             end
@@ -303,8 +302,8 @@ let shell debug address username =
               begin
                 Client.remove t (!cwd @ [ file ])
                 >>= function
-                | Result.Ok () -> return ()
-                | Result.Error (`Msg m) ->
+                | Ok () -> return ()
+                | Error (`Msg m) ->
                   print_endline m;
                   return ()
               end
@@ -357,8 +356,8 @@ let serve debug address path =
     let module Server = Server9p_unix.Make(Log)(Lofs9p) in
     Server.listen fs proto address
     >>= function
-    | Result.Error (`Msg m) -> Lwt.fail (Failure m)
-    | Result.Ok server -> Server.serve_forever server in
+    | Error (`Msg m) -> Lwt.fail (Failure m)
+    | Ok server -> Server.serve_forever server in
   wrap_exceptions
     (fun () ->
       ignore (Lwt_main.run t);

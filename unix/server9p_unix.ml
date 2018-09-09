@@ -61,7 +61,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
         Lwt_unix.bind fd sockaddr
         >>= fun () ->
         Lwt_unix.listen fd 5;
-        Lwt.return (Result.Ok (of_fd fs fd))
+        Lwt.return (Ok (of_fd fs fd))
       | _ ->
         Lwt.return (Error.error_msg "Unable to understand protocol %s and address %s" proto address)
       end
@@ -73,7 +73,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
       Lwt_unix.bind fd sockaddr
       >>= fun () ->
       Lwt_unix.listen fd 5;
-      Lwt.return (Result.Ok (of_fd fs fd))
+      Lwt.return (Ok (of_fd fs fd))
     | _ ->
       Lwt.return (Error.error_msg "Unknown protocol %s" proto)
 
@@ -109,7 +109,7 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
         )
       >>= fun () ->
       Lwt.wakeup_later t.shutdown_done_u ();
-      return (Result.Ok ())
+      return (Ok ())
 
   let serve_forever t =
     accept_forever t
@@ -117,8 +117,8 @@ module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
          let flow = Flow_lwt_unix.connect fd in
          S.connect t.fs flow ()
          >>= function
-         | Result.Error (`Msg x) -> fail (Failure x)
-         | Result.Ok t ->
+         | Error (`Msg x) -> fail (Failure x)
+         | Ok t ->
            Log.debug (fun f -> f "Successfully negotiated a connection.");
            S.after_disconnect t
       )

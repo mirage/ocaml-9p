@@ -131,7 +131,7 @@ module Fid = struct
   let of_int32 x =
     if x = nofid
     then error_msg "%ld is an invalid fid (it is defined to be NOFID in the spec)" x
-    else Result.Ok x
+    else Ok x
 
   let to_int32 x = x
 
@@ -190,7 +190,7 @@ module OpenMode = struct
     let extra = x land (lnot all) in
     if extra <> 0
     then error_msg "Unknown mode bits: 0x%x" extra
-    else Result.Ok { io; truncate; rclose; append; }
+    else Ok { io; truncate; rclose; append; }
 
   let sizeof _ = 1
 

@@ -1,6 +1,6 @@
 PKG cstruct
 PKG sexplib
-PKG result rresult
+PKG rresult
 PKG mirage-flow-lwt
 PKG mirage-kv-lwt
 PKG mirage-channel-lwt

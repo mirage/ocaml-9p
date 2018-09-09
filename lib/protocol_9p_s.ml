@@ -16,8 +16,6 @@
  *)
 
 
-open Result
-
 module type LOG = sig
   val debug : 'a Logs.log
   val info  : 'a Logs.log

@@ -17,8 +17,6 @@
 
 (** Common error reporting functions *)
 
-open Result
-
 type error = [
   | `Msg of string (** A fatal error condition; the string should be logged *)
 ]
