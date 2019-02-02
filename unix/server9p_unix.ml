@@ -21,9 +21,6 @@ open Astring
 module Make(Log : S.LOG)(Filesystem: Filesystem.S) = struct
   module S = Protocol_9p.Server.Make(Log)(Flow_lwt_unix)(Filesystem)
 
-  type ip = string
-  type port = int
-
   let finally f g =
     Lwt.catch
       (fun () ->

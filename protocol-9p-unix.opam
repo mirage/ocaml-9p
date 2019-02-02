@@ -8,11 +8,11 @@ bug-reports:  "https://github.com/mirage/ocaml-9p/issues"
 doc:          "https://mirage.github.io/ocaml-9p/"
 
 build: [
-  ["jbuilder" "subst"] {pinned}
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "jbuilder" {build & >="1.0+beta10"}
+  "dune" {build & >= "1.0"}
   "protocol-9p"
   "base-bytes"
   "cstruct" {>= "3.0.0"}

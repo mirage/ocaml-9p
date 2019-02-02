@@ -15,6 +15,8 @@
  *
  *)
 
+[@@@warning "-27"]
+
 open Protocol_9p
 open Protocol_9p_unix
 open Lwt

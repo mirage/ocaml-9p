@@ -49,7 +49,7 @@ struct
 
   let get_info t = t.info
 
-  let default_exn_converter info exn =
+  let default_exn_converter _info exn =
     Response.Err {
       Response.Err.ename = Printexc.to_string exn;
       errno = None;
@@ -286,7 +286,7 @@ struct
       ) in
 
       let open Lwt in
-      let cancel_t, cancel_u = Lwt.task () in
+      let cancel_t, _ = Lwt.task () in
       receive_cb ~cancel:cancel_t payload
       >>= begin function
         | Error (`Msg message) ->

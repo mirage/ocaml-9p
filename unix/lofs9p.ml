@@ -15,9 +15,11 @@
  *
  *)
 
-(* This is an implementation of a POSIX loopback filesystem on top of
-   a POSIX syscall interface which is expected to be consumed by a
-   POSIX client. *)
+(* POSIX loopback filesystem on top of a POSIX syscall interface.
+
+   This interface is expected to be consumed by a POSIX client. *)
+
+[@@@warning "-27"]
 
 open Protocol_9p
 open Infix
@@ -84,8 +86,6 @@ let make root = { root }
 
     let append path node = { segments = node::path.segments }
 
-    let of_segments segments = { segments = List.rev segments }
-
     let perms_of_code code =
       match code land 7 with
       | 1 -> [ `Execute ]
@@ -104,7 +104,7 @@ let make root = { root }
       >>= fun stats ->
       qid_of_path realpath
       >>*= fun qid ->
-      let { LargeFile.st_perm } = stats in
+      let { LargeFile.st_perm; _ } = stats in
       let owner = perms_of_code (st_perm lsr 6) in
       let group = perms_of_code (st_perm lsr 3) in
       let other = perms_of_code st_perm in
@@ -317,7 +317,7 @@ let make root = { root }
       | path ->
         walk path [] wnames
 
-  let attach connection ~cancel { Request.Attach.fid } =
+  let attach connection ~cancel { Request.Attach.fid; _ } =
     (* bind the fid as another root *)
     connection.fids := Types.Fid.Map.add fid (Resource.of_path Path.root) !(connection.fids);
     let realpath = Path.realpath connection.t Path.root in
@@ -470,7 +470,7 @@ let make root = { root }
       let realpath = Path.realpath connection.t path in
       let {
         Types.Stat.ty; dev; qid;
-        mode; atime; mtime; length; name;
+        mode; atime; mtime; length; name; _
       } = stat in
       (* we just ignore any attempts to change muid, uid, gid *)
       if not (Types.Int16.is_any ty)

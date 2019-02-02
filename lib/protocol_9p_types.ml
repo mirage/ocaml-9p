@@ -372,7 +372,7 @@ module Qid = struct
     List.fold_left (lor) 0 (List.map (fun x -> List.assoc x flags) fs)
 
   let of_int x =
-    List.map snd (List.filter (fun (bit, flag) -> x land bit <> 0) flags')
+    List.map snd (List.filter (fun (bit, _flag) -> x land bit <> 0) flags')
 
   let needed = 13
 

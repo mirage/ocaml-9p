@@ -21,6 +21,8 @@ open Infix
 open Lwt
 open Astring
 
+[@@@warning "-27"]
+
 let project_url = "http://github.com/mirage/ocaml-9p"
 let version = "%%VERSION%%"
 
@@ -150,7 +152,7 @@ let print_stats stats =
      let name = x.Types.Stat.name in
      if filemode.Types.FileMode.is_symlink
      then match x.Types.Stat.u with
-       | Some { Types.Stat.extension = e } ->
+       | Some { Types.Stat.extension = e; _ } ->
          name ^ " -> " ^ e
        | None ->
          name
@@ -161,7 +163,7 @@ let print_stats stats =
   let rows = Array.of_list (List.map row_of_stat stats) in
   let padto n x =
     let extra = max 0 (n - (String.length x)) in
-    x ^ (String.v extra (fun _ -> ' ')) in
+    x ^ (String.v ~len:extra (fun _ -> ' ')) in
   Array.iter (fun row ->
     Array.iteri (fun i txt ->
       let column = Array.map (fun row -> row.(i)) rows in
@@ -196,7 +198,7 @@ class read_line ~term ~history ~state = object(self)
   inherit LTerm_read_line.read_line ~history ()
   inherit [Zed_utf8.t] LTerm_read_line.term term
 
-  method show_box = false
+  method! show_box = false
 
   initializer
     let open React in
