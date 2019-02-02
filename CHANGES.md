@@ -1,5 +1,6 @@
 ## dev
 
+* Upgrade metadata to opam 2.0 format (@avsm)
 * Port to dune (@avsm)
 * Fix warnings for unused variables and opens and record binds (@avsm)
 
