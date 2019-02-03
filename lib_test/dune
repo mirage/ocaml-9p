@@ -5,6 +5,7 @@
 
 (alias
  (name runtest)
+ (package protocol-9p-unix)
  (deps
   (:< lofs_test.exe)
   tests.exe)
