@@ -1,4 +1,4 @@
-## dev
+## v1.0.0 (2019-02-03)
 
 * Upgrade metadata to opam 2.0 format (@avsm)
 * Port to dune (@avsm)
