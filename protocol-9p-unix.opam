@@ -1,23 +1,18 @@
-opam-version: "1.2"
-maintainer:   "dave@recoil.org"
-authors:      [ "David Scott" "David Sheets" "Thomas Leonard" ]
-license:      "ISC"
-homepage:     "https://github.com/mirage/ocaml-9p"
-dev-repo:     "https://github.com/mirage/ocaml-9p.git"
-bug-reports:  "https://github.com/mirage/ocaml-9p/issues"
-doc:          "https://mirage.github.io/ocaml-9p/"
-
-build: [
-  ["jbuilder" "subst"] {pinned}
-  ["jbuilder" "build" "-p" name "-j" jobs]
-]
+opam-version: "2.0"
+maintainer: "dave@recoil.org"
+authors: ["David Scott" "David Sheets" "Thomas Leonard" "Anil Madhavapeddy"]
+license: "ISC"
+homepage: "https://github.com/mirage/ocaml-9p"
+doc: "https://mirage.github.io/ocaml-9p/"
+bug-reports: "https://github.com/mirage/ocaml-9p/issues"
 depends: [
-  "jbuilder" {build & >="1.0+beta10"}
+  "ocaml" {>= "4.03.0"}
+  "dune" {build & >= "1.0"}
   "protocol-9p"
   "base-bytes"
   "cstruct" {>= "3.0.0"}
   "cstruct-lwt" {>= "3.0.0"}
-  "sexplib" {> "113.00.00" }
+  "sexplib" {> "113.00.00"}
   "prometheus"
   "rresult"
   "mirage-flow-lwt"
@@ -30,8 +25,18 @@ depends: [
   "logs" {>= "0.5.0"}
   "win-error"
   "io-page-unix" {>= "2.0.0"}
-  "ppx_sexp_conv" {build}
-  "ppx_tools" {build}
-  "alcotest" {test & >= "0.4.0"}
+  "ppx_sexp_conv"
+  "alcotest" {with-test & >= "0.4.0"}
 ]
-available: [ocaml-version >= "4.03.0"]
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+dev-repo: "git+https://github.com/mirage/ocaml-9p.git"
+synopsis: "A Unix implementation of the 9p protocol in pure OCaml"
+description: """
+ocaml-9p is an implementation of the 9P protocol, written in
+a Mirage-friendly style.  This package supports the Unix socket
+library.
+"""
+

@@ -21,6 +21,8 @@ open Protocol_9p
 open Astring
 open Protocol_9p.Infix
 
+[@@@warning "-9"]
+
 module Metrics = struct
   let namespace = "ocaml9p"
   let subsystem = "client"

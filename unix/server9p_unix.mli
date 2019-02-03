@@ -15,7 +15,6 @@
  *
  *)
 open Protocol_9p
-open Lwt
 
 module Make(Log : S.LOG)(Filesystem: Filesystem.S) : sig
   type t

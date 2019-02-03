@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  *)
+
+[@@@warning "-33"]
+
 open Protocol_9p
 open Protocol_9p_unix
 

@@ -1,3 +1,9 @@
+## dev
+
+* Upgrade metadata to opam 2.0 format (@avsm)
+* Port to dune (@avsm)
+* Fix warnings for unused variables and opens and record binds (@avsm)
+
 ## v0.12.1 (2018-06-14)
 
 * Remove (broken) support for named pipes.

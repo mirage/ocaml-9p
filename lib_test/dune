@@ -1,0 +1,12 @@
+(executables
+ (names lofs_test tests)
+ (libraries cstruct alcotest lwt cstruct-lwt logs.fmt astring mirage-flow-lwt
+   mirage-kv-lwt mirage-channel-lwt protocol-9p protocol-9p-unix))
+
+(alias
+ (name runtest)
+ (deps
+  (:< lofs_test.exe)
+  tests.exe)
+ (action
+  (run %{<} -e -v)))

@@ -2,8 +2,6 @@ _build
 *~
 \.\#*
 \#*#
-*.native
-*.byte
+.*.swp
+.merlin
 *.install
-*.merlin
-_tests/
