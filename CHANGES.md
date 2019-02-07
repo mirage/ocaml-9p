@@ -1,3 +1,7 @@
+## v1.0.1 (2019-02-07)
+
+* Use modern `io-page-unix` instead of `io-page.unix` (@avsm)
+
 ## v1.0.0 (2019-02-03)
 
 * Upgrade metadata to opam 2.0 format (@avsm)
