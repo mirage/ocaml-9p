@@ -1,4 +1,4 @@
-## v2.0.0
+## v2.0.0 (2019-03-10)
 
 * Remove old `KV_RO` interface in the client as it has
   been superseded by mirage-kv-2.0.  The new interface
