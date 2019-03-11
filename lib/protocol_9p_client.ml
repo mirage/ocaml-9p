@@ -16,7 +16,6 @@
  *)
 
 open Protocol_9p_infix
-open Astring
 
 module Error = Protocol_9p_error
 open Error
@@ -39,8 +38,6 @@ module type S = sig
   val remove: t -> string list -> unit Error.t Lwt.t
   val readdir: t -> string list -> Types.Stat.t list Error.t Lwt.t
   val stat: t -> string list -> Types.Stat.t Error.t Lwt.t
-
-  module KV_RO : Mirage_kv_lwt.RO with type t = t
 
   module LowLevel : sig
     val maximum_write_payload: t -> int32
@@ -90,8 +87,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
     mutable fids: Types.Fid.Set.t;
     free_fids_c: unit Lwt_condition.t;
   }
-
-  type connection = t
 
   (* For converting flow errors *)
   let (>>|=) m f =
@@ -490,45 +485,6 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
         end else
           return ()
       )
-
-  module KV_RO = struct
-    open Lwt
-
-    type 'a io = 'a Lwt.t
-
-    type t = connection
-
-    type error = Mirage_kv.error
-    let pp_error = Mirage_kv.pp_error
-
-    type page_aligned_buffer = Cstruct.t
-
-    let parse_path x = String.cuts x ~sep:"/"
-
-    let read t key offset length =
-      let path = parse_path key in
-      let count = Int64.to_int32 length in (* FIXME: Error on overflow? *)
-      read t path offset count
-      >>= function
-      | Ok bufs -> return (Ok bufs)
-      | _ -> return (Error (`Unknown_key key))
-
-    let size t key =
-      let path = parse_path key in
-      stat t path
-      >>= function
-      | Ok stat -> return (Ok stat.Types.Stat.length)
-      | _ -> return (Error (`Unknown_key key))
-
-    let mem t key =
-      let path = parse_path key in
-      stat t path
-      >>= function
-      | Ok _ -> return (Ok true)
-      | _ -> return (Ok false)
-
-    let disconnect = disconnect
-  end
 
   let readdir t path =
     let open LowLevel in

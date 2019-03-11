@@ -13,7 +13,6 @@ depends: [
   "sexplib" {> "113.00.00"}
   "rresult"
   "mirage-flow-lwt"
-  "mirage-kv-lwt"
   "mirage-channel-lwt"
   "lwt" {>= "3.0.0"}
   "astring"

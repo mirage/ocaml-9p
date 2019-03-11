@@ -42,8 +42,6 @@ module Make(Log: S.LOG) = struct
     switch : Lwt_switch.t;
   }
 
-  type connection = t
-
   let pp_addr ppf = function
     | Lwt_unix.ADDR_UNIX path -> Fmt.pf ppf "unix:%s" path
     | Lwt_unix.ADDR_INET (host, port) ->
@@ -146,28 +144,6 @@ module Make(Log: S.LOG) = struct
   let readdir { client } = Client.readdir client
 
   let stat { client } = Client.stat client
-
-  module KV_RO = struct
-    open Client
-
-    type t = connection
-
-    type 'a io = 'a KV_RO.io
-
-    type error = KV_RO.error
-
-    let pp_error = KV_RO.pp_error
-
-    type page_aligned_buffer = KV_RO.page_aligned_buffer
-
-    let disconnect { client } = KV_RO.disconnect client
-
-    let read { client } = KV_RO.read client
-
-    let size { client } = KV_RO.size client
-
-    let mem { client } = KV_RO.mem client
-  end
 
   module LowLevel = struct
     open Client
