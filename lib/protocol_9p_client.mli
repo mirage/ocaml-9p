@@ -58,8 +58,6 @@ module type S = sig
     Protocol_9p_types.Stat.t Protocol_9p_error.t Lwt.t
   (** Return information about a named directory or named file. *)
 
-  module KV_RO : Mirage_kv_lwt.RO with type t = t
-
   module LowLevel : sig
     (** The functions in this module are mapped directly onto individual 9P
         RPCs. The client must carefully respect the rules on managing fids

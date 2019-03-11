@@ -1,3 +1,9 @@
+## v2.0.0
+
+* Remove old `KV_RO` interface in the client as it has
+  been superseded by mirage-kv-2.0.  The new interface
+  will be re-added in a future release (@avsm)
+
 ## v1.0.1 (2019-02-07)
 
 * Use modern `io-page-unix` instead of `io-page.unix` (@avsm)
