@@ -9,7 +9,8 @@ depends: [
   "ocaml" {>= "4.03.0"}
   "dune" {build & >= "1.0"}
   "base-bytes"
-  "cstruct" {>= "3.0.0"}
+  "cstruct" {>= "4.0.0"}
+  "cstruct-sexp"
   "sexplib" {> "113.00.00"}
   "rresult"
   "mirage-flow-lwt"
