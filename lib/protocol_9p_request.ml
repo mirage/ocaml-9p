@@ -298,7 +298,7 @@ module Write = struct
   type t = {
     fid: Fid.t;
     offset: int64;
-    data: Cstruct.t;
+    data: Cstruct_sexp.t;
   } [@@deriving sexp]
 
   let equal a b =

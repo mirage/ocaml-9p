@@ -1,3 +1,7 @@
+## v2.0.1 (2019-03-26)
+
+* Use cstruct-sexp introduced in cstruct.4.0.0 (@avsm)
+
 ## v2.0.0 (2019-03-10)
 
 * Remove old `KV_RO` interface in the client as it has
