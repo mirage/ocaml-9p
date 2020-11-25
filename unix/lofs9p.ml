@@ -236,7 +236,7 @@ let make root = { root }
             Lwt_bytes.read fd buffer 0 (Lwt_bytes.length buffer)
           )
         >>= fun n ->
-        let data = Cstruct.(sub (of_bigarray buffer) 0 n) in
+        let data = Cstruct.sub (Cstruct.of_bigarray buffer) 0 n in
         Lwt.return (Ok { Response.Read.data })
       end
 

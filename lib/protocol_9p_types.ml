@@ -488,7 +488,7 @@ module Data = struct
     Cstruct.blit_from_string x 0 t 0 (String.length x);
     t
 
-  let to_string = Cstruct.to_string
+  let to_string x = Cstruct.to_string x
 
   let sizeof t = 2 + (Cstruct.len t)
 
