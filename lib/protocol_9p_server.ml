@@ -28,7 +28,7 @@ type exn_converter = Protocol_9p_info.t -> exn -> Protocol_9p_response.payload
 
 module Make
     (Log: Protocol_9p_s.LOG)
-    (FLOW: Mirage_flow_lwt.S)
+    (FLOW: Mirage_flow.S)
     (Filesystem: Protocol_9p_filesystem.S) =
 struct
   module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)

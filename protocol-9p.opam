@@ -13,8 +13,8 @@ depends: [
   "cstruct-sexp"
   "sexplib" {> "113.00.00"}
   "rresult"
-  "mirage-flow-lwt"
-  "mirage-channel-lwt"
+  "mirage-flow" {>= "2.0.0"}
+  "mirage-channel" {>= "4.0.0"}
   "lwt" {>= "3.0.0"}
   "astring"
   "fmt"

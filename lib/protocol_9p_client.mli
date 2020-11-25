@@ -148,7 +148,7 @@ module type S = sig
 end
 
 (** Given a transport (a Mirage FLOW), construct a 9P client on top. *)
-module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) : sig
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) : sig
   include S
 
   val connect:

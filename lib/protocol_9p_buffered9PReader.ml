@@ -21,8 +21,8 @@ open Lwt.Infix
 
 let max_message_size = 655360l       (* 640 KB should be enough... Linux limit is 32 KB *)
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
-  module C = Mirage_channel_lwt.Make(FLOW)
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) = struct
+  module C = Mirage_channel.Make(FLOW)
   type t = {
     channel: C.t;
     read_m: Lwt_mutex.t;

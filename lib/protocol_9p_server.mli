@@ -57,7 +57,7 @@ let unix_exn_converter info exn =
 
 module Make
     (Log: Protocol_9p_s.LOG)
-    (FLOW: Mirage_flow_lwt.S)
+    (FLOW: Mirage_flow.S)
     (Filesystem: Protocol_9p_filesystem.S) :
 sig
 

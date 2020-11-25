@@ -1,7 +1,7 @@
 (executables
  (names lofs_test tests)
- (libraries cstruct alcotest lwt cstruct-lwt logs.fmt astring mirage-flow-lwt
-   mirage-channel-lwt protocol-9p protocol-9p-unix))
+ (libraries cstruct alcotest lwt cstruct-lwt logs.fmt astring mirage-flow
+   mirage-channel protocol-9p protocol-9p-unix))
 
 (alias
  (name runtest)

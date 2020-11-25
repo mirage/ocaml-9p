@@ -18,7 +18,7 @@
 val max_message_size : int32
 (** Messages longer than this will be rejected. *)
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S): sig
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S): sig
 
   type t
   (** A buffered 9P message reader over a FLOW *)
