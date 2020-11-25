@@ -196,7 +196,7 @@ let ls debug address path username =
 let cwd = ref []
 class read_line ~term ~history ~state = object(self)
   inherit LTerm_read_line.read_line ~history ()
-  inherit [Zed_utf8.t] LTerm_read_line.term term
+  inherit [Zed_string.t] LTerm_read_line.term term
 
   method! show_box = false
 
@@ -325,7 +325,7 @@ let shell debug address username =
               | e -> fail e)
           >>= function
           | Some command ->
-            execute_command command
+            execute_command (Zed_string.to_utf8 command)
             >>= fun () ->
             LTerm_history.add history command;
             loop term history
