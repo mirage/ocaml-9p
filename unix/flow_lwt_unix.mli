@@ -17,6 +17,6 @@
 
 (* FIXME(samoht): should be moved in mirage-flow *)
 
-include Mirage_flow_lwt.S
+include Mirage_flow.S
 
 val connect: Lwt_unix.file_descr -> flow

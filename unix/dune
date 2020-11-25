@@ -1,5 +1,5 @@
 (library
  (name protocol_9p_unix)
  (public_name protocol-9p-unix)
- (libraries fmt lwt mirage-flow-lwt cstruct cstruct-lwt astring protocol-9p
+ (libraries fmt lwt mirage-flow cstruct cstruct-lwt astring protocol-9p
    io-page-unix prometheus))

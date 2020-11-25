@@ -62,7 +62,7 @@ module type S = sig
   val with_fid: t -> (Types.Fid.t -> 'a Error.t Lwt.t) -> 'a Error.t Lwt.t
 end
 
-module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow_lwt.S) = struct
+module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) = struct
   module Reader = Protocol_9p_buffered9PReader.Make(Log)(FLOW)
 
   open Log

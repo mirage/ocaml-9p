@@ -17,8 +17,6 @@
 
 open Lwt.Infix
 
-type 'a io = 'a Lwt.t
-type buffer = Cstruct.t
 type error = [`Unix of Unix.error]
 type write_error = [`Closed | `Unix of Unix.error]
 
