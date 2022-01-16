@@ -217,7 +217,7 @@ let make root = { root }
               let n = Types.Stat.sizeof stat in
               if off < offset
               then write Int64.(add off (of_int n)) rest xs
-              else if Cstruct.len rest < n then Lwt.return (Ok off)
+              else if Cstruct.length rest < n then Lwt.return (Ok off)
               else
                 Lwt.return (Types.Stat.write stat rest)
                 >>*= fun rest ->
@@ -430,7 +430,7 @@ let make root = { root }
           (fun () ->
             Lwt_unix.LargeFile.lseek fd offset Lwt_unix.SEEK_SET
             >>= fun _cursor ->
-            let len = Cstruct.len data in
+            let len = Cstruct.length data in
             Lwt_unix.write fd (Bytes.of_string (Cstruct.to_string data)) 0 len
           )
         >>= fun written ->

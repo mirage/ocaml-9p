@@ -78,7 +78,7 @@ module Auth = struct
     >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    if Cstruct.len rest = 0
+    if Cstruct.length rest = 0
     then return ({ afid; uname; aname; n_uname = None }, rest)
     else
       Int32.read rest
@@ -143,7 +143,7 @@ module Attach = struct
     >>= fun (aname, rest) ->
     let uname = Data.to_string uname in
     let aname = Data.to_string aname in
-    if Cstruct.len rest = 0
+    if Cstruct.length rest = 0
     then return ({ fid; afid; uname; aname; n_uname = None }, rest)
     else
       Int32.read rest
@@ -259,7 +259,7 @@ module Create = struct
     OpenMode.read rest
     >>= fun (mode, rest) ->
     let name = Data.to_string name in
-    if Cstruct.len rest = 0
+    if Cstruct.length rest = 0
     then return ({ fid; name; perm; mode; extension = None}, rest)
     else
       Data.read rest
@@ -306,14 +306,14 @@ module Write = struct
 
   let sizeof_header = 4 + 8 + 4
 
-  let sizeof t = (Fid.sizeof t.fid) + 8 + 4 + (Cstruct.len t.data)
+  let sizeof t = (Fid.sizeof t.fid) + 8 + 4 + (Cstruct.length t.data)
 
   let write t rest =
     Fid.write t.fid rest
     >>= fun rest ->
     Int64.write t.offset rest
     >>= fun rest ->
-    let len = Cstruct.len t.data in
+    let len = Cstruct.length t.data in
     Int32.write (Int32.of_int len) rest
     >>= fun rest ->
     big_enough_for "Write.data" rest len
@@ -501,7 +501,7 @@ let pp ppf = function
   | { tag; payload = Write { Write.fid; offset; data } } ->
     let tag = Types.Tag.to_int tag in
     let fid = Types.Fid.to_int32 fid in
-    let len = Cstruct.len data in
+    let len = Cstruct.length data in
     Format.fprintf ppf "tag %d Write(fid: %ld, offset: %Ld, len(data): %d)"
       tag fid offset len
   | t -> Sexplib.Sexp.pp_hum ppf (sexp_of_t t)

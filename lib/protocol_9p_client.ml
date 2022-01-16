@@ -392,7 +392,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) = struct
         openfid t newfid Types.OpenMode.write_only
         >>*= fun _ ->
         let rec loop offset remaining =
-          let len = Cstruct.len remaining in
+          let len = Cstruct.length remaining in
           if len = 0
           then Lwt.return (Ok ())
           else begin
@@ -416,7 +416,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) = struct
           let to_request = min remaining t.maximum_payload in
           read t newfid offset to_request
           >>*= fun { Response.Read.data } ->
-          let n = Cstruct.len data in
+          let n = Cstruct.length data in
           if n = 0
           then Lwt.return (Ok (List.rev acc))
           else
@@ -495,15 +495,15 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) = struct
         let rec loop acc offset =
           read t newfid offset t.maximum_payload
           >>*= fun { Response.Read.data } ->
-          if Cstruct.len data = 0
+          if Cstruct.length data = 0
           then Lwt.return (Ok acc)
           else
             (* Data should be an integral number of marshalled Stat.ts *)
             let module StatArray = Types.Arr(Types.Stat) in
             (Lwt.return (StatArray.read data))
             >>*= fun (stats, rest) ->
-            assert (Cstruct.len rest = 0);
-            loop (acc @ stats) Int64.(add offset (of_int (Cstruct.len data))) in
+            assert (Cstruct.length rest = 0);
+            loop (acc @ stats) Int64.(add offset (of_int (Cstruct.length data))) in
         loop [] 0L
     )
 

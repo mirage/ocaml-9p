@@ -85,7 +85,7 @@ let read debug address path username =
         let rec loop offset =
           Client.read t path offset two_mib
           >>*= fun data ->
-          let len = List.fold_left (+) 0 (List.map (fun x -> Cstruct.len x) data) in
+          let len = List.fold_left (+) 0 (List.map (fun x -> Cstruct.length x) data) in
           if len = 0
           then return (Ok ())
           else begin
@@ -266,7 +266,7 @@ let shell debug address username =
                 print_endline m;
                 return ()
               | Ok bufs ->
-                let len = List.fold_left (+) 0 (List.map Cstruct.len bufs) in
+                let len = List.fold_left (+) 0 (List.map Cstruct.length bufs) in
                 List.iter (fun x -> output_string stdout (Cstruct.to_string x)) bufs;
                 flush stdout;
                 if Int32.of_int len < requested
@@ -278,7 +278,7 @@ let shell debug address username =
           | "write" :: file :: rest ->
             let data = String.concat ~sep:" " rest in
             let buf = Cstruct.create (String.length data) in
-            Cstruct.blit_from_string data 0 buf 0 (Cstruct.len buf);
+            Cstruct.blit_from_string data 0 buf 0 (Cstruct.length buf);
             begin
               Client.write t (!cwd @ [ file ]) 0L buf
               >>= function

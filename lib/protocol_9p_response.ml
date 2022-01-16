@@ -58,7 +58,7 @@ module Err = struct
     Data.read buf
     >>= fun (ename, rest) ->
     let ename = Data.to_string ename in
-    if Cstruct.len rest = 0
+    if Cstruct.length rest = 0
     then return ({ ename; errno = None }, rest)
     else
       Int32.read rest
@@ -183,10 +183,10 @@ module Read = struct
 
   let sizeof_header = 4
 
-  let sizeof t = sizeof_header + (Cstruct.len t.data)
+  let sizeof t = sizeof_header + (Cstruct.length t.data)
 
   let write t rest =
-    let len = Cstruct.len t.data in
+    let len = Cstruct.length t.data in
     Int32.write (Int32.of_int len) rest
     >>= fun rest ->
     big_enough_for "Read.data" rest len
@@ -368,7 +368,7 @@ let read rest =
 let pp ppf = function
   | { tag; payload = Read { Read.data } } ->
     let tag = Types.Tag.to_int tag in
-    let len = Cstruct.len data in
+    let len = Cstruct.length data in
     Format.fprintf ppf "tag %d Read(len(data): %d)" tag len
   | t -> Sexplib.Sexp.pp_hum ppf (sexp_of_t t)
 

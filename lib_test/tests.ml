@@ -25,7 +25,7 @@ let () =
 
 let example_data =
   let data = Cstruct.create 1 in
-  for i = 0 to Cstruct.len data - 1 do
+  for i = 0 to Cstruct.length data - 1 do
     Cstruct.set_char data i '\000'
   done;
   data
@@ -129,10 +129,10 @@ let print_parse_request r () =
     Request.write r buf
     >>= fun remaining ->
     Cstruct.hexdump buf;
-    Alcotest.(check int) "write request" 0 (Cstruct.len remaining);
+    Alcotest.(check int) "write request" 0 (Cstruct.length remaining);
     Request.read (Cstruct.shift buf len_size)
     >>= fun (r', remaining) ->
-    Alcotest.(check int) "read request" 0 (Cstruct.len remaining);
+    Alcotest.(check int) "read request" 0 (Cstruct.length remaining);
     Alcotest.(check request) "request" r r';
     return ()
   )
@@ -144,10 +144,10 @@ let print_parse_response r () =
     let buf = Cstruct.create needed in
     Response.write r buf
     >>= fun remaining ->
-    Alcotest.(check int) "write response" 0 (Cstruct.len remaining);
+    Alcotest.(check int) "write response" 0 (Cstruct.length remaining);
     Response.read (Cstruct.shift buf len_size)
     >>= fun (r', remaining) ->
-    Alcotest.(check int) "read respsonse" 0 (Cstruct.len remaining);
+    Alcotest.(check int) "read respsonse" 0 (Cstruct.length remaining);
     Alcotest.(check response) "response" r r';
     return ()
   )

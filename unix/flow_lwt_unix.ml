@@ -55,7 +55,7 @@ let safe op f r =
 let read flow =
   if flow.closed then Lwt.return (Ok `Eof)
   else begin
-    if Cstruct.len flow.read_buffer = 0
+    if Cstruct.length flow.read_buffer = 0
     then flow.read_buffer <- Cstruct.create flow.read_buffer_size;
     safe Lwt_cstruct.read flow.fd flow.read_buffer >|= function
     | 0 -> Ok `Eof
