@@ -14,7 +14,7 @@ depends: [
   "rresult"
   "logs" {>= "0.5.0"}
   "fmt"
-  "lambda-term" {< "2.0"}
+  "lambda-term"
   "win-error"
   "cmdliner"
 ]
