@@ -157,7 +157,7 @@ let test_requests = List.map (fun r ->
   ) requests
 
 let test_responses = List.map (fun r ->
-    Fmt.strf "print then parser random response", `Quick, print_parse_response r
+    Fmt.str "print then parser random response", `Quick, print_parse_response r
   ) responses
 
 let tests = [

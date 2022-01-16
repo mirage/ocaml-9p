@@ -23,7 +23,7 @@ type 'a t = ('a, error) result
 
 let return x = Ok x
 
-let error_msg fmt = Fmt.kstrf (fun s -> Error (`Msg s)) fmt
+let error_msg fmt = Fmt.kstr (fun s -> Error (`Msg s)) fmt
 
 let ( >>= ) m f = match m with
   | Error x -> Error x
