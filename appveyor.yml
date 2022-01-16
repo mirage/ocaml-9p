@@ -2,11 +2,13 @@ platform:
   - x86
 
 environment:
-  FORK_USER: ocaml
-  FORK_BRANCH: master
-  PINS: "protocol-9p:. protocol-9p-tool:. protocol-9p-unix:."
-  PACKAGE: protocol-9p-unix
-  CYG_ROOT: C:\cygwin64
+  global:
+    FORK_USER: ocaml
+    FORK_BRANCH: master
+    CYG_ROOT: C:\cygwin64
+    PINS: "protocol-9p:. protocol-9p-tool:. protocol-9p-unix:."
+    PACKAGE: protocol-9p-unix
+    OPAM_SWITCH: 4.08.0+mingw64c
 
 install:
   - ps: iex ((new-object net.webclient).DownloadString("https://raw.githubusercontent.com/$env:FORK_USER/ocaml-ci-scripts/$env:FORK_BRANCH/appveyor-install.ps1"))
