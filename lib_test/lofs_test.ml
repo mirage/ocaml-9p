@@ -245,7 +245,7 @@ let check_directory_boundary_read () =
         | Error (`Msg err) ->
           Alcotest.fail ("client1: read: " ^ err)
         | Ok { Response.Read.data } ->
-          let n = Cstruct.len data in
+          let n = Cstruct.length data in
           if n = 0
           then Lwt.return (Ok ())
           else Alcotest.fail ("client1: read non-zero: " ^ (string_of_int n))

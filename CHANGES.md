@@ -1,3 +1,8 @@
+## v2.0.2 (2021-01-16)
+
+* Update to Cstruct.length in cstruct.6.0.0 and use Fmt.str
+  rather than Fmt.strf (@djs55)
+
 ## v2.0.1 (2019-03-26)
 
 * Use cstruct-sexp introduced in cstruct.4.0.0 (@avsm)

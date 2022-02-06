@@ -18,7 +18,7 @@ open Sexplib.Std
 open Protocol_9p_error
 
 let big_enough_for name buf needed =
-  let length = Cstruct.len buf in
+  let length = Cstruct.length buf in
   if length < needed
   then error_msg "%s: buffer too small (%d < %d)" name length needed
   else return ()
@@ -490,17 +490,17 @@ module Data = struct
 
   let to_string x = Cstruct.to_string x
 
-  let sizeof t = 2 + (Cstruct.len t)
+  let sizeof t = 2 + (Cstruct.length t)
 
   let read buf =
-    let length = Cstruct.len buf in
+    let length = Cstruct.length buf in
     ( if length < 2
       then error_msg "Buffer is too short to contain a string length"
       else return ()
     ) >>= fun () ->
     let required = Cstruct.LE.get_uint16 buf 0 in
     let rest = Cstruct.shift buf 2 in
-    let remaining = Cstruct.len rest in
+    let remaining = Cstruct.length rest in
     ( if remaining < required
       then error_msg "Buffer is too short to contain string payload"
       else return ()
@@ -510,14 +510,14 @@ module Data = struct
     return (data, rest)
 
   let write t buf =
-    let length = Cstruct.len buf in
+    let length = Cstruct.length buf in
     let needed = sizeof t in
     ( if length < needed
       then error_msg "Buffer is too small for Data.t (%d < %d)" needed length
       else return ()
     ) >>= fun () ->
-    Cstruct.LE.set_uint16 buf 0 (Cstruct.len t);
-    Cstruct.blit t 0 buf 2 (Cstruct.len t);
+    Cstruct.LE.set_uint16 buf 0 (Cstruct.length t);
+    Cstruct.blit t 0 buf 2 (Cstruct.length t);
     return (Cstruct.shift buf needed)
 end
 
@@ -630,7 +630,7 @@ module Stat = struct
     let t = { ty; dev; qid; mode; atime; mtime; length; name; uid; gid; muid; u = None } in
     (* We are often decoding contiguous arrays of Stat structures,
        so we must use the sz field to discover where the data ends. *)
-    let consumed = Cstruct.len buf - (Cstruct.len rest) in
+    let consumed = Cstruct.length buf - (Cstruct.length rest) in
     if consumed = sz + 2 (* Size of the sz field itself *)
     then return (t, rest)
     else
@@ -645,7 +645,7 @@ module Stat = struct
       >>= fun (n_muid, rest) ->
       let u = Some { extension; n_uid; n_gid; n_muid } in
       (* In case of future extensions, remove trailing garbage *)
-      let consumed = Cstruct.len buf - (Cstruct.len rest) in
+      let consumed = Cstruct.length buf - (Cstruct.length rest) in
       let trailing_garbage = consumed - sz - 2 in
       let rest = Cstruct.shift rest trailing_garbage in
       return ({ t with u }, rest)
@@ -702,7 +702,7 @@ module Arr(T: Protocol_9p_s.SERIALISABLE) = struct
 
   let read rest =
     let rec loop acc rest =
-      if Cstruct.len rest = 0
+      if Cstruct.length rest = 0
       then return (List.rev acc, rest)
       else
         T.read rest

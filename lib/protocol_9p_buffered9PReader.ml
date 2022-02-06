@@ -39,7 +39,7 @@ module Make(Log: Protocol_9p_s.LOG)(FLOW: Mirage_flow.S) = struct
     C.read_exactly ~len c >>= function
     | Ok (`Data bufs) -> Lwt.return (Ok (Cstruct.concat bufs))
     | Ok `Eof -> Lwt.return (Error `Eof)
-    | Error e -> Lwt.return (Error (`Msg (Fmt.strf "%a" C.pp_error e)))
+    | Error e -> Lwt.return (Error (`Msg (Fmt.str "%a" C.pp_error e)))
 
   let read_must_have_lock t =
     let len_size = 4 in
