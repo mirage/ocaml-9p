@@ -1,4 +1,4 @@
-## v2.0.2 (2021-01-16)
+## v2.0.2 (2021-02-06)
 
 * Update to Cstruct.length in cstruct.6.0.0 and use Fmt.str
   rather than Fmt.strf (@djs55)
