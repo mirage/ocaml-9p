@@ -91,3 +91,12 @@ let writev flow bufs =
         loop xs
   in
   protect (fun () -> loop bufs)
+
+let shutdown flow cmd =
+  let cmd' = match cmd with
+    | `write -> Lwt_unix.SHUTDOWN_SEND
+    | `read -> SHUTDOWN_RECEIVE
+    | `read_write -> SHUTDOWN_ALL
+  in
+  Lwt_unix.shutdown flow.fd cmd';
+  Lwt.return_unit

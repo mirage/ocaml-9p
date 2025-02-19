@@ -16,7 +16,7 @@ depends: [
   "fmt"
   "lambda-term"
   "win-error"
-  "cmdliner"
+  "cmdliner" { >= "1.1.0" }
 ]
 build: [
   ["dune" "subst"] {dev}
