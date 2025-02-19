@@ -12,7 +12,7 @@ depends: [
   "base-bytes"
   "cstruct" {>= "6.0.0"}
   "cstruct-lwt" {>= "6.0.0"}
-  "sexplib" {> "113.00.00" & < "v0.15"}
+  "sexplib" {> "113.00.00" }
   "prometheus"
   "rresult"
   "mirage-flow" {>= "3.0.0"}
@@ -24,7 +24,7 @@ depends: [
   "logs" {with-test & >= "0.5.0"}
   "win-error"
   "io-page-unix" {>= "2.0.0"}
-  "ppx_sexp_conv" {< "v0.15"}
+  "ppx_sexp_conv"
   "alcotest" {with-test & >= "0.4.0"}
 ]
 build: [
