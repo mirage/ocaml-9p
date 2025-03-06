@@ -37,3 +37,4 @@ Please also refer to the `protocol-9p-unix` package for a
 Unix/Windows implementation, and to `protocol-9p-tool` for a
 CLI interface.
 """
+x-maintenance-intent: [ "(latest)" ]
