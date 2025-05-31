@@ -39,4 +39,4 @@ ocaml-9p is an implementation of the 9P protocol, written in
 a Mirage-friendly style.  This package supports the Unix socket
 library.
 """
-
+x-maintenance-intent: [ "(latest)" ]
