@@ -6,7 +6,7 @@ homepage: "https://github.com/mirage/ocaml-9p"
 doc: "https://mirage.github.io/ocaml-9p/"
 bug-reports: "https://github.com/mirage/ocaml-9p/issues"
 depends: [
-  "ocaml" {>= "4.03.0"}
+  "ocaml" {>= "4.08.0"}
   "dune" {>= "1.0"}
   "protocol-9p" {>="1.0.1"}
   "base-bytes"
@@ -15,7 +15,7 @@ depends: [
   "sexplib" {> "113.00.00" }
   "prometheus"
   "rresult"
-  "mirage-flow" {>= "3.0.0"}
+  "mirage-flow" {>= "4.0.0"}
   "mirage-channel" {with-test & >= "4.0.0"}
   "lwt" {>= "3.0.0"}
   "base-unix"

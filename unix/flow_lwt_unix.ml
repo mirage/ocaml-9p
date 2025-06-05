@@ -30,22 +30,30 @@ type flow = {
   fd: Lwt_unix.file_descr;
   read_buffer_size: int;
   mutable read_buffer: Cstruct.t;
-  mutable closed: bool;
+  mutable shutdown: [ `None | `Read | `Write | `Both ];
 }
 
 let connect fd =
   let read_buffer_size = 32768 in
   let read_buffer = Cstruct.create read_buffer_size in
-  let closed = false in
-  { fd; read_buffer_size; read_buffer; closed }
+  let shutdown = `None in
+  { fd; read_buffer_size; read_buffer; shutdown }
 
 let close t =
-  match t.closed with
-  | false ->
-    t.closed <- true;
+  match t.shutdown with
+  | `None ->
+    t.shutdown <- `Both;
     Lwt_unix.close t.fd
-  | true ->
-    Lwt.return ()
+  | `Read ->
+    t.shutdown <- `Both;
+    Lwt_unix.shutdown t.fd Lwt_unix.SHUTDOWN_SEND;
+    Lwt.return_unit
+  | `Write ->
+    t.shutdown <- `Both;
+    Lwt_unix.shutdown t.fd Lwt_unix.SHUTDOWN_RECEIVE;
+    Lwt.return_unit
+  | `Both ->
+    Lwt.return_unit
 
 let safe op f r =
   Lwt.catch (fun () -> op f r) (function
@@ -53,8 +61,9 @@ let safe op f r =
       | e -> Lwt.fail e)
 
 let read flow =
-  if flow.closed then Lwt.return (Ok `Eof)
-  else begin
+  match flow.shutdown with
+  | `Read | `Both -> Lwt.return (Ok `Eof)
+  | _ ->
     if Cstruct.length flow.read_buffer = 0
     then flow.read_buffer <- Cstruct.create flow.read_buffer_size;
     safe Lwt_cstruct.read flow.fd flow.read_buffer >|= function
@@ -63,7 +72,6 @@ let read flow =
       let result = Cstruct.sub flow.read_buffer 0 n in
       flow.read_buffer <- Cstruct.shift flow.read_buffer n;
       Ok (`Data result)
-  end
 
 let protect f =
   Lwt.catch f (function
@@ -74,8 +82,9 @@ let protect f =
     )
 
 let write flow buf =
-  if flow.closed then Lwt.return (Error `Closed)
-  else
+  match flow.shutdown with
+  | `Write | `Both -> Lwt.return (Error `Closed)
+  | _ ->
     protect (fun () ->
         Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) buf >|= fun () ->
         Ok ()
@@ -85,18 +94,28 @@ let writev flow bufs =
   let rec loop = function
     | []      -> Lwt.return (Ok ())
     | x :: xs ->
-      if flow.closed then Lwt.return (Error `Closed)
-      else
+      match flow.shutdown with
+      | `Write | `Both -> Lwt.return (Error `Closed)
+      | _ ->
         Lwt_cstruct.complete (safe Lwt_cstruct.write flow.fd) x >>= fun () ->
         loop xs
   in
   protect (fun () -> loop bufs)
 
 let shutdown flow cmd =
-  let cmd' = match cmd with
+  let cmd', status = match flow.shutdown, cmd with
+    | `Both, _ -> None, `Both
+    | `None, x -> Some x, (match cmd with `write -> `Write | `read -> `Read | `read_write -> `Both)
+    | `Read, (`write | `read_write) -> Some `write, `Both
+    | `Write, (`read | `read_write) -> Some `read, `Both
+    | s, _ -> None, s
+  in
+  let lwt_cmd = Option.map (function
     | `write -> Lwt_unix.SHUTDOWN_SEND
     | `read -> SHUTDOWN_RECEIVE
-    | `read_write -> SHUTDOWN_ALL
+    | `read_write -> SHUTDOWN_ALL)
+      cmd'
   in
-  Lwt_unix.shutdown flow.fd cmd';
+  flow.shutdown <- status;
+  Option.iter (Lwt_unix.shutdown flow.fd) lwt_cmd;
   Lwt.return_unit
