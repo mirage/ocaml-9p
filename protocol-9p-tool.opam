@@ -6,7 +6,7 @@ homepage: "https://github.com/mirage/ocaml-9p"
 doc: "https://mirage.github.io/ocaml-9p/"
 bug-reports: "https://github.com/mirage/ocaml-9p/issues"
 depends: [
-  "ocaml" {>= "4.03.0"}
+  "ocaml" {>= "4.08.0"}
   "dune" {>= "1.0"}
   "protocol-9p"
   "protocol-9p-unix"
