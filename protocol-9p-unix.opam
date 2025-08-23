@@ -8,7 +8,7 @@ bug-reports: "https://github.com/mirage/ocaml-9p/issues"
 depends: [
   "ocaml" {>= "4.08.0"}
   "dune" {>= "1.0"}
-  "protocol-9p" {>="1.0.1"}
+  "protocol-9p" {= version}
   "base-bytes"
   "cstruct" {>= "6.0.0"}
   "cstruct-lwt" {>= "6.0.0"}
