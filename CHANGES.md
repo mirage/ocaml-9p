@@ -1,3 +1,11 @@
+## v2.1.0 (2025-08-24)
+
+* Update to cmdliner 1.1.0 (#146 @patricoferris)
+* Add some lower bounds, remove sexplib upper bounds (#146 @patricoferris)
+* Adapt to io-page changes (#148 @hannesm)
+* Adapt to mirage-flow shutdown signature (#148 @hannesm)
+* Specify internal deps with =version constraint (#149 @hannesm)
+
 ## v2.0.2 (2021-02-06)
 
 * Update to Cstruct.length in cstruct.6.0.0 and use Fmt.str
